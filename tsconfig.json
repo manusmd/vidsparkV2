@@ -23,5 +23,6 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "files": ["node_modules/typescript/lib/lib.es6.d.ts"],
   "exclude": ["node_modules"]
 }
