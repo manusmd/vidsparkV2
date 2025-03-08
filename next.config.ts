@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
     config.module.rules.push({
       test: /\.(js|ts|tsx)$/,
       include: /functions/,
-      use: "null-loader",
+      use: require.resolve("null-loader"),
     });
     return config;
   },
