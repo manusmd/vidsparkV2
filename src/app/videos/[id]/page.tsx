@@ -6,6 +6,7 @@ import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
 import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 import { SceneList } from "@/components/video/SceneList.component";
+import { VideoPreview } from "@/components/remotion/VideoPreview.component";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
@@ -39,11 +40,10 @@ export default function VideoDetailPage() {
       {/* Right Column - Video Info & Preview (Sticky within parent) */}
       <div className="relative flex flex-col w-[420px]">
         <div className="sticky top-[96px] space-y-6">
-          {/* Adjusted top value */}
           <VideoInfo video={video} />
-          {/* Placeholder for Video Preview */}
-          <div className="w-full aspect-video bg-muted flex items-center justify-center text-muted-foreground rounded-lg">
-            Video Preview
+          {/* Updated aspect ratio for shorts: 9:16 */}
+          <div className="w-full aspect-[9/16] bg-muted flex items-center justify-center text-muted-foreground rounded-lg">
+            <VideoPreview scenes={video.scenes} />
           </div>
         </div>
       </div>

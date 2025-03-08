@@ -1,3 +1,5 @@
+import { TikTokPage } from "@remotion/captions";
+
 export type Step = {
   id: string;
   name: string;
@@ -52,6 +54,13 @@ export interface Scene {
     }[];
   }[];
 }
+
+export type SceneWithTiming = null | {
+  startFrame: number;
+  pages: TikTokPage[];
+  durationInFrames: number;
+  scene: Scene;
+};
 
 export interface Video {
   id: string;
