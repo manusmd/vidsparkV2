@@ -1,10 +1,8 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { environment } from "./environment";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { connectFunctionsEmulator, getFunctions } from "@firebase/functions";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { getStripePayments } from "@invertase/firestore-stripe-payments";
 
 const firebaseConfig = {
@@ -20,10 +18,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
+/*
 const storage = getStorage(app);
+*/
 const auth = getAuth(app);
+/*
 const functions = getFunctions(app);
+*/
 
+/* Emulator connection logic is commented out
 if (process.env.NEXT_PUBLIC_APP_ENV === "emulato") {
   // Use emulator settings for Firestore
   const firestorePath =
@@ -45,11 +48,13 @@ if (process.env.NEXT_PUBLIC_APP_ENV === "emulato") {
   const [storageHost, storagePort] = storagePath.split(":");
   connectStorageEmulator(storage, storageHost, parseInt(storagePort, 10));
 
+  // Use emulator settings for Functions
   const functionsPath =
     process.env.NEXT_PUBLIC_EMULATOR_FUNCTIONS_PATH || "localhost:5001";
   const [functionHost, functionPort] = functionsPath.split(":");
   connectFunctionsEmulator(functions, functionHost, parseInt(functionPort, 10));
 }
+*/
 
 const analytics =
   typeof window !== "undefined" &&
@@ -62,4 +67,4 @@ const payments = getStripePayments(app, {
   customersCollection: "customers",
 });
 
-export { app, analytics, db, storage, auth, payments };
+export { app, analytics, db, auth, payments };
