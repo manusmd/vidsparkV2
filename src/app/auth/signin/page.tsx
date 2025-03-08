@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase";
 import {
   signInWithEmailAndPassword,
@@ -18,12 +19,21 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { GrGoogle } from "react-icons/gr";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function SignIn() {
   const router = useRouter();
+  const { user } = useAuth(); // custom hook that returns current user as a string (uid) or an object
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  // If user is already signed in, redirect them.
+  useEffect(() => {
+    if (user) {
+      router.push("/create");
+    }
+  }, [user, router]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,8 +41,12 @@ export default function SignIn() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/create");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     }
   };
 
@@ -41,8 +55,12 @@ export default function SignIn() {
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
       router.push("/create");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     }
   };
 
@@ -82,7 +100,6 @@ export default function SignIn() {
         </CardContent>
         {/* Divider */}
         <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-2 h-[1px] w-full" />
-
         <CardFooter>
           <button
             onClick={handleGoogleSignIn}

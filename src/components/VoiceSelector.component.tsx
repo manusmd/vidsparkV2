@@ -155,6 +155,7 @@ export function VoiceSelector({
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1 mt-1">
                     {Object.entries(voice.labels)
+                      // eslint-disable-next-line @typescript-eslint/no-unused-vars
                       .filter(([_, value]) => value)
                       .map(([key, value]) => (
                         <Badge

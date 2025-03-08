@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       message: "Video updated and pending entry created.",
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error updating video and writing pending entry:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unknown error" },

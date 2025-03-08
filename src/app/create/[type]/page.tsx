@@ -17,6 +17,7 @@ import { ContentTypeDetails } from "@/app/create/[type]/ContentTypeDetails.compo
 import { VoiceSelector } from "@/components/VoiceSelector.component";
 import { SceneEditor } from "@/app/create/[type]/SceneEditor.component";
 import { useAuth } from "@/hooks/useAuth";
+import { ContentType } from "@/app/types";
 
 // Define validation schema for form
 const storySchema = z.object({
@@ -34,13 +35,6 @@ const storySchema = z.object({
 });
 
 type StoryFormValues = z.infer<typeof storySchema>;
-
-interface ContentType {
-  id: string;
-  title: string;
-  description: string;
-  prompt?: string;
-}
 
 export default function VideoGenerationPage() {
   const router = useRouter();

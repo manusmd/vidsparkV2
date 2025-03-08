@@ -1,6 +1,11 @@
 import { Card } from "@/components/ui/card";
+import { ContentType } from "@/app/types";
 
-export function ContentTypeDetails({ contentType }: { contentType: any }) {
+export function ContentTypeDetails({
+  contentType,
+}: {
+  contentType: ContentType;
+}) {
   return (
     <>
       <h1 className="text-4xl font-bold">{contentType.title}</h1>

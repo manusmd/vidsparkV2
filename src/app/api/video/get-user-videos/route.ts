@@ -19,6 +19,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ videos });
   } catch (error) {
+    console.error("Error getting user videos:", error);
+
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }

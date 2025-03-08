@@ -65,7 +65,6 @@ export type SceneWithTiming = null | {
 export interface Video {
   id: string;
   title: string;
-  hook: string;
   description: string;
   voiceId: string;
   scenes: {

@@ -15,15 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Trash2, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useAuth } from "@/hooks/useAuth"; // Import your auth hook
-
-interface Video {
-  id: string;
-  title: string;
-  description: string;
-  status: string;
-  createdAt: Date;
-}
+import { useAuth } from "@/hooks/useAuth";
+import { Video } from "@/app/types"; // Import your auth hook
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -49,7 +42,7 @@ export default function HistoryPage() {
 
         const { videos } = await response.json();
         setVideos(
-          videos.map((video: any) => ({
+          videos.map((video: Video) => ({
             ...video,
             createdAt: video.createdAt ? new Date(video.createdAt) : new Date(),
           })),

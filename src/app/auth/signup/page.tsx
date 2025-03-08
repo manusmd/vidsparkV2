@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { auth } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
@@ -31,6 +32,13 @@ export default function SignUp() {
   });
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    // If the user is already signed in, redirect them
+    if (auth.currentUser) {
+      router.push("/create");
+    }
+  }, [router]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -48,27 +56,35 @@ export default function SignUp() {
       await updateProfile(user, {
         displayName: `${formData.firstName} ${formData.lastName}`,
       });
-      // Force token refresh so that updated custom claims are available
+      // Force token refresh so updated claims are available
       await user.getIdToken(true);
       router.push("/create");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred.");
+      }
     }
   };
 
   const handleGoogleSignIn = async () => {
+    setError("");
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
       router.push("/profile");
-    } catch (err: any) {
-      console.error("Google Sign-In Error:", err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Google Sign-In Error:", err.message);
+      } else {
+        console.error("Google Sign-In Error: Unknown error");
+      }
     }
   };
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-background">
-      {/* Background Animation */}
       <Card className="relative z-10 w-full max-w-md bg-opacity-80 backdrop-blur-lg">
         <CardHeader>
           <CardTitle>Welcome to VidSpark</CardTitle>
@@ -132,10 +148,7 @@ export default function SignUp() {
             </Button>
           </form>
         </CardContent>
-
-        {/* Divider */}
         <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-2 h-[1px] w-full" />
-
         <CardFooter>
           <button
             onClick={handleGoogleSignIn}

@@ -21,11 +21,11 @@ export async function DELETE(req: Request) {
 
     await videoRef.delete();
     return NextResponse.json({ message: "Video deleted successfully" });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting video:", error);
-    return NextResponse.json(
-      { error: error.message || "Unknown error" },
-      { status: 500 },
-    );
+    if (error instanceof Error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+    return NextResponse.json({ error: "Unknown error" }, { status: 500 });
   }
 }

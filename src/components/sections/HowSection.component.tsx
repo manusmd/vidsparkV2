@@ -59,7 +59,7 @@ export default function HowSection() {
       {/* Carousel container */}
       <Carousel className="w-full max-w-4xl mx-auto">
         <CarouselContent className="-ml-1 flex items-center">
-          {steps.map((step, index) => (
+          {steps.map((step) => (
             <CarouselItem
               key={step.number}
               // Ensures one item per view, no forced height
