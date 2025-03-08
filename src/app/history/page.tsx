@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -17,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, Trash2, Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/hooks/useAuth"; // Import your auth hook
 
 interface Video {
   id: string;
@@ -28,34 +27,41 @@ interface Video {
 
 export default function HistoryPage() {
   const router = useRouter();
+  const { user } = useAuth(); // Get current user from authentication context
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
+    if (!user) return; // Wait for user authentication
+
     const fetchVideos = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "videos"));
-        const videosData = snapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            ...data,
-            id: doc.id,
-            createdAt: data.createdAt?.toDate
-              ? data.createdAt.toDate()
-              : new Date(),
-          } as Video;
+        const response = await fetch(`/api/video/get-user-videos`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${await user.getIdToken()}`, // Secure request
+          },
         });
 
-        setVideos(videosData);
+        if (!response.ok) throw new Error("Failed to fetch videos");
+
+        const { videos } = await response.json();
+        setVideos(
+          videos.map((video: any) => ({
+            ...video,
+            createdAt: video.createdAt ? new Date(video.createdAt) : new Date(),
+          })),
+        );
       } catch (error) {
         console.error("Error fetching videos:", error);
       }
       setLoading(false);
     };
+
     fetchVideos();
-  }, []);
+  }, [user]);
 
   const toggleSelection = (videoId: string) => {
     setSelectedVideos((prev) =>
@@ -68,8 +74,14 @@ export default function HistoryPage() {
   const handleDelete = async () => {
     try {
       await Promise.all(
-        selectedVideos.map((id) => deleteDoc(doc(db, "videos", id))),
+        selectedVideos.map(async (id) => {
+          await fetch(`/api/video`, {
+            method: "DELETE",
+            body: JSON.stringify({ videoId: id }),
+          });
+        }),
       );
+
       setVideos((prev) =>
         prev.filter((video) => !selectedVideos.includes(video.id)),
       );
@@ -133,9 +145,13 @@ export default function HistoryPage() {
 
               <div className="text-xs text-muted-foreground">
                 Created{" "}
-                {formatDistanceToNow(new Date(video.createdAt), {
-                  addSuffix: true,
-                })}
+                {formatDistanceToNow(
+                  (() => {
+                    const d = new Date(video.createdAt);
+                    return isNaN(d.getTime()) ? new Date() : d;
+                  })(),
+                  { addSuffix: true },
+                )}
               </div>
 
               <div className="flex justify-between items-center">

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { doc, getDoc, addDoc, collection } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,9 @@ import { useVoices } from "@/hooks/data/useVoices";
 import { ContentTypeDetails } from "@/app/create/[type]/ContentTypeDetails.component";
 import { VoiceSelector } from "@/components/VoiceSelector.component";
 import { SceneEditor } from "@/app/create/[type]/SceneEditor.component";
+import { useAuth } from "@/hooks/useAuth";
 
-// ✅ Define validation schema for form
+// Define validation schema for form
 const storySchema = z.object({
   title: z.string().min(2, "Title is required").max(100),
   description: z.string().min(10, "Description is required").max(500),
@@ -43,11 +44,13 @@ interface ContentType {
 
 export default function VideoGenerationPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const { type } = useParams();
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [videoId, setVideoId] = useState<string | null>(null);
 
   const { voices, loading: voicesLoading, error: voicesError } = useVoices();
 
@@ -71,26 +74,22 @@ export default function VideoGenerationPage() {
       setLoading(false);
       return;
     }
-
     const fetchContentType = async () => {
       const docRef = doc(db, "contentTypes", type as string);
       const docSnap = await getDoc(docRef);
-
       if (docSnap.exists()) {
         setSelectedContentType(docSnap.data() as ContentType);
       } else {
         setSelectedContentType(null);
       }
-
       setLoading(false);
     };
-
     fetchContentType();
   }, [type]);
 
+  // Handle AI Story Generation (calls your /api/openai/story route)
   const handleGenerateStory = async () => {
     if (!selectedContentType) return;
-
     setIsGenerating(true);
     try {
       const response = await fetch("/api/openai/story", {
@@ -99,15 +98,14 @@ export default function VideoGenerationPage() {
         body: JSON.stringify({
           contentType: selectedContentType.title,
           customPrompt: selectedContentType.prompt || "",
+          uid: user?.uid,
         }),
       });
-
       if (!response.ok) {
         throw new Error("Failed to generate story.");
       }
-
-      const { story } = await response.json();
-
+      const { story, videoId } = await response.json();
+      setVideoId(videoId);
       setValue("title", story.title);
       setValue("description", story.description);
       setValue("scenes", story.scenes);
@@ -117,45 +115,28 @@ export default function VideoGenerationPage() {
     setIsGenerating(false);
   };
 
+  // Handle video creation by sending the form data and videoId to your API route
   const handleGenerateVideo = async (data: StoryFormValues) => {
     setIsGenerating(true);
-
     try {
-      // ✅ Initialize status fields for scenes
-      const initialSceneStatus = Object.fromEntries(
-        data.scenes.map((_, index) => [
-          index,
-          { statusMessage: "pending", progress: 0 },
-        ]),
-      );
-
-      // ✅ Prepare the video document
-      const videoData = {
-        ...data,
-        status: "processing:voices", // Initial processing stage
-        sceneStatus: initialSceneStatus,
-        imageStatus: initialSceneStatus,
-        voiceStatus: initialSceneStatus,
-        createdAt: new Date(),
-      };
-
-      // ✅ Add video to 'videos' collection
-      const videoRef = await addDoc(collection(db, "videos"), videoData);
-
-      // ✅ Add video ID to 'pendingVideos' collection
-      await addDoc(collection(db, "pendingVideos"), {
-        videoId: videoRef.id,
-        createdAt: new Date(),
-      });
-
-      // ✅ Navigate to video details page
-      router.push(`/videos/${videoRef.id}`);
+      if (videoId) {
+        // Pass both the videoId and form data to the API route so it can update the video doc
+        const response = await fetch("/api/video/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ videoId, ...data }),
+        });
+        if (!response.ok) {
+          throw new Error("Failed to update video.");
+        }
+        router.push(`/videos/${videoId}`);
+      }
     } catch (error) {
-      console.error("Failed to create video:", error);
+      console.error("Failed to update video:", error);
     }
-
     setIsGenerating(false);
   };
+
   return (
     <div className="container py-8 px-4 md:px-8 space-y-8">
       {loading ? (
@@ -193,7 +174,6 @@ export default function VideoGenerationPage() {
                 </Button>
               </div>
 
-              {/* Title Field with Error */}
               <Controller
                 name="title"
                 control={control}
@@ -209,7 +189,6 @@ export default function VideoGenerationPage() {
                 )}
               />
 
-              {/* Description Field with Error */}
               <Controller
                 name="description"
                 control={control}
@@ -225,7 +204,6 @@ export default function VideoGenerationPage() {
                 )}
               />
 
-              {/* Voice Selector with Error */}
               {voicesLoading ? (
                 <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
               ) : voicesError ? (
@@ -251,7 +229,6 @@ export default function VideoGenerationPage() {
                 />
               )}
 
-              {/* Scene Editor with Error */}
               <Controller
                 name="scenes"
                 control={control}
@@ -270,7 +247,6 @@ export default function VideoGenerationPage() {
                 )}
               />
             </Card>
-
             <Button
               type="submit"
               disabled={isSubmitting || isGenerating}

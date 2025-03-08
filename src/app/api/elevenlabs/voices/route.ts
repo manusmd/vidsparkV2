@@ -16,8 +16,6 @@ export async function GET() {
     // Fetch voices using the SDK
     const voices = await elevenlabs.voices.getAll();
 
-    console.log("Fetched voices:", voices);
-
     // Process voices and include preview URLs
     const processedVoices = voices.voices.map((voice) => ({
       id: voice.voice_id,

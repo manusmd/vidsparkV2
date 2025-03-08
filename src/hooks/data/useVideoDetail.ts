@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Step, Video } from "@/app/types";
+import { Scene, Step, Video } from "@/app/types";
 
 // Define processing steps globally (reused in the hook)
 const processingSteps = [
@@ -26,12 +26,23 @@ export function useVideoDetail(videoId: string) {
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const videoData = docSnapshot.data();
+
+          // Ensure `scenes` is treated as an object
+          const scenes = videoData.scenes ?? {};
+          const formattedScenes = Object.entries(scenes).reduce(
+            (acc, [key, value]) => {
+              acc[Number(key)] = value as Scene;
+              return acc;
+            },
+            {} as Record<number, { narration: string; imagePrompt: string }>,
+          );
+
           const video: Video = {
             id: docSnapshot.id,
             title: videoData.title ?? "Untitled Video",
             description: videoData.description ?? "No description available.",
             voiceId: videoData.voiceId ?? "",
-            scenes: videoData.scenes ?? [],
+            scenes: formattedScenes, // ✅ Now an object
             status: videoData.status ?? "processing:voices",
             sceneStatus: videoData.sceneStatus ?? {},
             imageStatus: videoData.imageStatus ?? {},
@@ -92,23 +103,29 @@ export function useVideoDetail(videoId: string) {
               : "upcoming",
         subSteps:
           step.id === "processing:voices"
-            ? video.scenes.map((scene, sceneIndex) => ({
-                index: sceneIndex,
-                scene: sceneIndex + 1,
-                narration: scene.narration,
-                status:
-                  video.voiceStatus?.[sceneIndex]?.statusMessage ?? "pending",
-                progress: video.voiceStatus?.[sceneIndex]?.progress ?? 0,
-              }))
-            : step.id === "processing:images"
-              ? video.scenes.map((scene, sceneIndex) => ({
-                  index: sceneIndex,
-                  scene: sceneIndex + 1,
-                  imagePrompt: scene.imagePrompt,
+            ? Object.entries(video.scenes).map(([sceneIndex, scene]) => {
+                const index = Number(sceneIndex); // ✅ Ensure sceneIndex is a number
+                return {
+                  index,
+                  scene: index + 1,
+                  narration: scene.narration,
                   status:
-                    video.imageStatus?.[sceneIndex]?.statusMessage ?? "pending",
-                  progress: video.imageStatus?.[sceneIndex]?.progress ?? 0,
-                }))
+                    video.voiceStatus?.[index]?.statusMessage ?? "pending", // ✅ Use index here
+                  progress: video.voiceStatus?.[index]?.progress ?? 0, // ✅ Use index here
+                };
+              })
+            : step.id === "processing:images"
+              ? Object.entries(video.scenes).map(([sceneIndex, scene]) => {
+                  const index = Number(sceneIndex); // ✅ Ensure sceneIndex is a number
+                  return {
+                    index,
+                    scene: index + 1,
+                    imagePrompt: scene.imagePrompt,
+                    status:
+                      video.imageStatus?.[index]?.statusMessage ?? "pending", // ✅ Use index here
+                    progress: video.imageStatus?.[index]?.progress ?? 0, // ✅ Use index here
+                  };
+                })
               : undefined,
       };
     });

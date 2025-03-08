@@ -1,63 +1,31 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
 import Link from "next/link";
-import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Ghost, Scale, History, Brain } from "lucide-react";
+import { ContentType } from "@/app/types";
 
-interface ContentType {
-  id: string;
-  title: string;
-  description: string;
+interface ContentTypeGridProps {
+  contentTypes: ContentType[];
 }
 
-export function ContentTypeGrid() {
-  const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
-  const [customPrompt, setCustomPrompt] = useState("");
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "contentTypes"),
-      (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as ContentType[];
-        setContentTypes(data);
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
-
-  const handleCustomSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (customPrompt.trim()) {
-      const encoded = encodeURIComponent(customPrompt.trim());
-      router.push(`/create/custom?prompt=${encoded}`);
-    }
-  };
-
-  // Define default icons (optional, can be moved to the database)
-  const iconMap: { [key: string]: React.ElementType } = {
-    horror: Ghost,
-    "true-crime": Scale,
-    history: History,
-    facts: Brain,
-  };
-
+export default function ContentTypeGrid({
+  contentTypes,
+}: ContentTypeGridProps) {
   return (
     <div className="grid gap-6 w-full">
       {/* Predefined Content Types */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {contentTypes.map((type) => {
-          const Icon = iconMap[type.id] || Ghost; // Default to Ghost if no match
+          const Icon =
+            {
+              horror: Ghost,
+              "true-crime": Scale,
+              history: History,
+              facts: Brain,
+            }[type.id] || Ghost;
           return (
             <Link key={type.id} href={`/create/${type.id}`} className="group">
               <Card className="relative overflow-hidden p-6 bg-card text-card-foreground hover:border-primary transition-colors cursor-pointer flex flex-col justify-between h-full min-h-[220px]">
@@ -84,10 +52,13 @@ export function ContentTypeGrid() {
           <span className="bg-background px-2">Or</span>
         </div>
       </div>
-
       {/* Custom Story Input (Always Visible) */}
       <Card className="p-6 bg-card text-card-foreground border border-border shadow-md">
-        <form onSubmit={handleCustomSubmit} className="flex flex-col gap-4">
+        <form
+          action="/create/custom"
+          method="GET"
+          className="flex flex-col gap-4"
+        >
           <div>
             <h3 className="font-semibold mb-2">Custom Story Prompt</h3>
             <p className="text-sm text-muted-foreground mb-4">
@@ -95,17 +66,12 @@ export function ContentTypeGrid() {
               the theme, style, and mood.
             </p>
             <Textarea
+              name="prompt"
               placeholder="E.g., A mysterious urban legend about a haunted smartphone app..."
-              value={customPrompt}
-              onChange={(e) => setCustomPrompt(e.target.value)}
               className="w-full h-24 resize-none bg-background text-foreground border-border"
             />
           </div>
-          <Button
-            type="submit"
-            disabled={!customPrompt.trim()}
-            className="self-start"
-          >
+          <Button type="submit" className="self-start">
             Create
           </Button>
         </form>

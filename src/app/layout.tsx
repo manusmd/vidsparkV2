@@ -5,8 +5,6 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/Navbar.component";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 
-// Lazy load Navbar for performance
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -32,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen  text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen text-white`}
       >
         <ThemeProvider>
           <AuthProvider>

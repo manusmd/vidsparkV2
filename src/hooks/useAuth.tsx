@@ -1,41 +1,26 @@
 "use client";
-
 import {
-  useState,
-  useEffect,
   createContext,
-  useContext,
   ReactNode,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
-import { initializeApp } from "firebase/app";
 import {
-  getAuth,
-  signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
+  signInWithPopup,
   signOut,
   User,
 } from "firebase/auth";
-import { environment } from "@/lib/environment";
+import { auth } from "@/lib/firebase";
 
-// Initialize Firebase
-const firebaseConfig = {
-  apiKey: environment.firebaseApiKey,
-  authDomain: environment.firebaseAuthDomain,
-  projectId: environment.firebaseProjectId,
-  storageBucket: environment.firebaseStorageBucket,
-  messagingSenderId: environment.firebaseMessagingSenderId,
-  appId: environment.firebaseAppId,
-  measurementId: environment.firebaseMeasurementId,
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
 // Create Context
 interface AuthContextType {
   user: User | null;
+  isAdmin: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -45,10 +30,26 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        // Force a refresh of the token to get updated custom claims.
+        currentUser
+          .getIdTokenResult(true)
+          .then((idTokenResult) => {
+            const roles = idTokenResult.claims.roles;
+            setIsAdmin(Array.isArray(roles) && roles.includes("admin"));
+          })
+          .catch((error) => {
+            console.error("Error fetching token claims:", error);
+            setIsAdmin(false);
+          });
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => unsubscribe();
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, isAdmin, loginWithGoogle, logout }}>
       {children}
     </AuthContext.Provider>
   );
