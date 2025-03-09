@@ -20,13 +20,15 @@ import {
 } from "@/components/ui/card";
 import { GrGoogle } from "react-icons/gr";
 import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 export default function SignIn() {
   const router = useRouter();
-  const { user } = useAuth(); // custom hook that returns current user as a string (uid) or an object
+  const { user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // If user is already signed in, redirect them.
   useEffect(() => {
@@ -38,6 +40,7 @@ export default function SignIn() {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/create");
@@ -48,13 +51,15 @@ export default function SignIn() {
         setError("An unknown error occurred.");
       }
     }
+    setIsLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
     setError("");
+    setIsLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      router.push("/create");
+      router.push("/app/create");
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -62,6 +67,7 @@ export default function SignIn() {
         setError("An unknown error occurred.");
       }
     }
+    setIsLoading(false);
   };
 
   return (
@@ -93,17 +99,24 @@ export default function SignIn() {
               required
               className="mt-4"
             />
-            <Button type="submit" className="w-full mt-4">
-              Sign In →
+            <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                  Loading...
+                </span>
+              ) : (
+                "Sign In →"
+              )}
             </Button>
           </form>
         </CardContent>
-        {/* Divider */}
         <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-2 h-[1px] w-full" />
         <CardFooter>
           <button
             onClick={handleGoogleSignIn}
             className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-black rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
+            disabled={isLoading}
           >
             <GrGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
             <span className="text-neutral-700 dark:text-neutral-300 text-sm">
