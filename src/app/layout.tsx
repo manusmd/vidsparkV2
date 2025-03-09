@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
 import Navbar from "@/components/layout/Navbar.component";
 import { ThemeProvider } from "@/providers/ThemeProvider";
+import WaitForAuth from "@/components/layout/WaitForAuth.component";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,10 +35,12 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <Navbar />
-            <main className="flex-1 flex flex-col items-center justify-center w-full pt-[64px]">
-              {children}
-            </main>
+            <WaitForAuth>
+              <Navbar />
+              <main className="flex-1 flex flex-col items-center justify-center w-full pt-[64px]">
+                {children}
+              </main>
+            </WaitForAuth>
           </AuthProvider>
         </ThemeProvider>
       </body>

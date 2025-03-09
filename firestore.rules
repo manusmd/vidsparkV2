@@ -1,6 +1,7 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow users to read their own customer info.
     match /customers/{uid} {
       allow read: if request.auth.uid == uid;
 
@@ -15,22 +16,31 @@ service cloud.firestore {
       }
     }
 
+    // Allow users to read their own profile from the users collection.
+    match /users/{uid} {
+      allow read: if request.auth.uid == uid;
+      // Optionally, you might add write rules if needed.
+      // allow write: if request.auth.uid == uid;
+    }
+
+    // Allow users to read video documents if the video's uid matches the requester's uid.
     match /videos/{id} {
       allow read: if request.auth.uid == resource.data.uid;
     }
 
+    // Public products rules.
     match /products/{id} {
       allow read: if true;
 
       match /prices/{id} {
         allow read: if true;
       }
-
       match /tax_rates/{id} {
         allow read: if true;
       }
     }
 
+    // Content types can be read if authenticated.
     match /contentTypes/{id} {
       allow read: if request.auth != null;
     }

@@ -8,13 +8,14 @@ export const syncNewUserToFirestore = auth.user().onCreate(async (user) => {
   const defaultRoles = ["user"];
 
   try {
-    // Set custom claims on the user (this will be available in their ID token after a refresh)
+    // Set custom claims on the user.
     await admin.auth().setCustomUserClaims(uid, { roles: defaultRoles });
 
-    // Create the Firestore document for the user
+    // Create the Firestore document for the user, including the roles.
     await db.collection("users").doc(uid).set({
       uid,
       email,
+      roles: defaultRoles,
       createdAt: Timestamp.now(),
     });
     console.log(

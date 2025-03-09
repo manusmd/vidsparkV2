@@ -5,7 +5,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   NavigationMenu,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
@@ -21,13 +20,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
 
   const navLinks = [
-    { href: "/create", label: "Create" },
-    { href: "/history", label: "History" },
-    { href: "/admin", label: "Admin" },
+    { href: "/app/create", label: "Create" },
+    { href: "/app/history", label: "History" },
+    { href: "/app/admin", label: "Admin" },
   ];
   const navLinksToRender = navLinks.filter((link) =>
     link.label === "Admin" ? isAdmin : true,
@@ -58,12 +57,16 @@ export default function Navbar() {
             <NavigationMenuList className="flex gap-6">
               {navLinksToRender.map(({ href, label }) => (
                 <NavigationMenuItem key={href}>
-                  <NavigationMenuLink
+                  <Link
                     href={href}
-                    className={`${navigationMenuTriggerStyle()} transition-all text-lg font-medium px-4 py-2 rounded-lg hover:text-blue-400 hover:bg-blue-500/10`}
+                    passHref
+                    className={
+                      navigationMenuTriggerStyle() +
+                      " transition-all text-lg font-medium px-4 py-2 rounded-lg hover:text-blue-400 hover:bg-blue-500/10 text-xl"
+                    }
                   >
                     {label}
-                  </NavigationMenuLink>
+                  </Link>
                 </NavigationMenuItem>
               ))}
             </NavigationMenuList>
@@ -72,7 +75,9 @@ export default function Navbar() {
 
         {/* Authentication / Avatar */}
         <div className="flex items-center gap-4">
-          {user ? (
+          {loading ? (
+            <div className="w-32 h-10" />
+          ) : user ? (
             <Popover>
               <PopoverTrigger asChild>
                 <button className="cursor-pointer focus:outline-none transition-transform hover:scale-105">
@@ -94,11 +99,10 @@ export default function Navbar() {
                 style={{ zIndex: 9999 }}
               >
                 <div className="flex flex-col space-y-1">
-                  <Link
-                    href="/profile"
-                    className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md"
-                  >
-                    Profile
+                  <Link href="/profile" passHref legacyBehavior>
+                    <a className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md">
+                      Profile
+                    </a>
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -111,11 +115,15 @@ export default function Navbar() {
             </Popover>
           ) : (
             <>
-              <Link href="/auth/signin">
-                <Button variant="ghost">Sign In</Button>
+              <Link href="/auth/signin" passHref legacyBehavior>
+                <a>
+                  <Button variant="ghost">Sign In</Button>
+                </a>
               </Link>
-              <Link href="/auth/signup">
-                <Button>Sign Up</Button>
+              <Link href="/auth/signup" passHref legacyBehavior>
+                <a>
+                  <Button>Sign Up</Button>
+                </a>
               </Link>
             </>
           )}

@@ -13,9 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useVoices } from "@/hooks/data/useVoices";
-import { ContentTypeDetails } from "@/app/create/[type]/ContentTypeDetails.component";
+import { ContentTypeDetails } from "@/app/app/create/[type]/ContentTypeDetails.component";
 import { VoiceSelector } from "@/components/VoiceSelector.component";
-import { SceneEditor } from "@/app/create/[type]/SceneEditor.component";
+import { SceneEditor } from "@/app/app/create/[type]/SceneEditor.component";
 import { useAuth } from "@/hooks/useAuth";
 import { ContentType } from "@/app/types";
 

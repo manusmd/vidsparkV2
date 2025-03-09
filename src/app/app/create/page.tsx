@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import ContentTypeGrid from "@/app/create/ContentTypeGrid.component";
+import ContentTypeGrid from "@/app/app/create/ContentTypeGrid.component";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 
 export default function CreatePage() {

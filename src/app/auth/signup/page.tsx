@@ -21,6 +21,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 
 export default function SignUp() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function SignUp() {
     password: "",
   });
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // If the user is already signed in, redirect them
@@ -46,6 +48,7 @@ export default function SignUp() {
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -56,7 +59,7 @@ export default function SignUp() {
       await updateProfile(user, {
         displayName: `${formData.firstName} ${formData.lastName}`,
       });
-      // Force token refresh so updated claims are available
+      // Force token refresh so that updated custom claims are available
       await user.getIdToken(true);
       router.push("/create");
     } catch (err: unknown) {
@@ -66,6 +69,7 @@ export default function SignUp() {
         setError("An unknown error occurred.");
       }
     }
+    setIsLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
@@ -143,8 +147,15 @@ export default function SignUp() {
 
             {error && <p className="text-red-500 text-sm">{error}</p>}
 
-            <Button type="submit" className="w-full mt-4">
-              Sign up →
+            <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+              {isLoading ? (
+                <span className="flex items-center justify-center">
+                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
+                  Loading...
+                </span>
+              ) : (
+                "Sign up →"
+              )}
             </Button>
           </form>
         </CardContent>

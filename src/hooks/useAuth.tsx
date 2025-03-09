@@ -1,4 +1,6 @@
+// useAuth.tsx
 "use client";
+
 import {
   createContext,
   ReactNode,
@@ -13,42 +15,49 @@ import {
   signOut,
   User,
 } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 const provider = new GoogleAuthProvider();
 
-// Create Context
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  loading: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        // Force a refresh of the token to get updated custom claims.
-        currentUser
-          .getIdTokenResult(true)
-          .then((idTokenResult) => {
-            const roles = idTokenResult.claims.roles;
-            setIsAdmin(Array.isArray(roles) && roles.includes("admin"));
+        // Fetch the user document from Firestore and check roles.
+        getDoc(doc(db, "users", currentUser.uid))
+          .then((docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const roles = data.roles;
+              setIsAdmin(Array.isArray(roles) && roles.includes("admin"));
+            } else {
+              setIsAdmin(false);
+            }
           })
           .catch((error) => {
-            console.error("Error fetching token claims:", error);
+            console.error("Error fetching user document:", error);
             setIsAdmin(false);
-          });
+          })
+          .finally(() => setLoading(false));
       } else {
         setIsAdmin(false);
+        setLoading(false);
       }
     });
 
@@ -72,13 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAdmin, loading, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom Hook to Use Auth
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

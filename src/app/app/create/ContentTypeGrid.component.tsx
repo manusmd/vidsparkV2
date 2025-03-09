@@ -27,7 +27,11 @@ export default function ContentTypeGrid({
               facts: Brain,
             }[type.id] || Ghost;
           return (
-            <Link key={type.id} href={`/create/${type.id}`} className="group">
+            <Link
+              key={type.id}
+              href={`/src/app/protected/create/${type.id}`}
+              className="group"
+            >
               <Card className="relative overflow-hidden p-6 bg-card text-card-foreground hover:border-primary transition-colors cursor-pointer flex flex-col justify-between h-full min-h-[220px]">
                 <div className="flex flex-col items-center text-center flex-1">
                   <Icon className="w-12 h-12 group-hover:text-primary transition-colors" />
@@ -55,7 +59,7 @@ export default function ContentTypeGrid({
       {/* Custom Story Input (Always Visible) */}
       <Card className="p-6 bg-card text-card-foreground border border-border shadow-md">
         <form
-          action="/create/custom"
+          action="/src/app/app/create/custom"
           method="GET"
           className="flex flex-col gap-4"
         >

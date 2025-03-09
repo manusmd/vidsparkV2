@@ -5,8 +5,8 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useVoices } from "@/hooks/data/useVoices";
 import type { ContentType } from "@/app/types";
-import { ContentTypeList } from "@/app/admin/components/ContentTypeList.component";
-import { ContentTypeForm } from "@/app/admin/components/ContentTypeForm.component";
+import { ContentTypeList } from "@/app/app/admin/components/ContentTypeList.component";
+import { ContentTypeForm } from "@/app/app/admin/components/ContentTypeForm.component";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 
 export default function ContentTypesManager() {
