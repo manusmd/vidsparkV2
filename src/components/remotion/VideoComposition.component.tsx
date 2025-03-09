@@ -26,10 +26,9 @@ const COMBINE_TOKENS_MS = 500;
 
 export const VideoComposition: React.FC<Props> = ({ scenes }) => {
   const { fps } = useVideoConfig();
-  const SCENE_PADDING = 0.5;
-  const INITIAL_DELAY_MS = 40;
 
   let currentFrame = 0;
+
   // Iterate over scenes using Object.entries since scenes is an object.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
@@ -46,17 +45,13 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
       }
 
       // Convert captionsWords to TikTok caption format.
-      const tikTokCaptions: Caption[] = scene.captionsWords.map(
-        (caption, captionIndex) => ({
-          text: caption.text + " ",
-          startMs:
-            caption.start * 1000 + (captionIndex === 0 ? INITIAL_DELAY_MS : 0),
-          endMs: caption.end * 1000,
-          timestampMs:
-            (caption.start + (caption.end - caption.start) / 2) * 1000,
-          confidence: null,
-        }),
-      );
+      const tikTokCaptions: Caption[] = scene.captionsWords.map((caption) => ({
+        text: caption.text + " ",
+        startMs: caption.start * 1000,
+        endMs: caption.end * 1000,
+        timestampMs: (caption.start + (caption.end - caption.start) / 2) * 1000,
+        confidence: null,
+      }));
 
       // Create caption pages.
       const { pages } = createTikTokStyleCaptions({
@@ -65,10 +60,10 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
       });
 
       const startFrame = currentFrame;
-      // Use the endMs of the last caption to determine audio duration in seconds.
+      // Use the endMs of the last caption to determine audio duration (no padding).
       const audioDuration =
         tikTokCaptions[tikTokCaptions.length - 1].endMs / 1000;
-      const durationInFrames = Math.ceil((audioDuration + SCENE_PADDING) * fps);
+      const durationInFrames = Math.ceil(audioDuration * fps);
       currentFrame += durationInFrames;
 
       return {

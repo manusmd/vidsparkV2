@@ -1,17 +1,10 @@
+"use client";
 import React from "react";
 import ContentTypeGrid from "@/app/create/ContentTypeGrid.component";
-import { db } from "@/lib/firebaseAdmin";
-import { ContentType } from "@/app/types";
+import { useContentTypes } from "@/hooks/data/useContentTypes";
 
-export default async function CreatePage() {
-  const snapshot = await db.collection("contentTypes").get();
-  const contentTypes: ContentType[] = snapshot.docs.map(
-    (doc) =>
-      ({
-        id: doc.id,
-        ...doc.data(),
-      }) as ContentType,
-  );
+export default function CreatePage() {
+  const { contentTypes } = useContentTypes();
 
   return (
     <div className="container py-12 px-4 md:px-8 flex flex-col items-center bg-background text-foreground">

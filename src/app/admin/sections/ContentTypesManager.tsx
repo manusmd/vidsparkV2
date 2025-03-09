@@ -1,24 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection,
-  addDoc,
-  deleteDoc,
-  doc,
-  updateDoc,
-  onSnapshot,
-} from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useVoices } from "@/hooks/data/useVoices";
-import { ContentType } from "@/app/types";
+import type { ContentType } from "@/app/types";
 import { ContentTypeList } from "@/app/admin/components/ContentTypeList.component";
 import { ContentTypeForm } from "@/app/admin/components/ContentTypeForm.component";
+import { useContentTypes } from "@/hooks/data/useContentTypes";
 
 export default function ContentTypesManager() {
-  const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
+  const {
+    contentTypes,
+    error,
+    createContentType,
+    updateContentType,
+    deleteContentType,
+  } = useContentTypes();
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [examples, setExamples] = useState("");
@@ -29,31 +28,9 @@ export default function ContentTypesManager() {
 
   const { voices, loading: voicesLoading, error: voicesError } = useVoices();
 
-  useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "contentTypes"),
-      (snapshot) => {
-        setContentTypes(
-          snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              title: data.title || "", // Ensure all required fields exist
-              description: data.description || "",
-              examples: Array.isArray(data.examples) ? data.examples : [],
-              prompt: data.prompt || "",
-              recommendedVoiceId: data.recommendedVoiceId || "",
-            } as ContentType;
-          }),
-        );
-      },
-    );
-
-    return () => unsubscribe();
-  }, []);
   const handleSubmit = async () => {
     if (!title || !description) return;
-    const contentData = {
+    const contentData: Partial<ContentType> = {
       title,
       description,
       examples: examples.split(",").map((ex) => ex.trim()),
@@ -61,11 +38,16 @@ export default function ContentTypesManager() {
       recommendedVoiceId,
     };
 
-    if (editingId)
-      await updateDoc(doc(db, "contentTypes", editingId), contentData);
-    else await addDoc(collection(db, "contentTypes"), contentData);
-
-    setIsModalOpen(false);
+    try {
+      if (editingId) {
+        await updateContentType(editingId, contentData);
+      } else {
+        await createContentType(contentData);
+      }
+      setIsModalOpen(false);
+    } catch (err: unknown) {
+      console.error("Error saving content type:", err);
+    }
   };
 
   const handleEdit = (content: ContentType) => {
@@ -75,12 +57,14 @@ export default function ContentTypesManager() {
     setExamples(content.examples.join(", "));
     setPrompt(content.prompt || "");
     setRecommendedVoiceId(content.recommendedVoiceId || "");
-    setIsModalOpen(true); // Ensure modal opens
+    setIsModalOpen(true);
   };
+
   const handleClose = () => {
     setEditingId(null);
     setIsModalOpen(false);
   };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -90,11 +74,16 @@ export default function ContentTypesManager() {
           <span className="hidden sm:inline">Add Content Type</span>
         </Button>
       </div>
+      {error && <p className="text-red-500 text-sm">Error: {error}</p>}
       <ContentTypeList
         contentTypes={contentTypes}
         voices={voices}
         onEdit={handleEdit}
-        onDelete={(id) => deleteDoc(doc(db, "contentTypes", id))} // FIXED
+        onDelete={(id) => {
+          deleteContentType(id).catch((err) =>
+            console.error("Error deleting content type:", err),
+          );
+        }}
       />
       <ContentTypeForm
         open={isModalOpen}
