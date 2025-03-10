@@ -7,10 +7,37 @@ import { VideoInfo } from "@/components/video/VideoInfo.component";
 import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 import { SceneList } from "@/components/video/SceneList.component";
 import { VideoPreview } from "@/components/remotion/VideoPreview.component";
+import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus.component";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
   const { video, steps, loading, error } = useVideoDetail(id as string);
+
+  // This function will be triggered when the "Generate Video" button is clicked.
+  const onGenerate = async () => {
+    try {
+      const response = await fetch("/api/video/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId: video?.id,
+          title: video?.title,
+          description: video?.description,
+          voiceId: video?.voiceId,
+          scenes: video?.scenes,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Failed to trigger video generation",
+        );
+      }
+      console.log("Video generation triggered successfully");
+    } catch (err: any) {
+      console.error("Error triggering video generation:", err.message);
+    }
+  };
 
   if (loading) {
     return (
@@ -30,22 +57,36 @@ export default function VideoDetailPage() {
   }
 
   return (
-    <div className="container relative min-w-screen min-h-screen py-8 px-4 md:px-8 flex gap-8">
-      {/* Left Column - Progress & Scenes */}
-      <div className="flex-1 space-y-8">
-        <ProgressSteps steps={steps} />
-        <SceneList scenes={video.scenes} />
-      </div>
-
-      {/* Right Column - Video Info & Preview (Sticky within parent) */}
-      <div className="relative flex flex-col w-[420px]">
-        <div className="sticky top-[96px] space-y-6">
+    <div className="container mx-auto px-4 py-8">
+      {/* Header: Video Info (Sticky on large screens) */}
+      <header className="mb-8">
+        <div className="sticky top-4 bg-background z-10 p-4 rounded shadow">
           <VideoInfo video={video} />
-          {/* Updated aspect ratio for shorts: 9:16 */}
-          <div className="w-full aspect-[9/16] bg-muted flex items-center justify-center text-muted-foreground rounded-lg">
-            <VideoPreview scenes={video.scenes} />
-          </div>
         </div>
+      </header>
+
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Left Column: Progress & Scenes */}
+        <section className="flex-1 space-y-8">
+          <ProgressSteps
+            steps={steps}
+            videoStatus={video.status}
+            onGenerate={video.status === "draft" ? onGenerate : undefined}
+          />
+          <SceneList scenes={video.scenes} />
+        </section>
+
+        {/* Right Column: Video Preview / Processing Status */}
+        <aside className="w-full lg:w-[420px]">
+          <div className="w-full aspect-[9/16] bg-muted flex items-center justify-center rounded-lg shadow">
+            {video.status === "draft" ||
+            video.status?.startsWith("processing") ? (
+              <VideoProcessingStatus status={video.status} />
+            ) : (
+              <VideoPreview scenes={video.scenes} />
+            )}
+          </div>
+        </aside>
       </div>
     </div>
   );

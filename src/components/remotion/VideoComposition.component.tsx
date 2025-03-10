@@ -1,7 +1,7 @@
-"use client";
-
-import React from "react";
+import React, { useEffect } from "react";
 import { AbsoluteFill, Audio, Sequence, useVideoConfig } from "remotion";
+import { resolveRedirect } from "@remotion/preload";
+import { prefetch } from "remotion";
 import {
   createTikTokStyleCaptions,
   type Caption,
@@ -27,9 +27,53 @@ const COMBINE_TOKENS_MS = 500;
 export const VideoComposition: React.FC<Props> = ({ scenes }) => {
   const { fps } = useVideoConfig();
 
+  // Prefetch all scene assets on mount.
+  useEffect(() => {
+    Object.values(scenes).forEach((scene) => {
+      // Prefetch image asset.
+      if (scene.imageUrl) {
+        resolveRedirect(scene.imageUrl)
+          .then((resolvedUrl) => {
+            prefetch(resolvedUrl, {
+              method: "blob-url",
+            });
+          })
+          .catch((err) => {
+            console.log(
+              "Could not resolve redirect for image",
+              scene.imageUrl,
+              err,
+            );
+            prefetch(scene.imageUrl || "", {
+              method: "blob-url",
+            });
+          });
+      }
+      // Prefetch audio asset.
+      if (scene.voiceUrl) {
+        resolveRedirect(scene.voiceUrl)
+          .then((resolvedUrl) => {
+            prefetch(resolvedUrl, {
+              method: "blob-url",
+            });
+          })
+          .catch((err) => {
+            console.log(
+              "Could not resolve redirect for audio",
+              scene.voiceUrl,
+              err,
+            );
+            prefetch(scene.voiceUrl || "", {
+              method: "blob-url",
+            });
+          });
+      }
+    });
+  }, [scenes]);
+
   let currentFrame = 0;
 
-  // Iterate over scenes using Object.entries since scenes is an object.
+  // Map over scenes to calculate timing for each scene.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
   )
@@ -60,7 +104,7 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
       });
 
       const startFrame = currentFrame;
-      // Use the endMs of the last caption to determine audio duration (no padding).
+      // Determine audio duration based on the last caption.
       const audioDuration =
         tikTokCaptions[tikTokCaptions.length - 1].endMs / 1000;
       const durationInFrames = Math.ceil(audioDuration * fps);
@@ -105,7 +149,6 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
                   | MyTikTokPage
                   | undefined;
                 const pageStartFrame = Math.floor((page.startMs / 1000) * fps);
-                // Use nextPage.startMs if exists, else currentPage.endMs.
                 const pageEndFrame = Math.floor(
                   ((nextPage ? nextPage.startMs : currentPage.endMs) / 1000) *
                     fps,

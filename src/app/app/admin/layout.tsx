@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/select";
 
 const NAV_ITEMS = [
-  { name: "Content Types", path: "/admin/content-types" },
-  { name: "Users", path: "/admin/users" },
-  { name: "Settings", path: "/admin/settings" },
+  { name: "Content Types", path: "/app/admin/content-types" },
+  { name: "Users", path: "/app/admin/users" },
+  { name: "Settings", path: "/app/admin/settings" },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

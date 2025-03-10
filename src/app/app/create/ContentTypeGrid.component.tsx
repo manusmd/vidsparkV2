@@ -29,7 +29,7 @@ export default function ContentTypeGrid({
           return (
             <Link
               key={type.id}
-              href={`/src/app/protected/create/${type.id}`}
+              href={`/app/create/${type.id}`}
               className="group"
             >
               <Card className="relative overflow-hidden p-6 bg-card text-card-foreground hover:border-primary transition-colors cursor-pointer flex flex-col justify-between h-full min-h-[220px]">

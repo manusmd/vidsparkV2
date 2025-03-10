@@ -30,21 +30,6 @@ export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
     }, 0);
   }, [scenes]);
 
-  // Debug log composition setup.
-  console.log("VideoPreview setup:", {
-    scenesCount: Object.keys(scenes).length,
-    totalDurationInFrames: durationInFrames,
-    scenes: Object.values(scenes).map((scene) => ({
-      duration:
-        scene.captionsWords && scene.captionsWords.length > 0
-          ? scene.captionsWords[scene.captionsWords.length - 1].end
-          : 5,
-      hasImage: !!scene.imageUrl,
-      hasAudio: !!scene.voiceUrl,
-      hasCaptions: scene.captionsWords ? scene.captionsWords.length > 0 : false,
-    })),
-  });
-
   // Memoize input props for the VideoComposition.
   const inputProps = useMemo(
     () => ({
@@ -59,6 +44,7 @@ export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
   return (
     <div className="aspect-[9/16] w-full max-w-md mx-auto">
       <Player
+        acknowledgeRemotionLicense
         component={VideoComposition}
         inputProps={inputProps}
         durationInFrames={durationInFrames}

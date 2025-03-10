@@ -29,6 +29,7 @@
     "@remotion/google-fonts": "^4.0.273",
     "@remotion/layout-utils": "^4.0.273",
     "@remotion/player": "^4.0.273",
+    "@remotion/preload": "^4.0.273",
     "@shadcn/ui": "^0.0.4",
     "@tabler/icons-react": "^3.31.0",
     "class-variance-authority": "^0.7.1",

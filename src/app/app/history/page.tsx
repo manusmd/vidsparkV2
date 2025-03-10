@@ -1,25 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Trash2, Eye } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { Loader2, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { Video } from "@/app/types"; // Import your auth hook
+import { Video } from "@/app/types";
+import { HistoryItem } from "@/components/history/HistoryItem.component"; // Import your auth hook
 
 export default function HistoryPage() {
-  const router = useRouter();
   const { user } = useAuth(); // Get current user from authentication context
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,55 +116,12 @@ export default function HistoryPage() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {videos.map((video) => (
-            <Card
+            <HistoryItem
               key={video.id}
-              className="relative p-6 space-y-4 border border-border shadow-lg hover:border-primary transition"
-            >
-              <div className="absolute top-4 left-4">
-                <Checkbox
-                  checked={selectedVideos.includes(video.id)}
-                  onCheckedChange={() => toggleSelection(video.id)}
-                />
-              </div>
-
-              <h3 className="font-semibold text-lg">{video.title}</h3>
-              <p className="text-sm text-muted-foreground">
-                {video.description}
-              </p>
-
-              <div className="text-xs text-muted-foreground">
-                Created{" "}
-                {formatDistanceToNow(
-                  (() => {
-                    const d = new Date(video.createdAt);
-                    return isNaN(d.getTime()) ? new Date() : d;
-                  })(),
-                  { addSuffix: true },
-                )}
-              </div>
-
-              <div className="flex justify-between items-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/videos/${video.id}`)}
-                >
-                  <Eye className="w-4 h-4 mr-2" />
-                  View
-                </Button>
-                <span
-                  className={`px-2 py-1 rounded text-white text-xs ${
-                    video.status.startsWith("processing")
-                      ? "bg-yellow-500"
-                      : video.status === "completed"
-                        ? "bg-green-500"
-                        : "bg-red-500"
-                  }`}
-                >
-                  {video.status.replace("processing:", "Processing: ")}
-                </span>
-              </div>
-            </Card>
+              video={video}
+              isSelected={selectedVideos.includes(video.id)}
+              toggleSelection={toggleSelection}
+            />
           ))}
         </div>
       )}

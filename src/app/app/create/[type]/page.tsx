@@ -53,12 +53,13 @@ export default function VideoGenerationPage() {
     handleSubmit,
     setValue,
     formState: { isSubmitting, errors },
+    getValues,
   } = useForm<StoryFormValues>({
     resolver: zodResolver(storySchema),
     defaultValues: {
       title: "",
       description: "",
-      voiceId: "",
+      voiceId: "", // We'll update this based on the content type's recommendedVoiceId
       scenes: [],
     },
   });
@@ -72,14 +73,19 @@ export default function VideoGenerationPage() {
       const docRef = doc(db, "contentTypes", type as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setSelectedContentType(docSnap.data() as ContentType);
+        const contentData = docSnap.data() as ContentType;
+        setSelectedContentType(contentData);
+        // Set the recommendedVoiceId as the initial value if present.
+        if (contentData.recommendedVoiceId) {
+          setValue("voiceId", contentData.recommendedVoiceId);
+        }
       } else {
         setSelectedContentType(null);
       }
       setLoading(false);
     };
     fetchContentType();
-  }, [type]);
+  }, [type, setValue]);
 
   // Handle AI Story Generation (calls your /api/openai/story route)
   const handleGenerateStory = async () => {
@@ -92,6 +98,7 @@ export default function VideoGenerationPage() {
         body: JSON.stringify({
           contentType: selectedContentType.title,
           customPrompt: selectedContentType.prompt || "",
+          voiceId: getValues("voiceId"),
           uid: user?.uid,
         }),
       });
@@ -123,7 +130,7 @@ export default function VideoGenerationPage() {
         if (!response.ok) {
           throw new Error("Failed to update video.");
         }
-        router.push(`/videos/${videoId}`);
+        router.push(`/app/videos/${videoId}`);
       }
     } catch (error) {
       console.error("Failed to update video:", error);

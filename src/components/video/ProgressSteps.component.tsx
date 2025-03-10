@@ -13,26 +13,63 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 
 function truncateText(text: string, maxLength: number) {
   return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
 }
 
-export function ProgressSteps({ steps }: { steps: Step[] }) {
+/**
+ * Computes the effective status for a step based on its subSteps.
+ * If there are no subSteps, returns the step's own status.
+ */
+function computeEffectiveStatus(
+  step: Step,
+): "complete" | "current" | "failed" | "upcoming" {
+  if (step.subSteps && step.subSteps.length > 0) {
+    if (step.subSteps.every((sub) => sub.status === "completed")) {
+      return "complete";
+    } else if (step.subSteps.some((sub) => sub.status === "processing")) {
+      return "current";
+    } else if (step.subSteps.some((sub) => sub.status === "failed")) {
+      return "failed";
+    } else {
+      return "upcoming";
+    }
+  }
+  // If there are no subSteps, use the provided status.
+  return step.status;
+}
+
+interface ProgressStepsProps {
+  steps: Step[];
+  videoStatus: string;
+  onGenerate?: () => void;
+}
+
+export function ProgressSteps({
+  steps,
+  videoStatus,
+  onGenerate,
+}: ProgressStepsProps) {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
     {},
   );
 
-  // Auto-expand the current processing step dynamically
+  // Auto-expand steps whose effective status is "current"
   useEffect(() => {
     setExpandedSteps((prevExpanded) => {
       const updatedExpanded = { ...prevExpanded };
 
       steps.forEach((step) => {
-        if (step.status === "current") {
-          updatedExpanded[step.id] = true; // Auto-expand if it's currently being processed
-        } else if (step.status === "complete" || step.status === "failed") {
-          updatedExpanded[step.id] = false; // Collapse completed/failed steps
+        const effectiveStatus = computeEffectiveStatus(step);
+        if (effectiveStatus === "current") {
+          updatedExpanded[step.id] = true; // Auto-expand current processing step
+        } else if (
+          effectiveStatus === "complete" ||
+          effectiveStatus === "failed"
+        ) {
+          updatedExpanded[step.id] = false; // Collapse complete or failed steps
         }
       });
 
@@ -49,16 +86,31 @@ export function ProgressSteps({ steps }: { steps: Step[] }) {
 
   return (
     <Card className="p-4 space-y-3 shadow-md border border-border bg-card">
-      <h2 className="text-lg font-semibold text-foreground">
-        Processing Progress
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-foreground">
+          Processing Progress
+        </h2>
+        {videoStatus === "draft" && onGenerate && (
+          <Button onClick={onGenerate}>Generate Video</Button>
+        )}
+      </div>
 
       <div className="space-y-1">
         {steps.map((step, stepIdx) => {
-          const isStepComplete = step.status === "complete";
-          const isStepCurrent = step.status === "current";
-          const isStepFailed = step.status === "failed";
+          const effectiveStatus = computeEffectiveStatus(step);
+          const isStepComplete = effectiveStatus === "complete";
+          const isStepCurrent = effectiveStatus === "current";
+          const isStepFailed = effectiveStatus === "failed";
           const isExpanded = expandedSteps[step.id];
+
+          // Determine icon or number for the step header.
+          const stepIcon = isStepComplete ? (
+            <Check className="h-4 w-4" />
+          ) : isStepFailed ? (
+            <X className="h-4 w-4" />
+          ) : (
+            stepIdx + 1
+          );
 
           return (
             <motion.div
@@ -87,13 +139,7 @@ export function ProgressSteps({ steps }: { steps: Step[] }) {
                             : "border border-border text-muted-foreground",
                     )}
                   >
-                    {isStepComplete ? (
-                      <Check className="h-4 w-4" />
-                    ) : isStepFailed ? (
-                      <X className="h-4 w-4" />
-                    ) : (
-                      stepIdx + 1
-                    )}
+                    {stepIcon}
                   </div>
                   <h3
                     className={cn(

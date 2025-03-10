@@ -31,7 +31,7 @@ export const processVideoQueue = onDocumentCreated(
     }
 
     console.log(`🔊 Processing tasks for video: ${videoId}`);
-    await videoRef.update({ status: "processing:queues" });
+    await videoRef.update({ status: "processing:assets" });
 
     // Enqueue voice tasks.
     const voiceQueue = functions.taskQueue("voiceQueue");

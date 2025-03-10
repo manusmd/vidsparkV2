@@ -3,6 +3,8 @@ import axios from "axios";
 import FormData from "form-data";
 import { defineSecret } from "firebase-functions/params";
 import { db, storage } from "../../../firebaseConfig";
+import { checkAndSetAssetsReady } from "../../helpers/checkAndSetAssetsReady";
+import { checkAndSetSceneStatus } from "../../helpers/checkAndSetSceneStatus";
 
 const ELEVENLABS_API_KEY = defineSecret("ELEVENLABS_API_KEY");
 
@@ -118,7 +120,11 @@ export const processVoiceQueue = onTaskDispatched(
         [`voiceStatus.${sceneIndex}.statusMessage`]: "failed",
         [`voiceStatus.${sceneIndex}.progress`]: 0,
       });
-      throw error; // Let Cloud Tasks retry the task.
+      throw error;
     }
+
+    // Check if there are any tasks left for this video.
+    await checkAndSetSceneStatus(videoId, sceneIndex);
+    await checkAndSetAssetsReady(videoId);
   },
 );

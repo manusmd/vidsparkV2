@@ -71,9 +71,8 @@ export interface Video {
     [sceneIndex: number]: Scene;
   };
   status:
-    | "processing:voices"
-    | "processing:images"
-    | "processing:video"
+    | "draft"
+    | "processing:assets"
     | "processing:upload"
     | "assets:ready"
     | "completed"

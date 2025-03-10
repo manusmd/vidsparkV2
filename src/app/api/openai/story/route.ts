@@ -5,10 +5,11 @@ import { z } from "zod";
 import { ChatCompletionMessageParam } from "openai/resources/chat/completions/completions";
 import { db } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
+import { Scene } from "@/app/types";
 
 export async function POST(req: Request) {
   try {
-    const { contentType, customPrompt, uid } = await req.json();
+    const { contentType, customPrompt, uid, voiceId } = await req.json();
     if (!contentType) {
       return NextResponse.json(
         { error: "Missing contentType" },
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
     const StorySchema = z.object({
       title: z.string(),
       description: z.string(),
+      // Expecting an array of scenes with narration and imagePrompt
       scenes: z.array(
         z.object({
           narration: z.string(),
@@ -43,11 +45,13 @@ export async function POST(req: Request) {
       },
       {
         role: "user",
-        content: `Generate a structured AI story about ${customPrompt ? "the following content" : contentType}. It should contain:
+        content: `Generate a structured AI story about ${
+          customPrompt ? "the following content" : contentType
+        }. It should contain:
 - A creative title
 - A short YouTube-style description
 - 3-5 scenes, each with a narration and an image prompt. The image prompt should lead to a super realistic image. If it makes sense to include people in the image also tell that in the image prompt.
-The first scene should be a hook to build tension and keep the user watching
+The first scene should be a really short hook to build tension and keep the users watching. The maximum length for the whole video should be about 1 minute so keep it short.
 ${customPrompt ? `Use the following custom prompt to guide the story:\n"${customPrompt}"` : ""}
 Return JSON matching the schema.`,
       },
@@ -62,11 +66,46 @@ Return JSON matching the schema.`,
 
     const story = completion.choices[0].message.parsed;
 
-    // Prepare video document data with status and timestamp
+    // Prepare fields based on the Video type
+    // Transform the scenes array into an object with scene indices as keys.
+    const scenes: { [sceneIndex: number]: Scene } = {};
+    const sceneStatus: {
+      [sceneIndex: number]: { statusMessage: string; progress: number };
+    } = {};
+    const imageStatus: {
+      [sceneIndex: number]: { statusMessage: string; progress: number };
+    } = {};
+    const voiceStatus: {
+      [sceneIndex: number]: { statusMessage: string; progress: number };
+    } = {};
+
+    story?.scenes.forEach((scene, index) => {
+      scenes[index] = {
+        narration: scene.narration,
+        imagePrompt: scene.imagePrompt,
+        // These fields will be updated during processing
+        imageUrl: "",
+        voiceUrl: "",
+        captions: "",
+        captionsWords: [],
+      };
+      // Initialize statuses for each scene to pending
+      sceneStatus[index] = { statusMessage: "pending", progress: 0 };
+      imageStatus[index] = { statusMessage: "pending", progress: 0 };
+      voiceStatus[index] = { statusMessage: "pending", progress: 0 };
+    });
+
+    // Build the video document data, using recommendedVoiceId from the request body
     const videoData = {
       uid,
-      story,
-      status: "processing:voices",
+      title: story?.title,
+      description: story?.description,
+      voiceId: voiceId || "",
+      scenes,
+      sceneStatus,
+      imageStatus,
+      voiceStatus,
+      status: "draft", // initial status
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
