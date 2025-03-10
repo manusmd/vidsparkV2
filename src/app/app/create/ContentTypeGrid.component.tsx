@@ -59,7 +59,7 @@ export default function ContentTypeGrid({
       {/* Custom Story Input (Always Visible) */}
       <Card className="p-6 bg-card text-card-foreground border border-border shadow-md">
         <form
-          action="/src/app/app/create/custom"
+          action="/app/create/custom"
           method="GET"
           className="flex flex-col gap-4"
         >

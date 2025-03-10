@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Controller, useForm } from "react-hook-form";
@@ -19,11 +19,13 @@ import { SceneEditor } from "@/app/app/create/[type]/SceneEditor.component";
 import { useAuth } from "@/hooks/useAuth";
 import { ContentType } from "@/app/types";
 
-// Define validation schema for form
+// Update your schema to optionally include a custom prompt.
 const storySchema = z.object({
   title: z.string().min(2, "Title is required").max(100),
   description: z.string().min(10, "Description is required").max(500),
   voiceId: z.string().min(1, "Voice selection is required"),
+  // customPrompt is optional – it will be used only if the type is custom
+  customPrompt: z.string().optional(),
   scenes: z
     .array(
       z.object({
@@ -40,6 +42,9 @@ export default function VideoGenerationPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { type } = useParams();
+  const searchParams = useSearchParams();
+  const initialCustomPrompt = searchParams.get("prompt") || "";
+
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,23 +64,44 @@ export default function VideoGenerationPage() {
     defaultValues: {
       title: "",
       description: "",
-      voiceId: "", // We'll update this based on the content type's recommendedVoiceId
+      voiceId: "",
+      customPrompt: initialCustomPrompt,
       scenes: [],
     },
   });
 
   useEffect(() => {
+    // If no type is provided, simply stop loading.
     if (!type) {
       setLoading(false);
       return;
     }
+
+    // Handle the "custom" type separately
+    if (type === "custom") {
+      // Create a default content type object for custom stories.
+      const customContentType: ContentType = {
+        id: "custom",
+        title: "Custom Story",
+        description: "A custom story prompt provided by the user.",
+        prompt: initialCustomPrompt,
+        examples: [],
+        recommendedVoiceId: "",
+      };
+      setSelectedContentType(customContentType);
+      // Optionally, set a default voice or prompt in your form.
+      setValue("customPrompt", initialCustomPrompt);
+      setLoading(false);
+      return;
+    }
+
+    // Otherwise, fetch the content type document from Firestore.
     const fetchContentType = async () => {
       const docRef = doc(db, "contentTypes", type as string);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const contentData = docSnap.data() as ContentType;
         setSelectedContentType(contentData);
-        // Set the recommendedVoiceId as the initial value if present.
         if (contentData.recommendedVoiceId) {
           setValue("voiceId", contentData.recommendedVoiceId);
         }
@@ -85,7 +111,7 @@ export default function VideoGenerationPage() {
       setLoading(false);
     };
     fetchContentType();
-  }, [type, setValue]);
+  }, [type, setValue, initialCustomPrompt]);
 
   // Handle AI Story Generation (calls your /api/openai/story route)
   const handleGenerateStory = async () => {
@@ -97,7 +123,9 @@ export default function VideoGenerationPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contentType: selectedContentType.title,
-          customPrompt: selectedContentType.prompt || "",
+          // Use the custom prompt from the form if provided, otherwise fallback
+          customPrompt:
+            getValues("customPrompt") || selectedContentType.prompt || "",
           voiceId: getValues("voiceId"),
           uid: user?.uid,
         }),
@@ -204,6 +232,19 @@ export default function VideoGenerationPage() {
                   </div>
                 )}
               />
+
+              {/* Only show the custom prompt field if type is custom */}
+              {type === "custom" && (
+                <Controller
+                  name="customPrompt"
+                  control={control}
+                  render={({ field }) => (
+                    <div>
+                      <Input placeholder="Custom story prompt..." {...field} />
+                    </div>
+                  )}
+                />
+              )}
 
               {voicesLoading ? (
                 <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
