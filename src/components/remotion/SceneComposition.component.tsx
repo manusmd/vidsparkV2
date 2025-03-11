@@ -18,7 +18,6 @@ export const SceneComposition: React.FC<SceneCompositionProps> = ({
     console.error(`Missing image URL for scene ${index}`);
     return null;
   }
-  console.log(scene.imageUrl);
 
   return (
     <AbsoluteFill>

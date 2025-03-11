@@ -1,17 +1,16 @@
 import React, { useEffect } from "react";
-import { AbsoluteFill, Audio, Sequence, useVideoConfig } from "remotion";
-import { resolveRedirect } from "@remotion/preload";
-import { prefetch } from "remotion";
+import { AbsoluteFill, Audio, useVideoConfig, prefetch } from "remotion";
 import {
-  createTikTokStyleCaptions,
   type Caption,
+  createTikTokStyleCaptions,
   type TikTokPage,
 } from "@remotion/captions";
 import type { Scene, SceneWithTiming } from "@/app/types";
 import { SceneComposition } from "@/components/remotion/SceneComposition.component";
 import SubtitlePage from "@/components/remotion/SubtitlePage.component";
+import { PremountedSequence } from "@/components/remotion/PremountedSequence.component";
+import { resolveRedirect } from "@remotion/preload";
 
-// Extend TikTokPage to include endMs.
 interface MyTikTokPage extends TikTokPage {
   endMs: number;
 }
@@ -27,45 +26,21 @@ const COMBINE_TOKENS_MS = 500;
 export const VideoComposition: React.FC<Props> = ({ scenes }) => {
   const { fps } = useVideoConfig();
 
-  // Prefetch all scene assets on mount.
   useEffect(() => {
     Object.values(scenes).forEach((scene) => {
-      // Prefetch image asset.
-      if (scene.imageUrl) {
-        resolveRedirect(scene.imageUrl)
-          .then((resolvedUrl) => {
-            prefetch(resolvedUrl, {
-              method: "blob-url",
-            });
-          })
-          .catch((err) => {
-            console.log(
-              "Could not resolve redirect for image",
-              scene.imageUrl,
-              err,
-            );
-            prefetch(scene.imageUrl || "", {
-              method: "blob-url",
-            });
-          });
-      }
-      // Prefetch audio asset.
       if (scene.voiceUrl) {
         resolveRedirect(scene.voiceUrl)
           .then((resolvedUrl) => {
             prefetch(resolvedUrl, {
               method: "blob-url",
+              contentType: "audio/mpeg",
             });
           })
           .catch((err) => {
-            console.log(
-              "Could not resolve redirect for audio",
-              scene.voiceUrl,
+            console.error(
+              `Could not resolve redirect for audio ${scene.voiceUrl}`,
               err,
             );
-            prefetch(scene.voiceUrl || "", {
-              method: "blob-url",
-            });
           });
       }
     });
@@ -73,7 +48,7 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
 
   let currentFrame = 0;
 
-  // Map over scenes to calculate timing for each scene.
+  // Calculate timing information for each scene.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
   )
@@ -88,7 +63,6 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
         return null;
       }
 
-      // Convert captionsWords to TikTok caption format.
       const tikTokCaptions: Caption[] = scene.captionsWords.map((caption) => ({
         text: caption.text + " ",
         startMs: caption.start * 1000,
@@ -97,14 +71,12 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
         confidence: null,
       }));
 
-      // Create caption pages.
       const { pages } = createTikTokStyleCaptions({
         captions: tikTokCaptions,
         combineTokensWithinMilliseconds: COMBINE_TOKENS_MS,
       });
 
       const startFrame = currentFrame;
-      // Determine audio duration based on the last caption.
       const audioDuration =
         tikTokCaptions[tikTokCaptions.length - 1].endMs / 1000;
       const durationInFrames = Math.ceil(audioDuration * fps);
@@ -131,10 +103,11 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
             return null;
           }
           return (
-            <Sequence
+            <PremountedSequence
               key={index}
               from={startFrame}
               durationInFrames={durationInFrames}
+              premountFor={100} // adjust the number of frames to premount as needed
             >
               <SceneComposition
                 scene={scene}
@@ -143,7 +116,6 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
               />
               <Audio src={scene.voiceUrl} volume={1} />
               {pages?.map((page: TikTokPage, pageIndex: number) => {
-                // Cast page to MyTikTokPage so we can access endMs.
                 const currentPage = page as MyTikTokPage;
                 const nextPage = pages[pageIndex + 1] as
                   | MyTikTokPage
@@ -156,16 +128,17 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
                 const pageDuration = pageEndFrame - pageStartFrame;
                 if (pageDuration <= 0) return null;
                 return (
-                  <Sequence
+                  <PremountedSequence
                     key={pageIndex}
                     from={pageStartFrame}
                     durationInFrames={pageDuration}
+                    premountFor={30} // adjust as needed for subtitles
                   >
                     <SubtitlePage page={page} />
-                  </Sequence>
+                  </PremountedSequence>
                 );
               })}
-            </Sequence>
+            </PremountedSequence>
           );
         },
       )}
