@@ -32,4 +32,4 @@ const SubtitlePage: React.FC<{
   );
 };
 
-export default SubtitlePage; // Changed to default export
+export default SubtitlePage;

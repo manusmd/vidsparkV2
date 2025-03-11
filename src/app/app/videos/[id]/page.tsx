@@ -8,6 +8,7 @@ import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 import { SceneList } from "@/components/video/SceneList.component";
 import { VideoPreview } from "@/components/remotion/VideoPreview.component";
 import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus.component";
+import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
@@ -73,11 +74,13 @@ export default function VideoDetailPage() {
             videoStatus={video.status}
             onGenerate={video.status === "draft" ? onGenerate : undefined}
           />
+          {/* If the video is not a draft, show the design selector */}
           <SceneList scenes={video.scenes} />
         </section>
 
         {/* Right Column: Video Preview / Processing Status */}
-        <aside className="w-full lg:w-[420px]">
+        <aside className="flex flex-col gap-4 w-full lg:w-[420px]">
+          {video.status !== "draft" && <TextDesignSelector />}
           <div className="w-full aspect-[9/16] bg-muted flex items-center justify-center rounded-lg shadow">
             {video.status === "draft" ||
             video.status?.startsWith("processing") ? (

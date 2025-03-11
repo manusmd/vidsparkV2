@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useRef, useEffect } from "react";
+import React, { useMemo, useRef } from "react";
 import { Player, PlayerRef } from "@remotion/player";
 import { VideoComposition } from "@/components/remotion/VideoComposition.component";
 import type { Scene } from "@/app/types";
@@ -10,6 +10,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface VideoPreviewProps {
   scenes: { [sceneIndex: number]: Scene };
@@ -44,34 +45,42 @@ export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
   );
 
   return (
-    <div className="relative aspect-[9/16] w-full max-w-md mx-auto">
-      <div className="absolute top-2 right-2 z-10">
-        <Tooltip>
-          <TooltipTrigger>
-            <Info className="w-5 h-5 text-gray-500 cursor-pointer" />
-          </TooltipTrigger>
-          <TooltipContent className="bg-gray-900 text-white p-2 rounded shadow-lg max-w-xs">
-            <p className="text-xs whitespace-normal">
-              Note: <br /> You may experience faltering audio during preview.
-              <br />
-              This issue will not occur in the rendered video.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
-      <Player
-        ref={playerRef}
-        acknowledgeRemotionLicense
-        component={VideoComposition}
-        inputProps={inputProps}
-        durationInFrames={durationInFrames}
-        fps={30}
-        compositionHeight={1920}
-        compositionWidth={1080}
-        style={{ width: "100%", height: "100%" }}
-        controls
-        autoPlay={false}
-      />
-    </div>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Video Preview</CardTitle>
+      </CardHeader>
+      <CardContent className={"p-0"}>
+        <div className="relative aspect-[9/16] w-full max-w-md mx-auto">
+          <div className="absolute top-2 right-2 z-10">
+            <Tooltip>
+              <TooltipTrigger>
+                <Info className="w-5 h-5 text-gray-500 cursor-pointer" />
+              </TooltipTrigger>
+              <TooltipContent className="bg-gray-900 text-white p-2 rounded shadow-lg max-w-xs">
+                <p className="text-xs whitespace-normal">
+                  Note: <br /> You may experience faltering audio during
+                  preview.
+                  <br />
+                  This issue will not occur in the rendered video.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <Player
+            ref={playerRef}
+            acknowledgeRemotionLicense
+            component={VideoComposition}
+            inputProps={inputProps}
+            durationInFrames={durationInFrames}
+            fps={30}
+            compositionHeight={1920}
+            compositionWidth={1080}
+            style={{ width: "100%", height: "100%" }}
+            controls
+            autoPlay={false}
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

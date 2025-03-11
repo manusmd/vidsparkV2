@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { TextDesignProvider } from "@/hooks/useTextDesign";
 
 export default function ProtectedLayout({
   children,
@@ -27,5 +28,5 @@ export default function ProtectedLayout({
     );
   }
 
-  return <>{children}</>;
+  return <TextDesignProvider>{children}</TextDesignProvider>;
 }
