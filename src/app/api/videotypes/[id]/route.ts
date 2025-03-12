@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
 
-// PUT: Update a video type
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } },
-) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
+  const { id } = context.params;
   try {
-    const { id } = params;
     const { title, prompt, imageUrl } = await req.json();
     if (!id || !title || !prompt || !imageUrl) {
       return NextResponse.json(
