@@ -1,9 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { id } = context.params;
+// PUT: Update a content type
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
   try {
     const { title, description, examples, prompt, recommendedVoiceId } =
       await req.json();
@@ -34,11 +38,11 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 
 // DELETE: Remove a content type
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } },
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   try {
-    const { id } = params;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }

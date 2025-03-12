@@ -1,9 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { id } = context.params;
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
   try {
     const { title, prompt, imageUrl } = await req.json();
     if (!id || !title || !prompt || !imageUrl) {
@@ -29,18 +32,19 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
   }
 }
 
-// DELETE: Remove a video type
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } },
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   try {
-    const { id } = params;
     if (!id) {
       return NextResponse.json({ error: "Missing id" }, { status: 400 });
     }
     await db.collection("videoTypes").doc(id).delete();
-    return NextResponse.json({ message: "Video type deleted successfully" });
+    return NextResponse.json({
+      message: "Video type deleted successfully",
+    });
   } catch (error: unknown) {
     console.error("Error deleting video type:", error);
     const message =
