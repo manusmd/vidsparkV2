@@ -9,6 +9,7 @@ import { SceneList } from "@/components/video/SceneList.component";
 import { VideoPreview } from "@/components/remotion/VideoPreview.component";
 import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus.component";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
+import { NextResponse } from "next/server";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
@@ -35,8 +36,11 @@ export default function VideoDetailPage() {
         );
       }
       console.log("Video generation triggered successfully");
-    } catch (err: any) {
-      console.error("Error triggering video generation:", err.message);
+    } catch (error: unknown) {
+      console.error("Error triggering video generation:", error);
+      const message =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      return NextResponse.json({ error: message }, { status: 500 });
     }
   };
 
