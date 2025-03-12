@@ -69,14 +69,13 @@ export const processImageQueue = onTaskDispatched(
         result = await replicate.predictions.get(prediction.id);
         attempts++;
 
-        const progress = Math.min(0.1 + attempts * (0.9 / maxAttempts), 0.9);
+        const progress = Math.min(0.1 + (attempts * 0.9) / maxAttempts, 0.9);
         await videoRef.update({
           [`imageStatus.${sceneIndex}.progress`]: progress,
         });
         console.log(`🔄 Attempt ${attempts}: Status - ${result.status}`);
       }
 
-      // Check if the prediction failed or took too long
       if (
         attempts >= maxAttempts ||
         result.status === "failed" ||
@@ -92,7 +91,7 @@ export const processImageQueue = onTaskDispatched(
         return;
       }
 
-      // We have a final output image URL
+      // Get the final output image URL from the prediction.
       const rawImageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
@@ -125,12 +124,45 @@ export const processImageQueue = onTaskDispatched(
           ...currentScenes,
           [sceneIndex]: {
             ...currentScenes[sceneIndex],
-            imageUrl: signedUrl, // store the signed URL
+            imageUrl: signedUrl,
           },
         },
         [`imageStatus.${sceneIndex}.statusMessage`]: "completed",
         [`imageStatus.${sceneIndex}.progress`]: 1,
       });
+
+      // 5. Check that the imageUrl was correctly set in Firestore.
+      let checkAttempts = 0;
+      const maxCheckAttempts = 3;
+      while (checkAttempts < maxCheckAttempts) {
+        const updatedSnapshot = await videoRef.get();
+        const updatedScenes = updatedSnapshot.data()?.scenes || {};
+        if (updatedScenes[sceneIndex]?.imageUrl) {
+          console.log(
+            `Image URL verified for video ${videoId}, scene ${sceneIndex}`,
+          );
+          break;
+        } else {
+          checkAttempts++;
+          console.warn(
+            `Image URL missing for video ${videoId}, scene ${sceneIndex} on check attempt ${checkAttempts}. Retrying update.`,
+          );
+          await videoRef.update({
+            scenes: {
+              ...updatedScenes,
+              [sceneIndex]: {
+                ...updatedScenes[sceneIndex],
+                imageUrl: signedUrl,
+              },
+            },
+          });
+          if (checkAttempts === maxCheckAttempts) {
+            console.error(
+              `Failed to verify image URL for video ${videoId}, scene ${sceneIndex} after ${maxCheckAttempts} attempts.`,
+            );
+          }
+        }
+      }
 
       console.log(
         `✅ Image generated for video ${videoId}, scene ${sceneIndex}`,
