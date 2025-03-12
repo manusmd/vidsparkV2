@@ -14,6 +14,7 @@ import {
 
 const NAV_ITEMS = [
   { name: "Content Types", path: "/app/admin/content-types" },
+  { name: "Video Types", path: "/app/admin/video-types" },
   { name: "Users", path: "/app/admin/users" },
   { name: "Settings", path: "/app/admin/settings" },
 ];
@@ -43,8 +44,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       {/* Main Layout */}
       <div className="flex flex-1 w-full">
         {/* Sidebar (Hidden on Mobile) */}
-        <aside className="hidden md:flex w-64 bg-card border-r border-border p-6 flex-col space-y-4 md:sticky md:top-0 md:h-screen">
-          <h2 className="text-xl font-semibold">Admin Dashboard</h2>
+        <aside className="hidden md:flex w-64 bg-card border-r border-border p-6 flex-col space-y-4 md:sticky md:top-20 md:h-[calc(100vh-80px)] overflow-hidden">
+          <h2 className="text-xl font-semibold">Admin Settings</h2>
           {NAV_ITEMS.map((item) => (
             <Link key={item.path} href={item.path}>
               <Button

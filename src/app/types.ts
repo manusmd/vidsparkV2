@@ -26,6 +26,14 @@ export type Voice = {
   preview_url?: string;
 };
 
+export type VideoType = {
+  id: string;
+  title: string;
+  imagePrompt: string;
+  prompt: string;
+  imageUrl: string;
+};
+
 export type ContentType = {
   id: string;
   title: string;

@@ -50,8 +50,10 @@ export async function POST(req: Request) {
         }. It should contain:
 - A creative title
 - A short YouTube-style description
-- 3-5 scenes, each with a narration and an image prompt. The image prompt should lead to a super realistic image. If it makes sense to include people in the image also tell that in the image prompt.
-The first scene should be a really short hook to build tension and keep the users watching. The maximum length for the whole video should be about 1 minute so keep it short.
+- 3-5 scenes, each with a narration and an image prompt. The image prompt should lead to a super realistic image and SFW!!! If it makes sense to include people in the image also tell that in the image prompt.
+The first scene should be a really short hook to build tension and keep the users watching.
+The last scene should always contain a hook (e.g. "You want more stories like this? Follow this channel." or "Did you also experience something similar? Let us know in the comments" but in short version).
+ The maximum length for the whole video should be about 1 minute so keep it short.
 ${customPrompt ? `Use the following custom prompt to guide the story:\n"${customPrompt}"` : ""}
 Return JSON matching the schema.`,
       },

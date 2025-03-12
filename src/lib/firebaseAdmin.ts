@@ -3,6 +3,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { getFunctions } from "firebase-admin/functions";
 import { adminEnvironment } from "@/lib/adminEnvironment";
+import { getStorage } from "firebase-admin/storage";
 
 const app =
   getApps().length === 0
@@ -17,6 +18,7 @@ const app =
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 const functions = getFunctions();
 
-export { db, auth, functions };
+export { db, auth, functions, storage };
