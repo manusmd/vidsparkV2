@@ -1,75 +1,129 @@
-import { NextResponse } from "next/server";
-import OpenAI from "openai";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { NextRequest, NextResponse } from "next/server";
+import { ChatOpenAI } from "@langchain/openai";
 import { z } from "zod";
-import { ChatCompletionMessageParam } from "openai/resources/chat/completions/completions";
 import { db } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
-import { Scene } from "@/app/types";
+import OpenAI from "openai";
+import type { Scene } from "@/app/types";
 
-export async function POST(req: Request) {
+const StorySchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  scenes: z.array(
+    z.object({
+      narration: z.string(),
+      imagePrompt: z.string(),
+    }),
+  ),
+});
+export const maxDuration = 60;
+
+export async function POST(req: NextRequest) {
   try {
     const { contentType, customPrompt, uid, voiceId } = await req.json();
-    if (!contentType) {
+    if (!contentType)
       return NextResponse.json(
         { error: "Missing contentType" },
         { status: 400 },
       );
-    }
-    if (!uid) {
+    if (!uid)
       return NextResponse.json({ error: "Missing user id" }, { status: 400 });
-    }
 
-    const openai = new OpenAI({
+    const reasoningModel = new ChatOpenAI({
       apiKey: process.env.OPENAI_API_KEY,
+      model: "o3-mini",
     });
-
-    const StorySchema = z.object({
-      title: z.string(),
-      description: z.string(),
-      // Expecting an array of scenes with narration and imagePrompt
-      scenes: z.array(
-        z.object({
-          narration: z.string(),
-          imagePrompt: z.string(),
-        }),
-      ),
-    });
-
-    // Build messages array with an optional custom prompt
-    const messages: ChatCompletionMessageParam[] = [
+    const reasoningMessages = [
       {
         role: "system",
-        content:
-          "You are a professional storyteller that tells stories for shortform content like for YouTube/TikTok video stories. Always use unique story ideas.",
+        content: `You are an expert in storytelling. Plan the optimal narrative structure for a short-form video story that:
+- Contains exactly between 3 and 5 scenes.
+- Has a total duration of no more than 1 minute.
+- Begins with a very strong hook.
+For each scene, outline:
+- The exact narration text that a narrator would say aloud.
+- An extremely detailed image prompt specifying visual composition, lighting, mood, style, and specific elements for realism.
+Ensure that in the final scene, the narration includes a call-to-action (e.g., "For more stories like this follow our channel"), adapted to match the context.
+Provide a concise reasoning summary that includes the exact number of scenes and a rough duration per scene.`,
+      },
+      {
+        role: "user",
+        content: `Plan the structure for a story about ${
+          customPrompt ? "the following content" : contentType
+        }${customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""}.`,
+      },
+    ];
+    const reasoningResponse = await reasoningModel.invoke(reasoningMessages);
+    const chainOfThought = reasoningResponse.content;
+
+    const generationModel = new ChatOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      model: "gpt-4",
+    });
+    const structuredLlm = generationModel.withStructuredOutput(StorySchema, {
+      method: "json_mode",
+      name: "story",
+    });
+    const generationMessages = [
+      {
+        role: "system",
+        content: `You are a professional storyteller. Use the following internal reasoning as guidance to generate a creative story that strictly contains between 3 and 5 scenes and lasts no more than 1 minute.
+Ensure:
+- The first scene contains a very strong hook that immediately grabs attention.
+- The narration in each scene is the exact spoken text a narrator would say aloud.
+- The final scene includes a clear, context-appropriate call-to-action.
+- For each scene, provide:
+  * "narration": the spoken text.
+  * "imagePrompt": an extremely detailed image prompt specifying visual composition, lighting, mood, style, and specific elements.
+Also, generate the video description exactly in the following format (without any extra text):
+<Description text> (include at least one smiley)
+
+For more stories like this follow our channel
+
+<Hashtags>
+Where <Hashtags> is a space-separated list of exactly 10 hashtags.
+Internal reasoning: ${chainOfThought}`,
       },
       {
         role: "user",
         content: `Generate a structured AI story about ${
           customPrompt ? "the following content" : contentType
-        }. It should contain:
-- A creative title
-- A short YouTube-style description
-- 3-5 scenes, each with a narration and an image prompt. The image prompt should lead to a super realistic image and SFW!!! If it makes sense to include people in the image also tell that in the image prompt.
-The first scene should be a really short hook to build tension and keep the users watching.
-The last scene should always contain a hook (e.g. "You want more stories like this? Follow this channel." or "Did you also experience something similar? Let us know in the comments" but in short version).
- The maximum length for the whole video should be about 1 minute so keep it short.
-${customPrompt ? `Use the following custom prompt to guide the story:\n"${customPrompt}"` : ""}
-Return JSON matching the schema.`,
+        }${customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""}. Ensure the final JSON output has exactly between 3 and 5 scenes, spoken narration, a total duration of no more than 1 minute, and a description in the required three-part format.`,
       },
     ];
+    const story = await structuredLlm.invoke(generationMessages);
 
-    // Use structured response format with OpenAI and Zod
-    const completion = await openai.beta.chat.completions.parse({
-      model: "gpt-4o",
-      messages,
-      response_format: zodResponseFormat(StorySchema, "story"),
+    const openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const hashtagResponse = await openaiClient.chat.completions.create({
+      model: "gpt-4o-search-preview",
+      // @ts-ignore
+      web_search_options: {
+        search_context_size: "medium",
+        user_location: {
+          type: "approximate",
+          approximate: { country: "US", city: "New York", region: "NY" },
+        },
+      },
+      messages: [
+        {
+          role: "user",
+          content: `For a ${customPrompt ? customPrompt : contentType} video on YouTube focused on ${
+            customPrompt ? customPrompt : contentType
+          }, what are the top 10 trending hashtags relevant to this theme? Please provide only the hashtags separated by spaces, with no additional text.`,
+        },
+      ],
     });
+    const hashtagsLine = (
+      hashtagResponse.choices[0].message.content as string
+    ).trim();
 
-    const story = completion.choices[0].message.parsed;
+    const descriptionParts = (story.description as string)
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean);
+    const descriptionText = descriptionParts[0];
+    story.description = `${descriptionText}\n\n${hashtagsLine}`;
 
-    // Prepare fields based on the Video type
-    // Transform the scenes array into an object with scene indices as keys.
     const scenes: { [sceneIndex: number]: Scene } = {};
     const sceneStatus: {
       [sceneIndex: number]: { statusMessage: string; progress: number };
@@ -80,46 +134,37 @@ Return JSON matching the schema.`,
     const voiceStatus: {
       [sceneIndex: number]: { statusMessage: string; progress: number };
     } = {};
-
-    story?.scenes.forEach((scene, index) => {
+    story.scenes.forEach((scene, index) => {
       scenes[index] = {
         narration: scene.narration,
         imagePrompt: scene.imagePrompt,
-        // These fields will be updated during processing
         imageUrl: "",
         voiceUrl: "",
         captions: "",
         captionsWords: [],
       };
-      // Initialize statuses for each scene to pending
       sceneStatus[index] = { statusMessage: "pending", progress: 0 };
       imageStatus[index] = { statusMessage: "pending", progress: 0 };
       voiceStatus[index] = { statusMessage: "pending", progress: 0 };
     });
 
-    // Build the video document data, using recommendedVoiceId from the request body
     const videoData = {
       uid,
-      title: story?.title,
-      description: story?.description,
+      title: story.title,
+      description: story.description,
       voiceId: voiceId || "",
       scenes,
       sceneStatus,
       imageStatus,
       voiceStatus,
-      status: "draft", // initial status
+      status: "draft",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
-
-    // Create a new document in the "videos" collection
     const videoRef = await db.collection("videos").add(videoData);
-
     return NextResponse.json({ story, videoId: videoRef.id });
-  } catch (error) {
-    console.error("Error generating story:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      { status: 500 },
-    );
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
