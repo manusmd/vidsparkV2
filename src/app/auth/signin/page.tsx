@@ -33,7 +33,7 @@ export default function SignIn() {
   // If user is already signed in, redirect them.
   useEffect(() => {
     if (user) {
-      router.push("/create");
+      router.push("/app/create");
     }
   }, [user, router]);
 
