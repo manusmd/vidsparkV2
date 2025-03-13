@@ -3,10 +3,10 @@ import { db } from "@/lib/firebaseAdmin";
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     await db.collection("accounts").doc(id).delete();
     return NextResponse.json({ message: "Account deleted successfully" });
   } catch (error: unknown) {
