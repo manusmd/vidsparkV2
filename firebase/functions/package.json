@@ -15,10 +15,13 @@
   },
   "main": "lib/src/index.js",
   "dependencies": {
+    "@langchain/openai": "^0.4.4",
     "axios": "^1.8.1",
     "firebase-admin": "^13.1.0",
     "firebase-functions": "^6.3.2",
-    "replicate": "^1.0.1"
+    "openai": "^4.87.3",
+    "replicate": "^1.0.1",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.26.0",

@@ -1,39 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { Controller, useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { useVoices } from "@/hooks/data/useVoices";
+import { Info, Loader2, Wand2 } from "lucide-react";
 import { ContentTypeDetails } from "@/app/app/create/[type]/ContentTypeDetails.component";
 import { VoiceSelector } from "@/components/VoiceSelector.component";
 import { SceneEditor } from "@/app/app/create/[type]/SceneEditor.component";
-import { useAuth } from "@/hooks/useAuth";
-import { ContentType } from "@/app/types";
+import { useContentTypes } from "@/hooks/data/useContentTypes";
+import { useStory } from "@/hooks/data/useStory";
+import type { ContentType } from "@/app/types";
+import { useVoices } from "@/hooks/data/useVoices";
+import LoadingOverlay from "@/app/app/create/[type]/StoryLoadingOverlay.component";
 
-// Update your schema to optionally include a custom prompt.
+const sceneSchema = z.object({
+  narration: z.string().min(5, "Narration is required"),
+  imagePrompt: z.string().min(5, "Image prompt is required"),
+});
+
 const storySchema = z.object({
   title: z.string().min(2, "Title is required").max(100),
   description: z.string().min(10, "Description is required").max(500),
   voiceId: z.string().min(1, "Voice selection is required"),
-  // customPrompt is optional – it will be used only if the type is custom
   customPrompt: z.string().optional(),
-  scenes: z
-    .array(
-      z.object({
-        narration: z.string().min(5, "Narration is required"),
-        imagePrompt: z.string().min(5, "Image prompt is required"),
-      }),
-    )
-    .nonempty("At least one scene is required"),
+  scenes: z.record(sceneSchema),
 });
 
 type StoryFormValues = z.infer<typeof storySchema>;
@@ -44,19 +41,22 @@ export default function VideoGenerationPage() {
   const { type } = useParams();
   const searchParams = useSearchParams();
   const initialCustomPrompt = searchParams.get("prompt") || "";
-
+  const {
+    contentTypes,
+    loading: contentTypesLoading,
+    error: contentTypesError,
+  } = useContentTypes();
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [videoId, setVideoId] = useState<string | null>(null);
-
-  const { voices, loading: voicesLoading, error: voicesError } = useVoices();
+  const { story, videoId, isGenerating, generateStory } = useStory();
+  const { voices } = useVoices();
 
   const {
     control,
     handleSubmit,
     setValue,
+    reset,
     formState: { isSubmitting, errors },
     getValues,
   } = useForm<StoryFormValues>({
@@ -66,20 +66,21 @@ export default function VideoGenerationPage() {
       description: "",
       voiceId: "",
       customPrompt: initialCustomPrompt,
-      scenes: [],
+      scenes: {},
     },
   });
 
   useEffect(() => {
-    // If no type is provided, simply stop loading.
-    if (!type) {
-      setLoading(false);
-      return;
+    if (story) {
+      setValue("title", story.title);
+      setValue("description", story.description);
+      setValue("scenes", story.scenes);
     }
+  }, [story, setValue]);
 
-    // Handle the "custom" type separately
+  useEffect(() => {
+    if (contentTypesLoading) return;
     if (type === "custom") {
-      // Create a default content type object for custom stories.
       const customContentType: ContentType = {
         id: "custom",
         title: "Custom Story",
@@ -89,223 +90,229 @@ export default function VideoGenerationPage() {
         recommendedVoiceId: "",
       };
       setSelectedContentType(customContentType);
-      // Optionally, set a default voice or prompt in your form.
       setValue("customPrompt", initialCustomPrompt);
       setLoading(false);
-      return;
-    }
-
-    // Otherwise, fetch the content type document from Firestore.
-    const fetchContentType = async () => {
-      const docRef = doc(db, "contentTypes", type as string);
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const contentData = docSnap.data() as ContentType;
-        setSelectedContentType(contentData);
-        if (contentData.recommendedVoiceId) {
-          setValue("voiceId", contentData.recommendedVoiceId);
-        }
-      } else {
-        setSelectedContentType(null);
+    } else {
+      const found = contentTypes.find((ct) => ct.id === type);
+      setSelectedContentType(found || null);
+      if (found && found.recommendedVoiceId) {
+        setValue("voiceId", found.recommendedVoiceId);
       }
       setLoading(false);
-    };
-    fetchContentType();
-  }, [type, setValue, initialCustomPrompt]);
-
-  // Handle AI Story Generation (calls your /api/openai/story route)
-  const handleGenerateStory = async () => {
-    if (!selectedContentType) return;
-    setIsGenerating(true);
-    try {
-      const response = await fetch("/api/openai/story", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contentType: selectedContentType.title,
-          // Use the custom prompt from the form if provided, otherwise fallback
-          customPrompt:
-            getValues("customPrompt") || selectedContentType.prompt || "",
-          voiceId: getValues("voiceId"),
-          uid: user?.uid,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error("Failed to generate story.");
-      }
-      const { story, videoId } = await response.json();
-      setVideoId(videoId);
-      setValue("title", story.title);
-      setValue("description", story.description);
-      setValue("scenes", story.scenes);
-    } catch (error) {
-      console.error("Failed to generate story:", error);
     }
-    setIsGenerating(false);
+  }, [type, initialCustomPrompt, setValue, contentTypes, contentTypesLoading]);
+
+  const handleGenerateStory = async () => {
+    if (!selectedContentType || !user) return;
+    // Reset the form if there's any content in the title or description fields.
+    if (getValues("title") || getValues("description")) {
+      reset({
+        title: "",
+        description: "",
+        voiceId: getValues("voiceId"),
+        customPrompt: getValues("customPrompt"),
+        scenes: {},
+      });
+    }
+    await generateStory({
+      contentType: selectedContentType.title,
+      customPrompt:
+        getValues("customPrompt") || selectedContentType.prompt || "",
+      voiceId: getValues("voiceId"),
+      uid: user.uid,
+    });
   };
 
-  // Handle video creation by sending the form data and videoId to your API route
   const handleGenerateVideo = async (data: StoryFormValues) => {
-    setIsGenerating(true);
+    if (!videoId) return;
     try {
-      if (videoId) {
-        // Pass both the videoId and form data to the API route so it can update the video doc
-        const response = await fetch("/api/video/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videoId, ...data }),
-        });
-        if (!response.ok) {
-          throw new Error("Failed to update video.");
-        }
-        router.push(`/app/videos/${videoId}`);
-      }
+      const response = await fetch("/api/video/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId, ...data }),
+      });
+      if (!response.ok) throw new Error("Failed to update video.");
+      router.push(`/app/videos/${videoId}`);
     } catch (error) {
       console.error("Failed to update video:", error);
     }
-    setIsGenerating(false);
   };
+
+  if (loading || contentTypesLoading) {
+    return (
+      <div className="flex items-center space-x-2">
+        <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
+        <span className="text-lg font-medium">Loading Content Type...</span>
+      </div>
+    );
+  }
+
+  if (contentTypesError) {
+    return <p className="text-red-500">{contentTypesError}</p>;
+  }
+
+  if (!selectedContentType) {
+    return (
+      <h1 className="text-4xl font-bold text-destructive">
+        Content Type Not Found
+      </h1>
+    );
+  }
 
   return (
     <div className="container py-8 px-4 md:px-8 space-y-8">
-      {loading ? (
-        <div className="flex items-center space-x-2">
-          <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
-          <span className="text-lg font-medium">Loading Content Type...</span>
-        </div>
-      ) : selectedContentType ? (
-        <>
-          <ContentTypeDetails contentType={selectedContentType} />
-
-          <form
-            onSubmit={handleSubmit(handleGenerateVideo)}
-            className="space-y-6"
-          >
-            <Card className="p-6 space-y-4">
-              <div className="flex flex-wrap gap-4 justify-between items-center">
-                <h3 className="text-xl font-semibold">Story Details</h3>
-                <Button
-                  onClick={handleGenerateStory}
-                  disabled={isGenerating}
-                  className="w-full md:w-auto"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating AI Story...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="mr-2 h-4 w-4" />
-                      Generate AI Story
-                    </>
-                  )}
-                </Button>
+      <ContentTypeDetails contentType={selectedContentType} />
+      <form
+        onSubmit={handleSubmit(handleGenerateVideo)}
+        className="space-y-6 relative"
+      >
+        <Card className="p-6 space-y-6 relative">
+          {isGenerating && <LoadingOverlay />}
+          {/* Heading + Generate Story Row */}
+          <div className="flex flex-wrap gap-4 justify-between items-center">
+            <h3 className="text-xl font-semibold">Story Details</h3>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleGenerateStory}
+                disabled={isGenerating}
+                className="w-full md:w-auto"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating AI Story...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Generate AI Story
+                  </>
+                )}
+              </Button>
+              <div className="relative group inline-block">
+                <Info className="w-5 h-5 text-muted-foreground cursor-pointer" />
+                <div className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-2 bg-black text-white text-xs rounded shadow-lg z-10">
+                  Story generation can take around 1 minute due to the
+                  complexity of processing multiple LLM calls and asset
+                  generation. Every generated story is saved as a draft in your
+                  history.
+                </div>
               </div>
+            </div>
+          </div>
 
-              <Controller
-                name="title"
-                control={control}
-                render={({ field }) => (
-                  <div>
-                    <Input placeholder="Story title..." {...field} />
-                    {errors.title && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.title.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              />
-
-              <Controller
-                name="description"
-                control={control}
-                render={({ field }) => (
-                  <div>
-                    <Textarea placeholder="Story description..." {...field} />
-                    {errors.description && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.description.message}
-                      </p>
-                    )}
-                  </div>
-                )}
-              />
-
-              {/* Only show the custom prompt field if type is custom */}
-              {type === "custom" && (
-                <Controller
-                  name="customPrompt"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <Input placeholder="Custom story prompt..." {...field} />
-                    </div>
+          {/* Title Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">Title</label>
+            <Controller
+              name="title"
+              control={control}
+              render={({ field }) => (
+                <>
+                  <Input placeholder="Story title..." {...field} />
+                  {errors.title && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.title.message}
+                    </p>
                   )}
-                />
+                </>
               )}
+            />
+          </div>
 
-              {voicesLoading ? (
-                <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
-              ) : voicesError ? (
-                <p className="text-red-500">{voicesError}</p>
-              ) : (
-                <Controller
-                  name="voiceId"
-                  control={control}
-                  render={({ field }) => (
-                    <div>
-                      <VoiceSelector
-                        selectedVoice={field.value}
-                        onSelectVoice={field.onChange}
-                        availableVoices={voices}
-                      />
-                      {errors.voiceId && (
-                        <p className="text-red-500 text-sm mt-1">
-                          {errors.voiceId.message}
-                        </p>
-                      )}
-                    </div>
+          {/* Description Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">
+              Description
+            </label>
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <>
+                  <Textarea placeholder="Story description..." {...field} />
+                  {errors.description && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.description.message}
+                    </p>
                   )}
-                />
+                </>
               )}
+            />
+          </div>
 
+          {/* Custom Prompt Field (only for "custom" type) */}
+          {type === "custom" && (
+            <div>
+              <label className="block font-semibold text-sm mb-1">
+                Custom Prompt
+              </label>
               <Controller
-                name="scenes"
+                name="customPrompt"
                 control={control}
                 render={({ field }) => (
-                  <div>
-                    <SceneEditor
-                      scenes={field.value}
-                      onUpdateScenes={field.onChange}
-                    />
-                    {errors.scenes && (
-                      <p className="text-red-500 text-sm mt-1">
-                        {errors.scenes.message}
-                      </p>
-                    )}
-                  </div>
+                  <Input placeholder="Custom story prompt..." {...field} />
                 )}
               />
-            </Card>
-            <Button
-              type="submit"
-              disabled={isSubmitting || isGenerating}
-              className="w-full"
-            >
-              {isSubmitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              Generate Video
-            </Button>
-          </form>
-        </>
-      ) : (
-        <h1 className="text-4xl font-bold text-destructive">
-          Content Type Not Found
-        </h1>
-      )}
+            </div>
+          )}
+
+          {/* Voice Selector */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">Voice</label>
+            <Controller
+              name="voiceId"
+              control={control}
+              render={({ field }) => (
+                <>
+                  <VoiceSelector
+                    selectedVoice={field.value}
+                    onSelectVoice={field.onChange}
+                    availableVoices={voices}
+                  />
+                  {errors.voiceId && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.voiceId.message}
+                    </p>
+                  )}
+                </>
+              )}
+            />
+          </div>
+
+          {/* Scenes */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">Scenes</label>
+            <Controller
+              name="scenes"
+              control={control}
+              render={({ field }) => (
+                <>
+                  <SceneEditor
+                    scenes={field.value}
+                    onUpdateScenes={field.onChange}
+                  />
+                  {errors.scenes && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {String(errors.scenes.message)}
+                    </p>
+                  )}
+                </>
+              )}
+            />
+          </div>
+        </Card>
+        <Button
+          type="submit"
+          disabled={isSubmitting || isGenerating}
+          className="w-full"
+        >
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : null}
+          Generate Video
+        </Button>
+      </form>
     </div>
   );
 }

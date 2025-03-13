@@ -6,7 +6,6 @@ import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
-  navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import {
   Popover,
@@ -17,11 +16,12 @@ import { signOut } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function Navbar() {
   const { user, isAdmin, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   const navLinks = [
     { href: "/app/create", label: "Create" },
@@ -29,9 +29,20 @@ export default function Navbar() {
     { href: "/app/settings", label: "Settings" },
     { href: "/app/admin", label: "Admin" },
   ];
+
   const navLinksToRender = navLinks.filter((link) =>
     link.label === "Admin" ? isAdmin : true,
   );
+
+  const getLinkClasses = (href: string) => {
+    const base =
+      "transition-all text-lg font-medium px-4 py-2 rounded-lg text-xl";
+    const active = "bg-indigo-600 text-white";
+    const inactive = "hover:bg-indigo-500/10 hover:text-indigo-600";
+    return pathname.startsWith(href)
+      ? `${base} ${active}`
+      : `${base} ${inactive}`;
+  };
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -58,14 +69,7 @@ export default function Navbar() {
             <NavigationMenuList className="flex gap-6">
               {navLinksToRender.map(({ href, label }) => (
                 <NavigationMenuItem key={href}>
-                  <Link
-                    href={href}
-                    passHref
-                    className={
-                      navigationMenuTriggerStyle() +
-                      " transition-all text-lg font-medium px-4 py-2 rounded-lg hover:text-blue-400 hover:bg-blue-500/10 text-xl"
-                    }
-                  >
+                  <Link href={href} passHref className={getLinkClasses(href)}>
                     {label}
                   </Link>
                 </NavigationMenuItem>
