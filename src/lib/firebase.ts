@@ -5,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStripePayments } from "@invertase/firestore-stripe-payments";
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: environment.firebaseApiKey,
   authDomain: environment.firebaseAuthDomain,
   projectId: environment.firebaseProjectId,

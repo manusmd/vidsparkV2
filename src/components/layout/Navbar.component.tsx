@@ -26,6 +26,7 @@ export default function Navbar() {
   const navLinks = [
     { href: "/app/create", label: "Create" },
     { href: "/app/history", label: "History" },
+    { href: "/app/settings", label: "Settings" },
     { href: "/app/admin", label: "Admin" },
   ];
   const navLinksToRender = navLinks.filter((link) =>

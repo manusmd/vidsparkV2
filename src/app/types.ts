@@ -105,3 +105,13 @@ export interface Video {
   };
   createdAt: Date;
 }
+
+export type Account = {
+  id: string;
+  provider: string;
+  accountName: string;
+  accountId: string;
+  createdAt?: Date;
+  channelThumbnail: string;
+  channelDescription: string;
+};
