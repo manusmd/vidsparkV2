@@ -17,7 +17,7 @@ export function useStory() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!videoId) return;
+    if (!videoId || !db) return;
     const unsubscribe = onSnapshot(
       doc(db, "videos", videoId),
       (docSnapshot) => {

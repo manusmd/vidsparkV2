@@ -3,7 +3,7 @@
 import React, { useMemo, useRef } from "react";
 import { Player, PlayerRef } from "@remotion/player";
 import { VideoComposition } from "@/components/remotion/VideoComposition.component";
-import type { Scene } from "@/app/types";
+import type { Scene, VideoStyling } from "@/app/types";
 import { Info } from "lucide-react";
 import {
   Tooltip,
@@ -14,18 +14,17 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface VideoPreviewProps {
   scenes: { [sceneIndex: number]: Scene };
-  style?: string;
-  genre?: string;
+  styling: VideoStyling;
 }
 
-export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
+export function VideoPreview({ scenes, styling }: VideoPreviewProps) {
   const playerRef = useRef<PlayerRef | null>(null);
 
   // Memoize duration calculation based on scenes.
-  const durationInFrames = useMemo(() => {
+  const durationInFramesComputed = useMemo(() => {
     const fps = 30;
     return Object.values(scenes).reduce((total, scene) => {
-      let sceneDurationSec = 5; // default duration
+      let sceneDurationSec = 5; // default duration per scene if no captions are available
       if (scene.captionsWords && scene.captionsWords.length > 0) {
         sceneDurationSec =
           scene.captionsWords[scene.captionsWords.length - 1].end;
@@ -34,14 +33,25 @@ export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
     }, 0);
   }, [scenes]);
 
+  // Provide a fallback value if computed duration is 0.
+  const durationInFrames =
+    durationInFramesComputed > 0 ? durationInFramesComputed : 1;
+  // Only include the styling fields that affect the rendering.
+  const stableStyling = useMemo(
+    () => ({
+      font: styling?.font,
+      variant: styling?.variant,
+    }),
+    [styling?.font, styling?.variant],
+  );
+
   // Memoize inputProps to prevent unnecessary re-renders.
   const inputProps = useMemo(
     () => ({
       scenes,
-      style,
-      genre,
+      styling: stableStyling,
     }),
-    [scenes, style, genre],
+    [scenes, stableStyling],
   );
 
   return (
@@ -73,8 +83,8 @@ export function VideoPreview({ scenes, style, genre }: VideoPreviewProps) {
             inputProps={inputProps}
             durationInFrames={durationInFrames}
             fps={30}
-            compositionHeight={1920}
-            compositionWidth={1080}
+            compositionHeight={1280}
+            compositionWidth={720}
             style={{ width: "100%", height: "100%" }}
             controls
             autoPlay={false}

@@ -3,16 +3,19 @@
 import type React from "react";
 import {
   AbsoluteFill,
+  Sequence,
   spring,
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
 import type { TikTokPage } from "@remotion/captions";
-import { Page } from "@/components/remotion/Page.component";
+import { TextDesign } from "@/components/remotion/TextDesign.component";
+import { VideoStyling } from "@/app/types";
 
 const SubtitlePage: React.FC<{
   page: TikTokPage;
-}> = ({ page }) => {
+  styling?: VideoStyling;
+}> = ({ page, styling }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -27,7 +30,20 @@ const SubtitlePage: React.FC<{
 
   return (
     <AbsoluteFill>
-      <Page enterProgress={enter} page={page} />
+      <AbsoluteFill>
+        <Sequence
+          className={"items-start"}
+          from={0}
+          durationInFrames={Infinity}
+        >
+          <TextDesign
+            enterProgress={enter}
+            page={page}
+            textVariant={styling?.font}
+            variant={styling?.variant}
+          />
+        </Sequence>
+      </AbsoluteFill>
     </AbsoluteFill>
   );
 };

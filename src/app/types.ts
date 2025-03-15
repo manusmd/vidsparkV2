@@ -1,4 +1,6 @@
 import { TikTokPage } from "@remotion/captions";
+import { z } from "zod";
+import { TextDesignSchema } from "@/components/remotion/types/constants";
 
 export type Step = {
   id: string;
@@ -70,10 +72,13 @@ export type SceneWithTiming = null | {
   scene: Scene;
 };
 
+export type VideoStyling = z.infer<typeof TextDesignSchema>;
+
 export interface Video {
   id: string;
   title: string;
   description: string;
+  styling: VideoStyling;
   voiceId: string;
   scenes: {
     [sceneIndex: number]: Scene;
@@ -82,9 +87,16 @@ export interface Video {
     | "draft"
     | "processing:assets"
     | "processing:upload"
+    | "processing:render"
+    | "render:complete"
+    | "render:error"
     | "assets:ready"
     | "completed"
     | "failed";
+  renderStatus: {
+    progress: number;
+    videoUrl: string;
+  };
   sceneStatus: {
     [sceneIndex: number]: {
       statusMessage: "pending" | "processing" | "completed" | "failed";

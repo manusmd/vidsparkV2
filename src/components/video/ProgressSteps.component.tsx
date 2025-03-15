@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -37,7 +36,6 @@ function computeEffectiveStatus(
       return "upcoming";
     }
   }
-  // If there are no subSteps, use the provided status.
   return step.status;
 }
 
@@ -45,12 +43,14 @@ interface ProgressStepsProps {
   steps: Step[];
   videoStatus: string;
   onGenerate?: () => void;
+  onRender?: () => Promise<void>;
 }
 
 export function ProgressSteps({
   steps,
   videoStatus,
   onGenerate,
+  onRender,
 }: ProgressStepsProps) {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
     {},
@@ -103,7 +103,6 @@ export function ProgressSteps({
           const isStepFailed = effectiveStatus === "failed";
           const isExpanded = expandedSteps[step.id];
 
-          // Determine icon or number for the step header.
           const stepIcon = isStepComplete ? (
             <Check className="h-4 w-4" />
           ) : isStepFailed ? (
@@ -121,12 +120,11 @@ export function ProgressSteps({
               className="relative flex flex-col space-y-1"
             >
               {/* Step Header */}
-              <button
-                onClick={() => toggleStep(step.id)}
-                className="flex items-center justify-between w-full p-2 rounded-md hover:bg-muted transition"
-              >
-                <div className="flex items-center space-x-2">
-                  {/* Step Number / Status Icon */}
+              <div className="flex items-center justify-between w-full">
+                <button
+                  onClick={() => toggleStep(step.id)}
+                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted transition"
+                >
                   <div
                     className={cn(
                       "flex items-center justify-center h-7 w-7 rounded-full text-sm font-semibold transition-all",
@@ -155,7 +153,19 @@ export function ProgressSteps({
                   >
                     {step.name}
                   </h3>
-                </div>
+                </button>
+
+                {/* Conditionally render Render Video button for the processing:video step */}
+                {step.id === "processing:video" &&
+                  (videoStatus === "processing:render" ? (
+                    <Button variant="outline" size="sm" disabled>
+                      Rendering...
+                    </Button>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={onRender}>
+                      Render Video
+                    </Button>
+                  ))}
 
                 {/* Expand/Collapse Icon */}
                 {step.subSteps && step.subSteps.length > 0 && (
@@ -166,7 +176,7 @@ export function ProgressSteps({
                     )}
                   />
                 )}
-              </button>
+              </div>
 
               {/* Substeps (Collapsible) */}
               <AnimatePresence>
@@ -188,12 +198,9 @@ export function ProgressSteps({
                           key={subStep.index}
                           className="flex flex-col space-y-1"
                         >
-                          {/* Scene Title */}
                           <p className="text-xs font-bold text-white">
                             Scene {subStep.index + 1}
                           </p>
-
-                          {/* Scene Details */}
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -218,10 +225,7 @@ export function ProgressSteps({
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-
-                          {/* Progress Indicator */}
                           <div className="flex items-center space-x-2">
-                            {/* Blinking Dot */}
                             {isProcessing && (
                               <div className="h-2 w-2 rounded-full bg-white animate-ping"></div>
                             )}
@@ -231,8 +235,6 @@ export function ProgressSteps({
                             {isFailed && (
                               <X className="h-3 w-3 text-destructive" />
                             )}
-
-                            {/* Progress Bar with Label */}
                             <div className="flex items-center w-full">
                               <Progress
                                 value={subStep.progress * 100}

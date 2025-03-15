@@ -1,4 +1,3 @@
-// utils/statusMessages.ts
 /**
  * Returns a user-friendly status message for a given video status.
  *
@@ -13,6 +12,12 @@ export function getFriendlyStatus(status: string): string {
       return "Processing Assets";
     case "processing:upload":
       return "Uploading Video";
+    case "processing:render":
+      return "Rendering Video";
+    case "render:complete":
+      return "Render Complete";
+    case "render:error":
+      return "Error during Rendering";
     case "assets:ready":
       return "Assets Ready";
     case "completed":

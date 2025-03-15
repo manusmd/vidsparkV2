@@ -1,46 +1,21 @@
-"use client";
+import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import {
-  TextDesignFonts,
-  TextDesignFontsType,
-  TextDesignVariant,
-} from "@/components/remotion/textDesigns";
+export function useTextDesign(videoId: string) {
+  const { video, loading, error } = useVideoDetail(videoId);
+  const styling = video?.styling || null;
 
-interface TextDesignContextType {
-  variant: TextDesignVariant;
-  font: TextDesignFontsType;
-  setVariant: (variant: TextDesignVariant) => void;
-  setFont: (font: TextDesignFontsType) => void;
+  const updateStyling = async (variant: string, font: string) => {
+    const res = await fetch(`/api/video/styling`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId, variant, font }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || "Error updating styling");
+    }
+    return res.json();
+  };
+
+  return { styling, loading, error, updateStyling };
 }
-
-const TextDesignContext = createContext<TextDesignContextType | undefined>(
-  undefined,
-);
-
-export const TextDesignProvider = ({
-  children,
-  initialVariant = "default",
-  initialFont = TextDesignFonts.ROBOTO,
-}: {
-  children: ReactNode;
-  initialVariant?: TextDesignVariant;
-  initialFont?: TextDesignFontsType;
-}) => {
-  const [variant, setVariant] = useState<TextDesignVariant>(initialVariant);
-  const [font, setFont] = useState<TextDesignFontsType>(initialFont);
-
-  return (
-    <TextDesignContext.Provider value={{ variant, font, setVariant, setFont }}>
-      {children}
-    </TextDesignContext.Provider>
-  );
-};
-
-export const useTextDesign = (): TextDesignContextType => {
-  const context = useContext(TextDesignContext);
-  if (!context) {
-    throw new Error("useTextDesign must be used within a TextDesignProvider");
-  }
-  return context;
-};

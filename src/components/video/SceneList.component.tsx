@@ -17,7 +17,6 @@ export function SceneList({ scenes }: SceneListProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Scenes</h2>
       <div className="grid grid-cols-1 gap-4">
         {" "}
         {/* Ensures 1 column layout */}

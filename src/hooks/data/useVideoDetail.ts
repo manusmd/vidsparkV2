@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Scene, Step, Video } from "@/app/types";
+import type { Scene, Step, Video } from "@/app/types";
 
 // Define processing steps globally (reused in the hook)
 const processingSteps = [
@@ -16,45 +16,48 @@ export function useVideoDetail(videoId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
+  const [stableAssets, setStableAssets] = useState<{
+    scenes: Video["scenes"];
+    styling: Video["styling"] | null;
+  } | null>(null);
 
   useEffect(() => {
-    if (!videoId) return;
-
-    // Subscribe to real-time Firestore updates
+    if (!videoId || !db) return;
     const unsubscribe = onSnapshot(
       doc(db, "videos", videoId),
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const videoData = docSnapshot.data();
 
-          // Ensure `scenes` is treated as an object
           const scenes = videoData.scenes ?? {};
           const formattedScenes = Object.entries(scenes).reduce(
             (acc, [key, value]) => {
               acc[Number(key)] = value as Scene;
               return acc;
             },
-            {} as Record<number, { narration: string; imagePrompt: string }>,
+            {} as Record<number, Scene>,
           );
 
-          const video: Video = {
+          const newVideo: Video = {
             id: docSnapshot.id,
             title: videoData.title ?? "Untitled Video",
             description: videoData.description ?? "No description available.",
             voiceId: videoData.voiceId ?? "",
-            scenes: formattedScenes, // ✅ Now an object
+            scenes: formattedScenes,
             status: videoData.status ?? "processing:voices",
             sceneStatus: videoData.sceneStatus ?? {},
+            renderStatus: videoData.renderStatus ?? {},
             imageStatus: videoData.imageStatus ?? {},
             voiceStatus: videoData.voiceStatus ?? {},
+            styling: videoData.styling ?? null,
             createdAt: videoData.createdAt?.toDate
               ? videoData.createdAt.toDate()
               : new Date(),
           };
 
-          setVideo(video);
+          setVideo(newVideo);
           setLoading(false);
-          updateSteps(video); // Update steps based on latest video data
+          updateSteps(newVideo);
         } else {
           setError("Video not found.");
           setLoading(false);
@@ -70,7 +73,6 @@ export function useVideoDetail(videoId: string) {
     return () => unsubscribe();
   }, [videoId]);
 
-  // Function to update processing steps dynamically
   function updateSteps(video: Video) {
     const currentStepIndex = processingSteps.findIndex(
       (s) => s.id === video.status,
@@ -104,26 +106,26 @@ export function useVideoDetail(videoId: string) {
         subSteps:
           step.id === "processing:voices"
             ? Object.entries(video.scenes).map(([sceneIndex, scene]) => {
-                const index = Number(sceneIndex); // ✅ Ensure sceneIndex is a number
+                const index = Number(sceneIndex);
                 return {
                   index,
                   scene: index + 1,
                   narration: scene.narration,
                   status:
-                    video.voiceStatus?.[index]?.statusMessage ?? "pending", // ✅ Use index here
-                  progress: video.voiceStatus?.[index]?.progress ?? 0, // ✅ Use index here
+                    video.voiceStatus?.[index]?.statusMessage ?? "pending",
+                  progress: video.voiceStatus?.[index]?.progress ?? 0,
                 };
               })
             : step.id === "processing:images"
               ? Object.entries(video.scenes).map(([sceneIndex, scene]) => {
-                  const index = Number(sceneIndex); // ✅ Ensure sceneIndex is a number
+                  const index = Number(sceneIndex);
                   return {
                     index,
                     scene: index + 1,
                     imagePrompt: scene.imagePrompt,
                     status:
-                      video.imageStatus?.[index]?.statusMessage ?? "pending", // ✅ Use index here
-                    progress: video.imageStatus?.[index]?.progress ?? 0, // ✅ Use index here
+                      video.imageStatus?.[index]?.statusMessage ?? "pending",
+                    progress: video.imageStatus?.[index]?.progress ?? 0,
                   };
                 })
               : undefined,
@@ -133,5 +135,22 @@ export function useVideoDetail(videoId: string) {
     setSteps(newSteps);
   }
 
-  return { video, steps, loading, error };
+  // Update stableAssets only if scenes or essential styling change.
+  useEffect(() => {
+    if (!video) return;
+    const newAssets = {
+      scenes: video.scenes,
+      styling: video.styling
+        ? { font: video.styling.font, variant: video.styling.variant }
+        : null,
+    };
+
+    const newAssetsStr = JSON.stringify(newAssets);
+    const oldAssetsStr = JSON.stringify(stableAssets);
+
+    if (newAssetsStr !== oldAssetsStr) {
+      setStableAssets(newAssets);
+    }
+  }, [video?.scenes, video?.styling]);
+  return { video, steps, loading, error, stableAssets };
 }

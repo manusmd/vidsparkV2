@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect } from "react";
 import { AbsoluteFill, Audio, useVideoConfig, prefetch } from "remotion";
 import {
@@ -5,7 +7,7 @@ import {
   createTikTokStyleCaptions,
   type TikTokPage,
 } from "@remotion/captions";
-import type { Scene, SceneWithTiming } from "@/app/types";
+import type { Scene, SceneWithTiming, VideoStyling } from "@/app/types";
 import { SceneComposition } from "@/components/remotion/SceneComposition.component";
 import SubtitlePage from "@/components/remotion/SubtitlePage.component";
 import { PremountedSequence } from "@/components/remotion/PremountedSequence.component";
@@ -15,15 +17,14 @@ interface MyTikTokPage extends TikTokPage {
   endMs: number;
 }
 
-interface Props {
-  scenes: { [sceneIndex: number]: Scene };
-  style?: string;
-}
-
-// How many milliseconds to group tokens
 const COMBINE_TOKENS_MS = 500;
 
-export const VideoComposition: React.FC<Props> = ({ scenes }) => {
+interface Props {
+  scenes?: { [sceneIndex: number]: Scene };
+  styling?: VideoStyling;
+}
+
+export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
   const { fps } = useVideoConfig();
 
   useEffect(() => {
@@ -48,7 +49,6 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
 
   let currentFrame = 0;
 
-  // Calculate timing information for each scene.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
   )
@@ -107,7 +107,7 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
               key={index}
               from={startFrame}
               durationInFrames={durationInFrames}
-              premountFor={100} // adjust the number of frames to premount as needed
+              premountFor={100}
             >
               <SceneComposition
                 scene={scene}
@@ -132,9 +132,9 @@ export const VideoComposition: React.FC<Props> = ({ scenes }) => {
                     key={pageIndex}
                     from={pageStartFrame}
                     durationInFrames={pageDuration}
-                    premountFor={30} // adjust as needed for subtitles
+                    premountFor={30}
                   >
-                    <SubtitlePage page={page} />
+                    <SubtitlePage page={page} styling={styling} />
                   </PremountedSequence>
                 );
               })}

@@ -15,13 +15,13 @@ export const firebaseConfig = {
   measurementId: environment.firebaseMeasurementId,
 };
 
-const app = initializeApp(firebaseConfig);
-
-const db = getFirestore(app);
+const app =
+  typeof window !== "undefined" ? initializeApp(firebaseConfig) : null;
+const db = app ? getFirestore(app) : null;
 /*
 const storage = getStorage(app);
 */
-const auth = getAuth(app);
+const auth = app ? getAuth(app) : null;
 /*
 const functions = getFunctions(app);
 */
@@ -58,13 +58,16 @@ if (process.env.NEXT_PUBLIC_APP_ENV === "emulato") {
 
 const analytics =
   typeof window !== "undefined" &&
+  app &&
   process.env.NEXT_PUBLIC_APP_ENV !== "emulator"
     ? getAnalytics(app)
     : null;
 
-const payments = getStripePayments(app, {
-  productsCollection: "products",
-  customersCollection: "customers",
-});
+const payments = app
+  ? getStripePayments(app, {
+      productsCollection: "products",
+      customersCollection: "customers",
+    })
+  : null;
 
 export { app, analytics, db, auth, payments };

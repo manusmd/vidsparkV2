@@ -11,12 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TextDesignVariant } from "./textDesigns";
 import { textDesignVariants, TextDesignFonts } from "./textDesigns";
 import { useTextDesign } from "@/hooks/useTextDesign";
-
-// Example font options:
-import type { TextDesignFontsType } from "./textDesigns";
+import { useParams } from "next/navigation";
 
 const fontOptions: Array<{
-  value: TextDesignFontsType;
+  value: string;
   label: string;
   style: React.CSSProperties;
 }> = [
@@ -46,6 +44,7 @@ const fontOptions: Array<{
     style: { fontFamily: "Dancing Script, cursive" },
   },
 ];
+
 const sampleText = "Sample Text";
 
 function getVariantStyle(variantKey: TextDesignVariant): React.CSSProperties {
@@ -68,7 +67,7 @@ function getVariantStyle(variantKey: TextDesignVariant): React.CSSProperties {
   };
 }
 
-function getFontStyle(fontValue: string | undefined): React.CSSProperties {
+function getFontStyle(fontValue: string): React.CSSProperties {
   const fontObj =
     fontOptions.find((f) => f.value === fontValue) || fontOptions[0];
   return {
@@ -83,9 +82,10 @@ function getFontStyle(fontValue: string | undefined): React.CSSProperties {
     transition: "filter 0.2s",
   };
 }
+
 function getCombinedPreviewStyle(
   variantKey: TextDesignVariant,
-  fontValue: TextDesignFontsType,
+  fontValue: string,
 ): React.CSSProperties {
   const baseVariantStyle = getVariantStyle(variantKey);
   const baseFontStyle = getFontStyle(fontValue);
@@ -96,45 +96,67 @@ function getCombinedPreviewStyle(
 }
 
 export function TextDesignSelector(): JSX.Element {
-  // Get context setters and values
-  const { variant, font, setVariant, setFont } = useTextDesign();
+  const { id }: { id: string } = useParams();
+
+  const { styling, updateStyling } = useTextDesign(id);
+
+  // Fallback to defaults if styling is not yet loaded
+  const currentVariant: TextDesignVariant = styling?.variant || "default";
+  const currentFont: string = styling?.font || TextDesignFonts.ROBOTO;
 
   const variantKeys = Object.keys(textDesignVariants) as TextDesignVariant[];
+  const currentVariantIndex = variantKeys.indexOf(currentVariant);
+  const currentFontIndex =
+    fontOptions.findIndex((f) => f.value === currentFont) || 0;
 
-  // Convert current values to indices
-  const currentVariantIndex = variantKeys.indexOf(variant);
-  const currentFontIndex = fontOptions.findIndex((f) => f.value === font) || 0;
-
-  // Local state for popover open states
   const [variantPopoverOpen, setVariantPopoverOpen] = useState(false);
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false);
 
-  // Handlers for variant
-  const handleVariantLeft = () => {
+  const handleVariantLeft = async () => {
     const newIndex =
       (currentVariantIndex - 1 + variantKeys.length) % variantKeys.length;
-    setVariant(variantKeys[newIndex]);
-  };
-  const handleVariantRight = () => {
-    const newIndex = (currentVariantIndex + 1) % variantKeys.length;
-    setVariant(variantKeys[newIndex]);
+    const newVariant = variantKeys[newIndex];
+    try {
+      await updateStyling(newVariant, currentFont);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // Handlers for font
-  const handleFontLeft = () => {
+  const handleVariantRight = async () => {
+    const newIndex = (currentVariantIndex + 1) % variantKeys.length;
+    const newVariant = variantKeys[newIndex];
+    try {
+      await updateStyling(newVariant, currentFont);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleFontLeft = async () => {
     const newIndex =
       (currentFontIndex - 1 + fontOptions.length) % fontOptions.length;
-    setFont(fontOptions[newIndex].value);
-  };
-  const handleFontRight = () => {
-    const newIndex = (currentFontIndex + 1) % fontOptions.length;
-    setFont(fontOptions[newIndex].value);
+    const newFont = fontOptions[newIndex].value;
+    try {
+      await updateStyling(currentVariant, newFont);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // Get selected styles
-  const selectedVariantKey = variant;
+  const handleFontRight = async () => {
+    const newIndex = (currentFontIndex + 1) % fontOptions.length;
+    const newFont = fontOptions[newIndex].value;
+    try {
+      await updateStyling(currentVariant, newFont);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const selectedVariantKey = currentVariant;
   const selectedFont =
-    fontOptions.find((f) => f.value === font) || fontOptions[0];
+    fontOptions.find((f) => f.value === currentFont) || fontOptions[0];
   const combinedPreviewStyle = getCombinedPreviewStyle(
     selectedVariantKey,
     selectedFont.value,
@@ -188,7 +210,13 @@ export function TextDesignSelector(): JSX.Element {
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
-                      onClick={() => setVariant(key)}
+                      onClick={async () => {
+                        try {
+                          await updateStyling(key, currentFont);
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
                     >
                       {key.charAt(0).toUpperCase() + key.slice(1)}
                     </button>
@@ -244,7 +272,13 @@ export function TextDesignSelector(): JSX.Element {
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
-                      onClick={() => setFont(fontOpt.value)}
+                      onClick={async () => {
+                        try {
+                          await updateStyling(currentVariant, fontOpt.value);
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
                     >
                       {fontOpt.label}
                     </button>
