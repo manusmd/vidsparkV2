@@ -21,7 +21,8 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { title, prompt, imageUrl, imagePrompt } = await req.json();
+    const { title, description, prompt, imageUrl, imagePrompt } =
+      await req.json();
     if (!title || !prompt || !imageUrl || !imagePrompt) {
       return NextResponse.json(
         { error: "Missing title, prompt, imageUrl or imagePrompt" },
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
     // Save initial data to Firestore
     const videoTypeData = {
       title,
+      description,
       prompt,
       imageUrl, // Save the original URL first
       imagePrompt,

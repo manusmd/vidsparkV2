@@ -38,12 +38,12 @@ export function VideoTypeList({
               <h4 className="font-semibold text-lg truncate">
                 {videoType.title}
               </h4>
-              {videoType.prompt && (
+              {videoType.description && (
                 <p
                   className="text-sm text-muted-foreground truncate"
-                  title={videoType.prompt}
+                  title={videoType.title}
                 >
-                  <strong>Prompt:</strong> {videoType.prompt}
+                  {videoType.description}
                 </p>
               )}
             </div>

@@ -9,7 +9,8 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const { title, prompt, imageUrl, imagePrompt } = await req.json();
+    const { title, description, prompt, imageUrl, imagePrompt } =
+      await req.json();
     if (!id || !title || !prompt || !imageUrl) {
       return NextResponse.json(
         { error: "Missing id, title, prompt, or imageUrl" },
@@ -49,6 +50,7 @@ export async function PUT(
 
     const videoTypeData = {
       title,
+      description,
       prompt,
       imageUrl: finalImageUrl,
       imagePrompt,

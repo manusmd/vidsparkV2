@@ -31,6 +31,7 @@ export type Voice = {
 export type VideoType = {
   id: string;
   title: string;
+  description: string;
   imagePrompt: string;
   prompt: string;
   imageUrl: string;

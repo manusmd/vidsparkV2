@@ -23,25 +23,25 @@ export const processVideoStory = onDocumentCreated(
     document: "videos/{videoId}",
     secrets: [OPENAI_API_KEY],
   },
-
   async (event) => {
     const videoId = event.params.videoId;
+    console.log("Starting processing for video:", videoId);
     const snapshot = event.data;
     if (!snapshot) {
       console.error("❌ No document data found.");
       return;
     }
     const data = snapshot.data();
-    // Only process if the video status is "processing:story"
     if (data.status !== "processing:story") {
       console.log(`Video ${videoId} not in processing:story status.`);
       return;
     }
+    console.log("Data retrieved for video:", videoId);
 
     const { contentType, customPrompt } = data;
+    const videoTypeValue = data.videoType || "";
 
     try {
-      // --- Reasoning Step ---
       const reasoningModel = new ChatOpenAI({
         apiKey: OPENAI_API_KEY.value(),
         model: "o3-mini",
@@ -61,32 +61,51 @@ Provide a concise reasoning summary that includes the exact number of scenes and
         },
         {
           role: "user",
-          content: `Plan the structure for a story about ${customPrompt ? "the following content" : contentType}${customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""}.`,
+          content: `Plan the structure for a story about ${
+            customPrompt ? "the following content" : contentType
+          }${
+            customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""
+          }.`,
         },
       ];
       const reasoningResponse = await reasoningModel.invoke(reasoningMessages);
       const chainOfThought = reasoningResponse.content;
+      console.log("Reasoning chain of thought:", chainOfThought);
 
-      // --- Generation Step ---
       const generationModel = new ChatOpenAI({
         apiKey: OPENAI_API_KEY.value(),
         model: "gpt-4",
       });
+
+      let videoTypeInstruction = "";
+      if (videoTypeValue) {
+        videoTypeInstruction = `
+- IMPORTANT: The user has specified a style or instructions: "${videoTypeValue}".
+- For every "imagePrompt" you produce, you MUST incorporate the details from "${videoTypeValue}" as part of the final text. This is not optional.
+- Merge these style instructions seamlessly with any other details in each scene's "imagePrompt."
+`;
+      }
+
       const structuredLlm = generationModel.withStructuredOutput(StorySchema, {
         method: "json_mode",
         name: "story",
       });
+
       const generationMessages = [
         {
           role: "system",
           content: `You are a professional storyteller. Use the following internal reasoning as guidance to generate a creative story that strictly contains between 3 and 5 scenes and lasts no more than 1 minute.
+
 Ensure:
 - The first scene contains a very strong hook that immediately grabs attention.
 - The narration in each scene is the exact spoken text a narrator would say aloud.
 - The final scene includes a clear, context-appropriate call-to-action.
 - For each scene, provide:
   * "narration": the spoken text.
-  * "imagePrompt": an extremely detailed image prompt specifying visual composition, lighting, mood, style, and specific elements.
+  * "imagePrompt": an extremely detailed prompt that includes lighting, mood, style, and specific elements for realism.
+
+${videoTypeInstruction}
+
 Also, generate the video description exactly in the following format (without any extra text):
 <Description text> (include at least one smiley)
 
@@ -94,22 +113,26 @@ For more stories like this follow our channel
 
 <Hashtags>
 Where <Hashtags> is a space-separated list of exactly 10 hashtags.
+
 Internal reasoning: ${chainOfThought}`,
         },
         {
           role: "user",
-          content: `Generate a structured AI story about ${customPrompt ? "the following content" : contentType}${customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""}. Ensure the final JSON output has exactly between 3 and 5 scenes, spoken narration, a total duration of no more than 1 minute, and a description in the required three-part format.`,
+          content: `Generate a structured AI story about ${
+            customPrompt ? "the following content" : contentType
+          }${
+            customPrompt ? ` with the custom prompt: "${customPrompt}"` : ""
+          }. Ensure the final JSON output has exactly between 3 and 5 scenes, spoken narration, a total duration of no more than 1 minute, and a description in the required three-part format.`,
         },
       ];
       const story = await structuredLlm.invoke(generationMessages);
+      console.log("Generated story:", JSON.stringify(story));
 
-      // --- Hashtag Retrieval ---
       const openaiClient = new OpenAI({
         apiKey: OPENAI_API_KEY.value(),
       });
       const hashtagResponse = await openaiClient.chat.completions.create({
         model: "gpt-4o-search-preview",
-        // @ts-ignore
         web_search_options: {
           search_context_size: "medium",
           user_location: {
@@ -120,15 +143,19 @@ Internal reasoning: ${chainOfThought}`,
         messages: [
           {
             role: "user",
-            content: `For a ${customPrompt ? customPrompt : contentType} video on YouTube focused on ${customPrompt ? customPrompt : contentType}, what are the top 10 trending hashtags relevant to this theme? Please provide only the hashtags separated by spaces, with no additional text.`,
+            content: `For a ${
+              customPrompt ? customPrompt : contentType
+            } video on YouTube focused on ${
+              customPrompt ? customPrompt : contentType
+            }, what are the top 10 trending hashtags relevant to this theme? Please provide only the hashtags separated by spaces, with no additional text.`,
           },
         ],
       });
       const hashtagsLine = (
         hashtagResponse.choices[0].message.content as string
       ).trim();
+      console.log("Retrieved hashtags:", hashtagsLine);
 
-      // Format the description: use the first line as the description text, then a blank line, then the hashtags.
       const descriptionParts = (story.description as string)
         .split("\n")
         .map((line) => line.trim())
@@ -136,11 +163,11 @@ Internal reasoning: ${chainOfThought}`,
       const descriptionText = descriptionParts[0];
       story.description = `${descriptionText}\n\n${hashtagsLine}`;
 
-      // Prepare scenes object.
       const scenes: { [sceneIndex: number]: any } = {};
       const sceneStatus: { [sceneIndex: number]: any } = {};
       const imageStatus: { [sceneIndex: number]: any } = {};
       const voiceStatus: { [sceneIndex: number]: any } = {};
+
       story.scenes.forEach((scene: any, index: number) => {
         scenes[index] = {
           narration: scene.narration,
@@ -155,7 +182,6 @@ Internal reasoning: ${chainOfThought}`,
         voiceStatus[index] = { statusMessage: "pending", progress: 0 };
       });
 
-      // Update the video document with the generated story and set status to "draft".
       await db.collection("videos").doc(videoId).update({
         title: story.title,
         description: story.description,
@@ -164,7 +190,9 @@ Internal reasoning: ${chainOfThought}`,
         imageStatus,
         voiceStatus,
         status: "draft",
+        videoType: videoTypeValue,
       });
+      console.log("Video document updated successfully for video:", videoId);
       return null;
     } catch (error: unknown) {
       const message =

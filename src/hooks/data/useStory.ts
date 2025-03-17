@@ -5,6 +5,7 @@ import { db } from "@/lib/firebase";
 
 interface GenerateStoryParams {
   contentType: string;
+  videoType: string;
   customPrompt?: string;
   voiceId: string;
   uid: string;
@@ -48,6 +49,7 @@ export function useStory() {
         body: JSON.stringify({
           contentType: params.contentType,
           customPrompt: params.customPrompt || "",
+          videoType: params.videoType,
           voiceId: params.voiceId,
           uid: params.uid,
         }),

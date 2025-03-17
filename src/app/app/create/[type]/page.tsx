@@ -16,21 +16,25 @@ import { VoiceSelector } from "@/components/VoiceSelector.component";
 import { SceneEditor } from "@/app/app/create/[type]/SceneEditor.component";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useStory } from "@/hooks/data/useStory";
-import type { ContentType } from "@/app/types";
+import type { ContentType, VideoType } from "@/app/types";
 import { useVoices } from "@/hooks/data/useVoices";
 import LoadingOverlay from "@/app/app/create/[type]/StoryLoadingOverlay.component";
+import { useVideoTypes } from "@/hooks/data/useVideoTypes";
+import { VideoTypeSelector } from "@/components/video/VideoTypeSelector.component";
 
 const sceneSchema = z.object({
   narration: z.string().min(5, "Narration is required"),
   imagePrompt: z.string().min(5, "Image prompt is required"),
 });
 
+// Add a new field "videoType" (which will store the imagePrompt from the selected VideoType)
 const storySchema = z.object({
   title: z.string().min(2, "Title is required").max(100),
-  description: z.string().min(10, "Description is required").max(500),
+  description: z.string().min(10, "Description is required").max(800),
   voiceId: z.string().min(1, "Voice selection is required"),
   customPrompt: z.string().optional(),
   scenes: z.record(sceneSchema),
+  videoType: z.string().optional(), // New field for video type (e.g., imagePrompt)
 });
 
 type StoryFormValues = z.infer<typeof storySchema>;
@@ -46,8 +50,17 @@ export default function VideoGenerationPage() {
     loading: contentTypesLoading,
     error: contentTypesError,
   } = useContentTypes();
+  const {
+    videoTypes,
+    loading: videoTypesLoading,
+    error: videoTypesError,
+  } = useVideoTypes();
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null);
+  // New state for the selected video type.
+  const [selectedVideoType, setSelectedVideoType] = useState<VideoType | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const { story, videoId, isGenerating, generateStory } = useStory();
   const { voices } = useVoices();
@@ -67,6 +80,7 @@ export default function VideoGenerationPage() {
       voiceId: "",
       customPrompt: initialCustomPrompt,
       scenes: {},
+      videoType: "", // Initialize videoType field.
     },
   });
 
@@ -102,6 +116,14 @@ export default function VideoGenerationPage() {
     }
   }, [type, initialCustomPrompt, setValue, contentTypes, contentTypesLoading]);
 
+  // When a video type is selected, update both local state and the form's "videoType" field.
+  const handleVideoTypeChange = (id: string) => {
+    const vt = videoTypes.find((v) => v.id === id) || null;
+    setSelectedVideoType(vt);
+    // Here, we assume that the "videoType" value should be the imagePrompt.
+    setValue("videoType", vt ? vt.prompt : "");
+  };
+
   const handleGenerateStory = async () => {
     if (!selectedContentType || !user) return;
     // Reset the form if there's any content in the title or description fields.
@@ -112,6 +134,7 @@ export default function VideoGenerationPage() {
         voiceId: getValues("voiceId"),
         customPrompt: getValues("customPrompt"),
         scenes: {},
+        videoType: getValues("videoType"),
       });
     }
     await generateStory({
@@ -120,6 +143,7 @@ export default function VideoGenerationPage() {
         getValues("customPrompt") || selectedContentType.prompt || "",
       voiceId: getValues("voiceId"),
       uid: user.uid,
+      videoType: getValues("videoType") || "", // Now part of the form data.
     });
   };
 
@@ -138,7 +162,7 @@ export default function VideoGenerationPage() {
     }
   };
 
-  if (loading || contentTypesLoading) {
+  if (loading || contentTypesLoading || videoTypesLoading) {
     return (
       <div className="flex items-center space-x-2">
         <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
@@ -162,6 +186,14 @@ export default function VideoGenerationPage() {
   return (
     <div className="container py-8 px-4 md:px-8 space-y-8">
       <ContentTypeDetails contentType={selectedContentType} />
+      {/* VideoTypeSelector receives videoTypes from outside */}
+      <VideoTypeSelector
+        value={selectedVideoType?.id || null}
+        onChange={handleVideoTypeChange}
+        videoTypes={videoTypes}
+        loading={videoTypesLoading}
+        error={videoTypesError}
+      />
       <form
         onSubmit={handleSubmit(handleGenerateVideo)}
         className="space-y-6 relative"

@@ -23,6 +23,7 @@ export default function VideoTypesManager() {
   // Define initial form values for a new video type.
   const emptyValues: VideoTypeFormData & { imageUrl: string } = {
     title: "",
+    description: "",
     prompt: "",
     imagePrompt: "",
     imageUrl: "",
@@ -43,6 +44,7 @@ export default function VideoTypesManager() {
 
     const videoTypeData: Partial<VideoType> = {
       title: data.title,
+      description: data.description,
       prompt: data.prompt,
       imagePrompt: data.imagePrompt,
       imageUrl: generatedImage,
@@ -67,6 +69,7 @@ export default function VideoTypesManager() {
     setEditingId(videoType.id);
     setInitialValues({
       title: videoType.title,
+      description: videoType.description,
       prompt: videoType.prompt,
       imagePrompt: videoType.imagePrompt,
       imageUrl: videoType.imageUrl,

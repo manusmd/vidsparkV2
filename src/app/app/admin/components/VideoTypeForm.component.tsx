@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Dialog,
   DialogContent,
@@ -10,14 +9,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 
-// Define the schema for the video type form.
+// Extend the schema to include a description field.
 const videoTypeSchema = z.object({
   title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
   prompt: z.string().min(1, "Prompt is required"),
   imagePrompt: z.string().min(1, "Image prompt is required"),
 });
@@ -60,8 +61,8 @@ export function VideoTypeForm({
   }, [initialValues, reset]);
 
   const handleGenerateImage = async (data: VideoTypeFormData) => {
-    const { title, imagePrompt } = data;
-    if (!title || !imagePrompt) return;
+    const { imagePrompt } = data;
+    if (!imagePrompt) return;
     setGenerating(true);
     try {
       const res = await fetch("/api/videotypes/generateImage", {
@@ -73,6 +74,7 @@ export function VideoTypeForm({
         throw new Error("Failed to generate image");
       }
       const result = await res.json();
+      console.log("Generated image URL:", result.imageUrl);
       setGeneratedImage(result.imageUrl);
     } catch (error) {
       console.error("Error generating image:", error);
@@ -86,37 +88,81 @@ export function VideoTypeForm({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent aria-describedby={undefined}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {initialValues.title ? "Edit Video Type" : "Add New Video Type"}
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-4">
-          <Input placeholder="Title" {...register("title")} />
-          {errors.title && (
-            <p className="text-red-500 text-sm">{errors.title.message}</p>
-          )}
-          <Textarea
-            placeholder="Prompt for scenes (used later for video generation)"
-            {...register("prompt")}
-          />
-          {errors.prompt && (
-            <p className="text-red-500 text-sm">{errors.prompt.message}</p>
-          )}
-          <Textarea
-            placeholder="Image Prompt (used to generate the example image)"
-            {...register("imagePrompt")}
-          />
-          {errors.imagePrompt && (
-            <p className="text-red-500 text-sm">{errors.imagePrompt.message}</p>
-          )}
+          {/* Title Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">Title</label>
+            <Input placeholder="Title" {...register("title")} />
+            {errors.title && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.title.message}
+              </p>
+            )}
+          </div>
+
+          {/* Description Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">
+              Description
+            </label>
+            <Textarea
+              placeholder="Full description for this video type..."
+              {...register("description")}
+            />
+            {errors.description && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.description.message}
+              </p>
+            )}
+          </div>
+
+          {/* Prompt Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">
+              Prompt for Scenes
+            </label>
+            <Textarea
+              placeholder="Prompt for scenes (used later for video generation)"
+              {...register("prompt")}
+            />
+            {errors.prompt && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.prompt.message}
+              </p>
+            )}
+          </div>
+
+          {/* Image Prompt Field */}
+          <div>
+            <label className="block font-semibold text-sm mb-1">
+              Image Prompt
+            </label>
+            <Textarea
+              placeholder="Image Prompt (used to generate the example image)"
+              {...register("imagePrompt")}
+            />
+            {errors.imagePrompt && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.imagePrompt.message}
+              </p>
+            )}
+          </div>
+
           <div className="flex flex-col items-center space-y-2">
             {generatedImage ? (
-              <img
+              <Image
+                priority
+                width={300}
+                height={300}
                 src={generatedImage}
                 alt="Generated Example"
-                className="w-full max-h-96 object-contain rounded border"
+                className=" object-contain rounded border"
               />
             ) : (
               <div className="w-full h-48 flex items-center justify-center rounded border border-dashed border-muted">
@@ -125,6 +171,7 @@ export function VideoTypeForm({
                 </span>
               </div>
             )}
+
             <Button
               type="button"
               onClick={handleSubmit(handleGenerateImage)}
@@ -133,13 +180,15 @@ export function VideoTypeForm({
               {generating ? "Generating..." : "Generate Image"}
             </Button>
           </div>
-          <DialogFooter className="flex justify-between">
-            <Button variant="secondary" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {initialValues.title ? "Save Changes" : "Add Video Type"}
-            </Button>
+          <DialogFooter>
+            <div className="flex gap-4 justify-between">
+              <Button variant="secondary" type="button" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit">
+                {initialValues.title ? "Save Changes" : "Add Video Type"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>

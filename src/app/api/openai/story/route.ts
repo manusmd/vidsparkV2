@@ -4,14 +4,17 @@ import admin from "firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const { contentType, customPrompt, uid, voiceId } = await req.json();
-    if (!contentType)
+    const { contentType, customPrompt, uid, voiceId, videoType } =
+      await req.json();
+    if (!contentType) {
       return NextResponse.json(
         { error: "Missing contentType" },
         { status: 400 },
       );
-    if (!uid)
+    }
+    if (!uid) {
       return NextResponse.json({ error: "Missing user id" }, { status: 400 });
+    }
 
     const videoData = {
       uid,
@@ -24,6 +27,7 @@ export async function POST(req: NextRequest) {
       sceneStatus: {},
       imageStatus: {},
       voiceStatus: {},
+      videoType: videoType || "",
       status: "processing:story",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
