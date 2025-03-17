@@ -3,7 +3,6 @@ import { db, storage } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
 import { environment } from "@/lib/environment";
 
-// GET: Retrieve all video types
 export async function GET() {
   try {
     const snapshot = await db.collection("videoTypes").get();
@@ -30,38 +29,45 @@ export async function POST(req: Request) {
       );
     }
 
+    // Save initial data to Firestore
     const videoTypeData = {
       title,
       prompt,
-      imageUrl,
+      imageUrl, // Save the original URL first
       imagePrompt,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     const docRef = await db.collection("videoTypes").add(videoTypeData);
 
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error("Failed to download image");
+    // If the imageUrl contains "replicate", download and re-upload to Firebase Storage.
+    if (imageUrl.includes("replicate")) {
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error("Failed to download image from replicate");
+      }
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      const imageBuffer = Buffer.from(arrayBuffer);
+
+      // Create a file in the "videoTypes" folder using the doc ID.
+      const filePath = `videoTypes/${docRef.id}.jpg`;
+      const bucket = storage.bucket(
+        `${environment.firebaseProjectId}.firebasestorage.app`,
+      );
+      const fileRef = bucket.file(filePath);
+      await fileRef.save(imageBuffer, {
+        metadata: { contentType: "image/jpeg" },
+      });
+
+      // Generate a signed URL that expires far in the future.
+      const farFuture = new Date("2100-01-01T00:00:00Z").getTime();
+      const [signedUrl] = await fileRef.getSignedUrl({
+        action: "read",
+        expires: farFuture,
+      });
+
+      // Update the Firestore document with the new imageUrl.
+      await docRef.update({ imageUrl: signedUrl });
     }
-    const arrayBuffer = await imageResponse.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
-
-    const filePath = `videoTypes/${docRef.id}.jpg`;
-    const bucket = storage.bucket(
-      `${environment.firebaseProjectId}.firebasestorage.app`,
-    );
-    const fileRef = bucket.file(filePath);
-    await fileRef.save(imageBuffer, {
-      metadata: { contentType: "image/jpeg" },
-    });
-
-    const farFuture = new Date("2100-01-01T00:00:00Z").getTime();
-    const [signedUrl] = await fileRef.getSignedUrl({
-      action: "read",
-      expires: farFuture,
-    });
-
-    await docRef.update({ imageUrl: signedUrl });
 
     const updatedDoc = await docRef.get();
     return NextResponse.json({ id: docRef.id, ...updatedDoc.data() });

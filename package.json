@@ -9,7 +9,7 @@
     "lint": "next lint",
     "emulators": "firebase emulators:start",
     "deploy:site": "npx remotion cloudrun sites create src/components/remotion/index.ts --site-name=vidspark-video --region=us-central1",
-    "deploy:services": "npx remotion cloudrun services deploy --region=us-central1 --memoryLimit=8Gi --cpuLimit=4.0  --timeoutSeconds=1000",
+    "deploy:services": "npx remotion cloudrun services deploy --region=us-central1 --memoryLimit=8Gi --cpuLimit=4.0  --timeoutSeconds=1000 --concurrency=10",
     "undeploy:site": "npx remotion cloudrun sites rm vidspark-video --region=us-central1",
     "undeploy:services": "npx remotion cloudrun services rm remotion-4-0-277-mem2gi-cpu1-0-t300 --region=us-central1"
   },

@@ -4,11 +4,11 @@ import { db } from "@/lib/firebase";
 import type { Scene, Step, Video } from "@/app/types";
 
 // Define processing steps globally (reused in the hook)
-const processingSteps = [
-  { id: "processing:voices", name: "Generating Voice" },
-  { id: "processing:images", name: "Generating Images" },
-  { id: "processing:video", name: "Rendering Video" },
-  { id: "processing:upload", name: "Uploading to YouTube" },
+const processingSteps: Step[] = [
+  { id: "processing:voices", name: "Generating Voice", status: "upcoming" },
+  { id: "processing:images", name: "Generating Images", status: "upcoming" },
+  { id: "processing:video", name: "Rendering Video", status: "upcoming" },
+  { id: "processing:upload", name: "Uploading to YouTube", status: "upcoming" },
 ];
 
 export function useVideoDetail(videoId: string) {
@@ -74,24 +74,28 @@ export function useVideoDetail(videoId: string) {
   }, [videoId]);
 
   function updateSteps(video: Video) {
-    const currentStepIndex = processingSteps.findIndex(
-      (s) => s.id === video.status,
-    );
+    // Instead of using findIndex by video.status directly, we'll override the processing:video step.
+    const newSteps: Step[] = processingSteps.map((step) => {
+      let effectiveStatus: "complete" | "current" | "failed" | "upcoming";
+      if (step.id === "processing:video") {
+        if (
+          video.renderStatus?.progress === 1 ||
+          video.renderStatus?.statusMessage === "completed"
+        ) {
+          effectiveStatus = "complete";
+        } else if (video.status === "processing:render") {
+          effectiveStatus = "current";
+        } else {
+          effectiveStatus = "upcoming";
+        }
+      } else {
+        // For other steps, use the helper function.
+        effectiveStatus = computeEffectiveStatus(step);
+      }
 
-    const newSteps: Step[] = processingSteps.map((step, index) => {
-      const isCompleted = index < currentStepIndex;
-      const isCurrent = step.id === video.status;
-      const isFailed =
-        (step.id === "processing:voices" &&
-          video.voiceStatus &&
-          Object.values(video.voiceStatus).some(
-            (s) => s.statusMessage === "failed",
-          )) ||
-        (step.id === "processing:images" &&
-          video.imageStatus &&
-          Object.values(video.imageStatus).some(
-            (s) => s.statusMessage === "failed",
-          ));
+      const isCompleted = effectiveStatus === "complete";
+      const isCurrent = effectiveStatus === "current";
+      const isFailed = effectiveStatus === "failed";
 
       return {
         id: step.id,
@@ -131,7 +135,6 @@ export function useVideoDetail(videoId: string) {
               : undefined,
       };
     });
-
     setSteps(newSteps);
   }
 
@@ -152,5 +155,26 @@ export function useVideoDetail(videoId: string) {
       setStableAssets(newAssets);
     }
   }, [video?.scenes, video?.styling]);
+
   return { video, steps, loading, error, stableAssets };
+}
+
+/**
+ * Helper function to compute effective status (for non-overridden steps).
+ */
+function computeEffectiveStatus(
+  step: Step,
+): "complete" | "current" | "failed" | "upcoming" {
+  if (step.subSteps && step.subSteps.length > 0) {
+    if (step.subSteps.every((sub) => sub.status === "completed")) {
+      return "complete";
+    } else if (step.subSteps.some((sub) => sub.status === "processing")) {
+      return "current";
+    } else if (step.subSteps.some((sub) => sub.status === "failed")) {
+      return "failed";
+    } else {
+      return "upcoming";
+    }
+  }
+  return step.status;
 }

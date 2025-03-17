@@ -53,7 +53,7 @@ export const processVideoRender = onDocumentCreated(
     console.log(`🔊 Starting render for video: ${videoId}`);
     await videoRef.update({
       status: "processing:render",
-      renderStatus: { progress: 0, videoUrl: null },
+      renderStatus: { progress: 0, videoUrl: null, statusMessage: "rendering" },
     });
 
     const region: GcpRegion = REMOTION_CLOUDRUN_REGION.value() as GcpRegion;
@@ -90,7 +90,10 @@ export const processVideoRender = onDocumentCreated(
         codec: "h264",
         updateRenderProgress: async (progress: number) => {
           console.log(`Render progress for video ${videoId}: ${progress}`);
-          await videoRef.update({ "renderStatus.progress": progress });
+          await videoRef.update({
+            "renderStatus.progress": progress,
+            "renderStatus.statusMessage": "rendering",
+          });
         },
       });
 
@@ -101,22 +104,27 @@ export const processVideoRender = onDocumentCreated(
           renderStatus: {
             progress: 1,
             videoUrl: result.publicUrl || null,
-            renderId: result.renderId,
-            bucketName: result.bucketName,
+            statusMessage: "completed",
           },
         });
       } else {
         console.error("Render crashed:", result.message);
         await videoRef.update({
           status: "render:error",
-          renderStatus: { error: result.message },
+          renderStatus: {
+            error: result.message,
+            statusMessage: "error",
+          },
         });
       }
     } catch (err: any) {
       console.error("Error rendering video on Cloud Run:", err);
       await videoRef.update({
         status: "render:error",
-        renderStatus: { error: err.message || "Unknown error" },
+        renderStatus: {
+          error: err.message || "Unknown error",
+          statusMessage: "error",
+        },
       });
     }
     // Delete the queue document to prevent re-triggering.

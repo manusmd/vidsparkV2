@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { TextDesignProvider } from "@/hooks/useTextDesign";
 
 export default function ProtectedLayout({
   children,
@@ -12,6 +13,7 @@ export default function ProtectedLayout({
 }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -27,5 +29,5 @@ export default function ProtectedLayout({
     );
   }
 
-  return children;
+  return <TextDesignProvider videoId={id}>{children}</TextDesignProvider>;
 }

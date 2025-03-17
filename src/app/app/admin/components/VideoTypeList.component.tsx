@@ -1,9 +1,9 @@
 "use client";
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash, Pencil } from "lucide-react";
 import type { VideoType } from "@/app/types";
+import Image from "next/image";
 
 interface VideoTypeListProps {
   videoTypes: VideoType[];
@@ -21,12 +21,15 @@ export function VideoTypeList({
       {videoTypes.map((videoType) => (
         <Card
           key={videoType.id}
-          className="p-4 flex justify-between items-center border border-border rounded-lg hover:bg-muted/10 transition w-full mx-auto"
+          className="relative p-4 border border-border rounded-lg hover:bg-muted/10 transition w-full mx-auto"
         >
           <div className="flex items-center space-x-4 w-full overflow-hidden">
             {videoType.imageUrl && (
-              <img
+              <Image
+                priority
                 src={videoType.imageUrl}
+                width={128}
+                height={128}
                 alt="Thumbnail"
                 className="w-32 h-32 object-cover rounded"
               />
@@ -45,7 +48,7 @@ export function VideoTypeList({
               )}
             </div>
           </div>
-          <div className="flex gap-2 flex-shrink-0">
+          <div className="absolute top-2 right-2 flex gap-2">
             <Button
               variant="outline"
               size="icon"

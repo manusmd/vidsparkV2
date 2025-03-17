@@ -99,7 +99,7 @@ export default function VideoDetailPage() {
         <VideoInfo video={video} />
         <ProgressSteps
           steps={steps}
-          videoStatus={video.status}
+          video={video}
           onGenerate={video.status === "draft" ? onGenerate : undefined}
           onRender={onRender}
         />

@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Step } from "@/app/types";
+import type { Step, Video } from "@/app/types";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { AnimatePresence, motion } from "framer-motion";
@@ -41,14 +41,14 @@ function computeEffectiveStatus(
 
 interface ProgressStepsProps {
   steps: Step[];
-  videoStatus: string;
+  video: Video; // full video document with status and renderStatus
   onGenerate?: () => void;
   onRender?: () => Promise<void>;
 }
 
 export function ProgressSteps({
   steps,
-  videoStatus,
+  video,
   onGenerate,
   onRender,
 }: ProgressStepsProps) {
@@ -60,22 +60,27 @@ export function ProgressSteps({
   useEffect(() => {
     setExpandedSteps((prevExpanded) => {
       const updatedExpanded = { ...prevExpanded };
-
       steps.forEach((step) => {
-        const effectiveStatus = computeEffectiveStatus(step);
+        // For processing:video, if renderStatus indicates completion, mark as complete.
+        const effectiveStatus =
+          step.id === "processing:video" &&
+          (video.renderStatus?.progress === 1 ||
+            video.renderStatus?.statusMessage === "completed" ||
+            video.status === "render:complete")
+            ? "complete"
+            : computeEffectiveStatus(step);
         if (effectiveStatus === "current") {
-          updatedExpanded[step.id] = true; // Auto-expand current processing step
+          updatedExpanded[step.id] = true;
         } else if (
           effectiveStatus === "complete" ||
           effectiveStatus === "failed"
         ) {
-          updatedExpanded[step.id] = false; // Collapse complete or failed steps
+          updatedExpanded[step.id] = false;
         }
       });
-
       return updatedExpanded;
     });
-  }, [steps]);
+  }, [steps, video.renderStatus]);
 
   const toggleStep = (stepId: string) => {
     setExpandedSteps((prev) => ({
@@ -90,14 +95,23 @@ export function ProgressSteps({
         <h2 className="text-lg font-semibold text-foreground">
           Processing Progress
         </h2>
-        {videoStatus === "draft" && onGenerate && (
+        {video.status === "draft" && onGenerate && (
           <Button onClick={onGenerate}>Generate Video</Button>
         )}
       </div>
 
       <div className="space-y-1">
         {steps.map((step, stepIdx) => {
-          const effectiveStatus = computeEffectiveStatus(step);
+          let effectiveStatus = computeEffectiveStatus(step);
+          // Override for processing:video if renderStatus indicates completion or status is "render:complete"
+          if (
+            step.id === "processing:video" &&
+            (video.renderStatus?.progress === 1 ||
+              video.renderStatus?.statusMessage === "completed" ||
+              video.status === "render:complete")
+          ) {
+            effectiveStatus = "complete";
+          }
           const isStepComplete = effectiveStatus === "complete";
           const isStepCurrent = effectiveStatus === "current";
           const isStepFailed = effectiveStatus === "failed";
@@ -155,17 +169,23 @@ export function ProgressSteps({
                   </h3>
                 </button>
 
-                {/* Conditionally render Render Video button for the processing:video step */}
-                {step.id === "processing:video" &&
-                  (videoStatus === "processing:render" ? (
-                    <Button variant="outline" size="sm" disabled>
-                      Rendering...
-                    </Button>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={onRender}>
-                      Render Video
-                    </Button>
-                  ))}
+                {/* Render Video Button for the processing:video step */}
+                {step.id === "processing:video" && (
+                  <>
+                    {video.status === "processing:render" ? (
+                      video.renderStatus?.progress < 1 &&
+                      video.renderStatus?.statusMessage !== "completed" ? (
+                        <Button variant="outline" size="sm" disabled>
+                          Rendering...
+                        </Button>
+                      ) : null
+                    ) : video.status !== "render:complete" ? (
+                      <Button variant="outline" size="sm" onClick={onRender}>
+                        Render Video
+                      </Button>
+                    ) : null}
+                  </>
+                )}
 
                 {/* Expand/Collapse Icon */}
                 {step.subSteps && step.subSteps.length > 0 && (

@@ -95,6 +95,7 @@ export interface Video {
     | "failed";
   renderStatus: {
     progress: number;
+    statusMessage: string;
     videoUrl: string;
   };
   sceneStatus: {
