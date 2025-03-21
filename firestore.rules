@@ -44,5 +44,9 @@ service cloud.firestore {
     match /contentTypes/{id} {
       allow read: if request.auth != null;
     }
+
+    match /storyIdeas/{ideaId} {
+      allow read: if request.auth.uid == resource.data.uid;
+    }
   }
 }

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { VoiceSelector } from "@/components/VoiceSelector.component";
+import { VoiceSelector } from "@/components/video/VoiceSelector.component";
 import { Voice } from "@/app/types";
 
 interface ContentTypeFormProps {

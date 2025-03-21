@@ -7,7 +7,6 @@ import { Scene } from "@/app/types";
 interface SceneCompositionProps {
   scene: Scene;
   index: number;
-  isTitle?: boolean;
 }
 
 export const SceneComposition: React.FC<SceneCompositionProps> = ({

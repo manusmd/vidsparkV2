@@ -12,6 +12,7 @@ import { SceneComposition } from "@/components/remotion/SceneComposition.compone
 import SubtitlePage from "@/components/remotion/SubtitlePage.component";
 import { PremountedSequence } from "@/components/remotion/PremountedSequence.component";
 import { resolveRedirect } from "@remotion/preload";
+import { TextDesign } from "@/components/remotion/TextDesign.component";
 
 interface MyTikTokPage extends TikTokPage {
   endMs: number;
@@ -22,10 +23,28 @@ const COMBINE_TOKENS_MS = 500;
 interface Props {
   scenes?: { [sceneIndex: number]: Scene };
   styling?: VideoStyling;
+  textPosition?: string;
+  showTitle?: boolean;
+  title?: string;
 }
 
-export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
+export const VideoComposition: React.FC<Props> = ({
+  scenes = {},
+  styling,
+  textPosition = "top",
+  showTitle = true,
+  title,
+}) => {
   const { fps } = useVideoConfig();
+
+  const alignmentClass =
+    textPosition === "top"
+      ? "items-start"
+      : textPosition === "center"
+        ? "items-center"
+        : textPosition === "bottom"
+          ? "items-end"
+          : "items-start";
 
   useEffect(() => {
     Object.values(scenes).forEach((scene) => {
@@ -94,9 +113,9 @@ export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
   return (
     <AbsoluteFill>
       {scenesWithTiming.map(
-        ({ scene, startFrame, durationInFrames, pages }, index) => {
+        ({ scene, startFrame, durationInFrames, pages }, sceneIndex) => {
           if (!scene.voiceUrl || !scene.imageUrl) {
-            console.error(`Missing assets for scene ${index}:`, {
+            console.error(`Missing assets for scene ${sceneIndex}:`, {
               voiceUrl: scene.voiceUrl,
               imageUrl: scene.imageUrl,
             });
@@ -104,16 +123,12 @@ export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
           }
           return (
             <PremountedSequence
-              key={index}
+              key={sceneIndex}
               from={startFrame}
               durationInFrames={durationInFrames}
               premountFor={100}
             >
-              <SceneComposition
-                scene={scene}
-                index={index}
-                isTitle={index === 0}
-              />
+              <SceneComposition scene={scene} index={sceneIndex} />
               <Audio src={scene.voiceUrl} volume={1} />
               {pages?.map((page: TikTokPage, pageIndex: number) => {
                 const currentPage = page as MyTikTokPage;
@@ -127,6 +142,48 @@ export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
                 );
                 const pageDuration = pageEndFrame - pageStartFrame;
                 if (pageDuration <= 0) return null;
+
+                if (sceneIndex === 0 && showTitle && pageIndex === 0 && title) {
+                  const titlePage: TikTokPage = {
+                    startMs: 0,
+                    tokens: [{ text: title, fromMs: 0, toMs: 1 }],
+                    text: title,
+                  };
+                  return (
+                    <>
+                      <PremountedSequence
+                        key={`${pageIndex}-title`}
+                        from={0}
+                        durationInFrames={1}
+                        premountFor={30}
+                      >
+                        <AbsoluteFill
+                          className={`flex ${alignmentClass} justify-center`}
+                        >
+                          <TextDesign
+                            enterProgress={1}
+                            page={titlePage}
+                            textVariant={styling?.font}
+                            variant={styling?.variant}
+                          />
+                        </AbsoluteFill>
+                      </PremountedSequence>
+                      <PremountedSequence
+                        key={`${pageIndex}-subtitle`}
+                        from={pageStartFrame + 1}
+                        durationInFrames={pageDuration - 1}
+                        premountFor={30}
+                      >
+                        <SubtitlePage
+                          page={page}
+                          styling={styling}
+                          textPosition={textPosition}
+                        />
+                      </PremountedSequence>
+                    </>
+                  );
+                }
+
                 return (
                   <PremountedSequence
                     key={pageIndex}
@@ -134,7 +191,11 @@ export const VideoComposition: React.FC<Props> = ({ scenes = {}, styling }) => {
                     durationInFrames={pageDuration}
                     premountFor={30}
                   >
-                    <SubtitlePage page={page} styling={styling} />
+                    <SubtitlePage
+                      page={page}
+                      styling={styling}
+                      textPosition={textPosition}
+                    />
                   </PremountedSequence>
                 );
               })}

@@ -1,4 +1,5 @@
 "use client";
+
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
@@ -9,15 +10,25 @@ import { VideoPreview } from "@/components/remotion/VideoPreview.component";
 import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus.component";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
 import { NextResponse } from "next/server";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState } from "react";
+import { CollapsibleSection } from "@/components/layout/CollapsibleSection.component";
+import { TextOptions } from "@/components/video/TextOptions.component";
+import { MusicSelector } from "@/components/video/MusicSelector.component";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
   const { video, steps, loading, error, stableAssets } = useVideoDetail(
     id as string,
   );
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const [showTitle, setShowTitle] = useState<boolean>(true);
+  const [textPosition, setTextPosition] = useState<string>("top");
 
-  // Triggered when the "Generate Video" button is clicked.
+  const handleToggleSection = (sectionId: string) => {
+    setOpenSection((prev) => (prev === sectionId ? null : sectionId));
+  };
+
   const onGenerate = async () => {
     try {
       const response = await fetch("/api/video/generate", {
@@ -50,7 +61,6 @@ export default function VideoDetailPage() {
     }
   };
 
-  // Example onRender function
   const onRender = async () => {
     try {
       const response = await fetch("/api/video/render", {
@@ -94,7 +104,6 @@ export default function VideoDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header: Video Info (Sticky on large screens) */}
       <div className="flex flex-col gap-4 bg-background z-10 p-4 rounded shadow">
         <VideoInfo video={video} />
         <ProgressSteps
@@ -105,28 +114,54 @@ export default function VideoDetailPage() {
         />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
-        {/* Left Column: Tabs for Scenes and Design plus ProgressSteps */}
+      <div className="flex flex-col lg:flex-row gap-8 p-4">
         <section className="flex-1 space-y-8">
           <Tabs defaultValue="scenes">
             <TabsList className="mb-4">
               <TabsTrigger value="scenes">Scenes</TabsTrigger>
-              <TabsTrigger value="design">Design</TabsTrigger>
+              <TabsTrigger value="design">Customize</TabsTrigger>
             </TabsList>
             <TabsContent value="scenes">
               <SceneList scenes={video.scenes} />
             </TabsContent>
             <TabsContent value="design">
               <div className="space-y-4">
-                <TextDesignSelector />
+                <CollapsibleSection
+                  id="design"
+                  title="Design"
+                  isOpen={openSection === "design"}
+                  onToggle={handleToggleSection}
+                >
+                  <TextDesignSelector />
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="textOptions"
+                  title="Text Options"
+                  isOpen={openSection === "textOptions"}
+                  onToggle={handleToggleSection}
+                >
+                  <TextOptions
+                    textPosition={textPosition}
+                    onTextPositionChange={setTextPosition}
+                    showTitle={showTitle}
+                    onShowTitleChange={setShowTitle}
+                  />
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="music"
+                  title="Music Selection"
+                  isOpen={openSection === "music"}
+                  onToggle={handleToggleSection}
+                >
+                  <MusicSelector />
+                </CollapsibleSection>
               </div>
             </TabsContent>
           </Tabs>
         </section>
 
-        {/* Right Column: Video Preview / Processing Status */}
         <aside className="w-full lg:w-[420px]">
-          <div className="w-full aspect-[9/16] bg-muted flex items-center justify-center rounded-lg shadow">
+          <div className="w-full aspect-[9/16] flex items-center justify-center rounded-lg shadow">
             {video.status === "draft" ||
             video.status === "processing:assets" ? (
               <VideoProcessingStatus status={video.status} />
@@ -134,6 +169,9 @@ export default function VideoDetailPage() {
               <VideoPreview
                 scenes={stableAssets?.scenes || {}}
                 styling={stableAssets?.styling || {}}
+                textPosition={textPosition}
+                showTitle={showTitle}
+                title={video.title}
               />
             )}
           </div>

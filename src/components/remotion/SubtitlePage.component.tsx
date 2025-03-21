@@ -12,10 +12,17 @@ import type { TikTokPage } from "@remotion/captions";
 import { TextDesign } from "@/components/remotion/TextDesign.component";
 import { VideoStyling } from "@/app/types";
 
-const SubtitlePage: React.FC<{
+interface SubtitlePageProps {
   page: TikTokPage;
   styling?: VideoStyling;
-}> = ({ page, styling }) => {
+  textPosition?: string;
+}
+
+const SubtitlePage: React.FC<SubtitlePageProps> = ({
+  page,
+  styling,
+  textPosition = "top",
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -28,13 +35,22 @@ const SubtitlePage: React.FC<{
     durationInFrames: 5,
   });
 
+  const alignmentClass =
+    textPosition === "top"
+      ? "items-start"
+      : textPosition === "center"
+        ? "items-center"
+        : textPosition === "bottom"
+          ? "items-end"
+          : "items-start";
+
   return (
     <AbsoluteFill>
       <AbsoluteFill>
         <Sequence
-          className={"items-start"}
           from={0}
           durationInFrames={Infinity}
+          className={alignmentClass}
         >
           <TextDesign
             enterProgress={enter}

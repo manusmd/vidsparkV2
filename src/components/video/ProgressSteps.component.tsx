@@ -1,27 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Step, Video } from "@/app/types";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
-function truncateText(text: string, maxLength: number) {
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-}
-
-/**
- * Computes the effective status for a step based on its subSteps.
- * If there are no subSteps, returns the step's own status.
- */
 function computeEffectiveStatus(
   step: Step,
 ): "complete" | "current" | "failed" | "upcoming" {
@@ -41,7 +27,7 @@ function computeEffectiveStatus(
 
 interface ProgressStepsProps {
   steps: Step[];
-  video: Video; // full video document with status and renderStatus
+  video: Video;
   onGenerate?: () => void;
   onRender?: () => Promise<void>;
 }
@@ -56,37 +42,8 @@ export function ProgressSteps({
     {},
   );
 
-  // Auto-expand steps whose effective status is "current"
-  useEffect(() => {
-    setExpandedSteps((prevExpanded) => {
-      const updatedExpanded = { ...prevExpanded };
-      steps.forEach((step) => {
-        // For processing:video, if renderStatus indicates completion, mark as complete.
-        const effectiveStatus =
-          step.id === "processing:video" &&
-          (video.renderStatus?.progress === 1 ||
-            video.renderStatus?.statusMessage === "completed" ||
-            video.status === "render:complete")
-            ? "complete"
-            : computeEffectiveStatus(step);
-        if (effectiveStatus === "current") {
-          updatedExpanded[step.id] = true;
-        } else if (
-          effectiveStatus === "complete" ||
-          effectiveStatus === "failed"
-        ) {
-          updatedExpanded[step.id] = false;
-        }
-      });
-      return updatedExpanded;
-    });
-  }, [steps, video.renderStatus]);
-
   const toggleStep = (stepId: string) => {
-    setExpandedSteps((prev) => ({
-      ...prev,
-      [stepId]: !prev[stepId],
-    }));
+    setExpandedSteps((prev) => ({ ...prev, [stepId]: !prev[stepId] }));
   };
 
   return (
@@ -99,11 +56,9 @@ export function ProgressSteps({
           <Button onClick={onGenerate}>Generate Video</Button>
         )}
       </div>
-
       <div className="space-y-1">
         {steps.map((step, stepIdx) => {
           let effectiveStatus = computeEffectiveStatus(step);
-          // Override for processing:video if renderStatus indicates completion or status is "render:complete"
           if (
             step.id === "processing:video" &&
             (video.renderStatus?.progress === 1 ||
@@ -115,8 +70,8 @@ export function ProgressSteps({
           const isStepComplete = effectiveStatus === "complete";
           const isStepCurrent = effectiveStatus === "current";
           const isStepFailed = effectiveStatus === "failed";
-          const isExpanded = expandedSteps[step.id];
-
+          const isProgressBarStep =
+            step.id === "processing:voices" || step.id === "processing:images";
           const stepIcon = isStepComplete ? (
             <Check className="h-4 w-4" />
           ) : isStepFailed ? (
@@ -124,21 +79,16 @@ export function ProgressSteps({
           ) : (
             stepIdx + 1
           );
-
-          return (
-            <motion.div
-              key={step.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="relative flex flex-col space-y-1"
-            >
-              {/* Step Header */}
-              <div className="flex items-center justify-between w-full">
-                <button
-                  onClick={() => toggleStep(step.id)}
-                  className="flex items-center gap-2 p-2 rounded-md hover:bg-muted transition"
-                >
+          let headerContent;
+          if (isProgressBarStep) {
+            const overallProgress =
+              step.subSteps && step.subSteps.length > 0
+                ? step.subSteps.reduce((acc, sub) => acc + sub.progress, 0) /
+                  step.subSteps.length
+                : 0;
+            headerContent = (
+              <div className="flex items-center justify-between w-full p-2 hover:bg-muted transition rounded-md">
+                <div className="flex items-center gap-2 flex-1 text-left">
                   <div
                     className={cn(
                       "flex items-center justify-center h-7 w-7 rounded-full text-sm font-semibold transition-all",
@@ -153,42 +103,52 @@ export function ProgressSteps({
                   >
                     {stepIcon}
                   </div>
-                  <h3
-                    className={cn(
-                      "text-sm font-medium transition-all",
-                      isStepComplete
-                        ? "text-emerald-500"
-                        : isStepFailed
-                          ? "text-destructive"
-                          : isStepCurrent
-                            ? "text-primary"
-                            : "text-muted-foreground",
-                    )}
-                  >
+                  <h3 className="text-sm font-medium text-left transition-all">
                     {step.name}
                   </h3>
-                </button>
-
-                {/* Render Video Button for the processing:video step */}
-                {step.id === "processing:video" && (
-                  <>
-                    {video.status === "processing:render" ? (
-                      video.renderStatus?.progress < 1 &&
-                      video.renderStatus?.statusMessage !== "completed" ? (
-                        <Button variant="outline" size="sm" disabled>
-                          Rendering...
-                        </Button>
-                      ) : null
-                    ) : video.status !== "render:complete" ? (
-                      <Button variant="outline" size="sm" onClick={onRender}>
-                        Render Video
-                      </Button>
-                    ) : null}
-                  </>
-                )}
-
-                {/* Expand/Collapse Icon */}
-                {step.subSteps && step.subSteps.length > 0 && (
+                </div>
+                <div className="flex items-center gap-2">
+                  {overallProgress === 1 ? (
+                    <span className="text-sm text-emerald-500">Completed</span>
+                  ) : (
+                    <>
+                      <Progress
+                        value={overallProgress * 100}
+                        className="h-1 w-24"
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {Math.round(overallProgress * 100)}%
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          } else {
+            const isCollapsible = step.subSteps && step.subSteps.length > 0;
+            const isExpanded = expandedSteps[step.id] || false;
+            headerContent = (
+              <>
+                <div className="flex items-center gap-2 flex-1 text-left">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center h-7 w-7 rounded-full text-sm font-semibold transition-all",
+                      isStepComplete
+                        ? "bg-emerald-500 text-white"
+                        : isStepCurrent
+                          ? "border-2 border-primary text-primary animate-pulse"
+                          : isStepFailed
+                            ? "bg-destructive text-white"
+                            : "border border-border text-muted-foreground",
+                    )}
+                  >
+                    {stepIcon}
+                  </div>
+                  <h3 className="text-sm font-medium text-left transition-all">
+                    {step.name}
+                  </h3>
+                </div>
+                {isCollapsible && (
                   <ChevronDown
                     className={cn(
                       "h-5 w-5 transition-transform",
@@ -196,81 +156,92 @@ export function ProgressSteps({
                     )}
                   />
                 )}
-              </div>
-
-              {/* Substeps (Collapsible) */}
-              <AnimatePresence>
-                {isExpanded && step.subSteps && step.subSteps.length > 0 && (
-                  <motion.div
-                    className="ml-8 mt-1 space-y-1"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    {step.subSteps.map((subStep) => {
-                      const isProcessing = subStep.status === "processing";
-                      const isCompleted = subStep.status === "completed";
-                      const isFailed = subStep.status === "failed";
-
-                      return (
-                        <div
-                          key={subStep.index}
-                          className="flex flex-col space-y-1"
-                        >
-                          <p className="text-xs font-bold text-white">
-                            Scene {subStep.index + 1}
-                          </p>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <p className="text-xs text-muted-foreground truncate line-clamp-1">
-                                  {step.id === "processing:voices"
-                                    ? truncateText(
-                                        subStep.narration ||
-                                          "Generating voice...",
-                                        50,
-                                      )
-                                    : truncateText(
-                                        subStep.imagePrompt ||
-                                          "Generating image...",
-                                        50,
-                                      )}
-                                </p>
-                              </TooltipTrigger>
-                              <TooltipContent className="text-xs">
-                                {step.id === "processing:voices"
-                                  ? subStep.narration
-                                  : subStep.imagePrompt}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                          <div className="flex items-center space-x-2">
-                            {isProcessing && (
-                              <div className="h-2 w-2 rounded-full bg-white animate-ping"></div>
-                            )}
-                            {isCompleted && (
-                              <Check className="h-3 w-3 text-emerald-500" />
-                            )}
-                            {isFailed && (
-                              <X className="h-3 w-3 text-destructive" />
-                            )}
-                            <div className="flex items-center w-full">
-                              <Progress
-                                value={subStep.progress * 100}
-                                className="h-1 flex-1"
-                              />
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                {Math.round(subStep.progress * 100)}%
-                              </span>
+              </>
+            );
+          }
+          return (
+            <motion.div
+              key={step.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative flex flex-col space-y-1"
+            >
+              {isProgressBarStep ? (
+                headerContent
+              ) : (
+                <>
+                  {step.subSteps && step.subSteps.length > 0 ? (
+                    <button
+                      onClick={() => toggleStep(step.id)}
+                      className="flex items-center justify-between w-full gap-2 p-2 rounded-md hover:bg-muted transition"
+                    >
+                      {headerContent}
+                    </button>
+                  ) : (
+                    <div className="flex items-center justify-between w-full gap-2 p-2">
+                      {headerContent}
+                      {step.id === "processing:video" &&
+                        video.status !== "render:complete" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onRender}
+                          >
+                            Render Video
+                          </Button>
+                        )}
+                    </div>
+                  )}
+                  {step.subSteps &&
+                    step.subSteps.length > 0 &&
+                    expandedSteps[step.id] && (
+                      <motion.div
+                        className="ml-8 mt-1 space-y-1"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        {step.subSteps.map((subStep) => {
+                          const isProcessing = subStep.status === "processing";
+                          const isCompleted = subStep.status === "completed";
+                          const isFailed = subStep.status === "failed";
+                          return (
+                            <div
+                              key={subStep.index}
+                              className="flex flex-col space-y-1"
+                            >
+                              <p className="text-xs font-bold text-white">
+                                Scene {subStep.index + 1}
+                              </p>
+                              <div className="flex items-center space-x-2">
+                                {isProcessing && (
+                                  <div className="h-2 w-2 rounded-full bg-white animate-ping"></div>
+                                )}
+                                {isCompleted && (
+                                  <Check className="h-3 w-3 text-emerald-500" />
+                                )}
+                                {isFailed && (
+                                  <X className="h-3 w-3 text-destructive" />
+                                )}
+                                <div className="flex items-center w-full">
+                                  <Progress
+                                    value={subStep.progress * 100}
+                                    className="h-1 flex-1"
+                                  />
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    {Math.round(subStep.progress * 100)}%
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                </>
+              )}
             </motion.div>
           );
         })}

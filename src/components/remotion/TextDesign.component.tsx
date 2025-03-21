@@ -113,6 +113,7 @@ export const TextDesign: React.FC<TextDesignProps> = ({
     whiteSpace: "normal",
     height: "fit-content",
     marginTop: "4rem",
+    marginBottom: "4rem",
     padding: "0.3rem 0.5rem",
     boxSizing: "border-box",
     WebkitTextStroke: `${commonStrokeWidth} ${currentVariant.stroke}`,
@@ -133,7 +134,7 @@ export const TextDesign: React.FC<TextDesignProps> = ({
         const active = startRelative <= timeInMs && endRelative > timeInMs;
         return (
           <span
-            key={t.fromMs}
+            key={`${t.fromMs}${t.toMs}`}
             style={{
               ...tokenBaseStyle,
               color: active ? effectiveHighlightColor : currentVariant.color,
