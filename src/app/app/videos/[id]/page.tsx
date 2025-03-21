@@ -15,6 +15,7 @@ import React, { useState } from "react";
 import { CollapsibleSection } from "@/components/layout/CollapsibleSection.component";
 import { TextOptions } from "@/components/video/TextOptions.component";
 import { MusicSelector } from "@/components/video/MusicSelector.component";
+import { MusicTrack } from "@/app/types";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
@@ -24,6 +25,8 @@ export default function VideoDetailPage() {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState<boolean>(true);
   const [textPosition, setTextPosition] = useState<string>("top");
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
+  const [volume, setVolume] = useState<number>(0);
 
   const handleToggleSection = (sectionId: string) => {
     setOpenSection((prev) => (prev === sectionId ? null : sectionId));
@@ -153,7 +156,12 @@ export default function VideoDetailPage() {
                   isOpen={openSection === "music"}
                   onToggle={handleToggleSection}
                 >
-                  <MusicSelector />
+                  <MusicSelector
+                    selectedTrack={selectedTrack}
+                    onSelectMusic={setSelectedTrack}
+                    volume={volume}
+                    onVolumeChange={setVolume}
+                  />
                 </CollapsibleSection>
               </div>
             </TabsContent>
@@ -172,6 +180,8 @@ export default function VideoDetailPage() {
                 textPosition={textPosition}
                 showTitle={showTitle}
                 title={video.title}
+                musicVolume={volume}
+                musicUrl={selectedTrack?.src}
               />
             )}
           </div>

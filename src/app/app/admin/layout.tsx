@@ -15,6 +15,7 @@ import {
 const NAV_ITEMS = [
   { name: "Content Types", path: "/app/admin/content-types" },
   { name: "Video Types", path: "/app/admin/video-types" },
+  { name: "Music", path: "/app/admin/music" },
   { name: "Users", path: "/app/admin/users" },
   { name: "Settings", path: "/app/admin/settings" },
 ];

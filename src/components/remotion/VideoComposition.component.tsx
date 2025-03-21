@@ -1,7 +1,13 @@
 "use client";
 
-import React, { useEffect } from "react";
-import { AbsoluteFill, Audio, useVideoConfig, prefetch } from "remotion";
+import React, { Fragment, useEffect } from "react";
+import {
+  AbsoluteFill,
+  Audio,
+  interpolate,
+  prefetch,
+  useVideoConfig,
+} from "remotion";
 import {
   type Caption,
   createTikTokStyleCaptions,
@@ -21,11 +27,13 @@ interface MyTikTokPage extends TikTokPage {
 const COMBINE_TOKENS_MS = 500;
 
 interface Props {
-  scenes?: { [sceneIndex: number]: Scene };
+  scenes?: { [sceneIndex: string]: Scene };
   styling?: VideoStyling;
   textPosition?: string;
   showTitle?: boolean;
   title?: string;
+  musicVolume?: number;
+  musicUrl?: string | null;
 }
 
 export const VideoComposition: React.FC<Props> = ({
@@ -34,9 +42,13 @@ export const VideoComposition: React.FC<Props> = ({
   textPosition = "top",
   showTitle = true,
   title,
+  musicVolume = 0,
+  musicUrl,
 }) => {
   const { fps } = useVideoConfig();
+  const currentFrameRef = { current: 0 };
 
+  // Determine alignment class based on textPosition
   const alignmentClass =
     textPosition === "top"
       ? "items-start"
@@ -47,6 +59,7 @@ export const VideoComposition: React.FC<Props> = ({
           : "items-start";
 
   useEffect(() => {
+    // Prefetch scene voice audio URLs
     Object.values(scenes).forEach((scene) => {
       if (scene.voiceUrl) {
         resolveRedirect(scene.voiceUrl)
@@ -66,8 +79,7 @@ export const VideoComposition: React.FC<Props> = ({
     });
   }, [scenes]);
 
-  let currentFrame = 0;
-
+  // Calculate timing for each scene and accumulate total duration in frames.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
   )
@@ -95,11 +107,11 @@ export const VideoComposition: React.FC<Props> = ({
         combineTokensWithinMilliseconds: COMBINE_TOKENS_MS,
       });
 
-      const startFrame = currentFrame;
+      const startFrame = currentFrameRef.current;
       const audioDuration =
         tikTokCaptions[tikTokCaptions.length - 1].endMs / 1000;
       const durationInFrames = Math.ceil(audioDuration * fps);
-      currentFrame += durationInFrames;
+      currentFrameRef.current += durationInFrames;
 
       return {
         scene,
@@ -109,6 +121,9 @@ export const VideoComposition: React.FC<Props> = ({
       };
     })
     .filter((item): item is Exclude<SceneWithTiming, null> => item !== null);
+
+  // Total frames for the entire video
+  const totalFrames = currentFrameRef.current;
 
   return (
     <AbsoluteFill>
@@ -150,9 +165,8 @@ export const VideoComposition: React.FC<Props> = ({
                     text: title,
                   };
                   return (
-                    <>
+                    <Fragment key={`${scene.voiceUrl}-${pageIndex}`}>
                       <PremountedSequence
-                        key={`${pageIndex}-title`}
                         from={0}
                         durationInFrames={1}
                         premountFor={30}
@@ -169,7 +183,6 @@ export const VideoComposition: React.FC<Props> = ({
                         </AbsoluteFill>
                       </PremountedSequence>
                       <PremountedSequence
-                        key={`${pageIndex}-subtitle`}
                         from={pageStartFrame + 1}
                         durationInFrames={pageDuration - 1}
                         premountFor={30}
@@ -180,7 +193,7 @@ export const VideoComposition: React.FC<Props> = ({
                           textPosition={textPosition}
                         />
                       </PremountedSequence>
-                    </>
+                    </Fragment>
                   );
                 }
 
@@ -202,6 +215,25 @@ export const VideoComposition: React.FC<Props> = ({
             </PremountedSequence>
           );
         },
+      )}
+      {/* Background Music with Fade Out over the last 30 frames */}
+      {musicUrl && (
+        <Audio
+          src={musicUrl}
+          volume={(frame) => {
+            // If we're before the fade-out range, use the initial volume
+            if (frame < totalFrames - 30) {
+              return musicVolume;
+            }
+            // Fade out from musicVolume to 0 in the last 30 frames
+            return interpolate(
+              frame,
+              [totalFrames - 30, totalFrames],
+              [musicVolume, 0],
+              { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+            );
+          }}
+        />
       )}
     </AbsoluteFill>
   );

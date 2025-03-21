@@ -17,6 +17,8 @@ interface VideoPreviewProps {
   textPosition: string;
   showTitle: boolean;
   title: string;
+  musicVolume: number;
+  musicUrl: string | undefined;
 }
 
 export function VideoPreview({
@@ -25,6 +27,8 @@ export function VideoPreview({
   textPosition,
   showTitle,
   title,
+  musicUrl,
+  musicVolume,
 }: VideoPreviewProps) {
   const playerRef = useRef<PlayerRef | null>(null);
 
@@ -57,8 +61,10 @@ export function VideoPreview({
       textPosition,
       showTitle,
       title,
+      musicUrl,
+      musicVolume,
     }),
-    [scenes, stableStyling, textPosition, showTitle],
+    [scenes, stableStyling, textPosition, showTitle, musicUrl, musicVolume],
   );
 
   return (

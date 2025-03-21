@@ -28,6 +28,12 @@ export type Voice = {
   preview_url?: string;
 };
 
+export interface MusicTrack {
+  id: string;
+  title: string;
+  src: string;
+}
+
 export type VideoType = {
   id: string;
   title: string;
