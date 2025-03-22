@@ -9,7 +9,7 @@ export async function PUT(
 ) {
   const { id } = await params;
   try {
-    const { title, description, examples, prompt, recommendedVoiceId } =
+    const { title, description, examples, prompt, recommendedVoiceId, order } =
       await req.json();
     if (!id || !title || !description) {
       return NextResponse.json(
@@ -23,6 +23,7 @@ export async function PUT(
       examples: Array.isArray(examples) ? examples : [],
       prompt: prompt || "",
       recommendedVoiceId: recommendedVoiceId || "",
+      order,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     await db.collection("contentTypes").doc(id).update(contentData);

@@ -4,9 +4,7 @@ export async function retrieveHashtags(
   apiKey: string,
   narration: string,
 ): Promise<string> {
-  const openaiClient = new OpenAI({
-    apiKey,
-  });
+  const openaiClient = new OpenAI({ apiKey });
   const hashtagResponse = await openaiClient.chat.completions.create({
     model: "gpt-4o-search-preview",
     web_search_options: {
@@ -23,5 +21,12 @@ export async function retrieveHashtags(
       },
     ],
   });
-  return (hashtagResponse.choices[0].message.content as string).trim();
+
+  const rawContent = (
+    hashtagResponse.choices[0].message.content as string
+  ).trim();
+
+  const hashtags = rawContent.match(/#[\w]+/g);
+
+  return hashtags ? hashtags.join(" ") : "";
 }

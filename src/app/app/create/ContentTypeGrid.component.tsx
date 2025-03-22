@@ -2,8 +2,6 @@
 import React from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Ghost, Scale, History, Brain } from "lucide-react";
 import { ContentType } from "@/app/types";
 
@@ -14,11 +12,15 @@ interface ContentTypeGridProps {
 export default function ContentTypeGrid({
   contentTypes,
 }: ContentTypeGridProps) {
+  // Sort the content types by 'order' in ascending order
+  const sortedTypes = [...contentTypes].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+
   return (
     <div className="grid gap-6 w-full">
-      {/* Predefined Content Types */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {contentTypes.map((type) => {
+        {sortedTypes.map((type) => {
           const Icon =
             {
               horror: Ghost,
@@ -26,6 +28,7 @@ export default function ContentTypeGrid({
               history: History,
               facts: Brain,
             }[type.id] || Ghost;
+
           return (
             <Link
               key={type.id}
@@ -47,39 +50,6 @@ export default function ContentTypeGrid({
           );
         })}
       </div>
-      {/* Separator */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-border" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase text-muted-foreground">
-          <span className="bg-background px-2">Or</span>
-        </div>
-      </div>
-      {/* Custom Story Input (Always Visible) */}
-      <Card className="p-6 bg-card text-card-foreground border border-border shadow-md">
-        <form
-          action="/app/create/custom"
-          method="GET"
-          className="flex flex-col gap-4"
-        >
-          <div>
-            <h3 className="font-semibold mb-2">Custom Story Prompt</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Describe the type of story you want to create. Be specific about
-              the theme, style, and mood.
-            </p>
-            <Textarea
-              name="prompt"
-              placeholder="E.g., A mysterious urban legend about a haunted smartphone app..."
-              className="w-full h-24 resize-none bg-background text-foreground border-border"
-            />
-          </div>
-          <Button type="submit" className="self-start">
-            Create
-          </Button>
-        </form>
-      </Card>
     </div>
   );
 }

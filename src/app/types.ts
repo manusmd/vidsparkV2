@@ -50,6 +50,7 @@ export type ContentType = {
   examples: string[];
   prompt?: string;
   recommendedVoiceId?: string;
+  order?: number;
 };
 
 export interface Scene {

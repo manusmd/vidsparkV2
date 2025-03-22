@@ -22,7 +22,7 @@ export async function GET() {
 // POST: Create a new content type
 export async function POST(req: Request) {
   try {
-    const { title, description, examples, prompt, recommendedVoiceId } =
+    const { title, description, examples, prompt, recommendedVoiceId, order } =
       await req.json();
     if (!title || !description) {
       return NextResponse.json(
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
       examples: Array.isArray(examples) ? examples : [],
       prompt: prompt || "",
       recommendedVoiceId: recommendedVoiceId || "",
+      order,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     const docRef = await db.collection("contentTypes").add(contentData);
