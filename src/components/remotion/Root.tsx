@@ -12,7 +12,7 @@ export const RemotionRoot: React.FC = () => {
       id="VideoComposition"
       schema={CompositionProps}
       component={VideoComposition}
-      fps={20}
+      fps={30}
       width={608}
       height={1080}
       defaultProps={{
@@ -48,7 +48,6 @@ export const RemotionRoot: React.FC = () => {
             0,
           );
         }
-
         return {
           durationInFrames: Math.floor(totalDurationInSeconds * 30),
         };

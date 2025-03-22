@@ -42,11 +42,11 @@ export const processStoryIdea = onDocumentCreated(
         {
           role: "system",
           content:
-            "Generate a short, creative narration text suitable for a YouTube Short video (around 1 minute in length) based on the given story idea.",
+            "Generate a short, creative narration text suitable for a YouTube Short video (around 1 minute in length). The narration should start with an attention-grabbing hook to captivate viewers immediately, and end with a call-to-action like 'Follow this channel for more amazing content.'",
         },
         {
           role: "user",
-          content: `Generate a creative narration for a YouTube Short (about 1 minute) for the following story idea: "${data.prompt}"`,
+          content: `Based on the following story idea: "${data.prompt}", generate a creative narration for a YouTube Short (about 1 minute) that includes a captivating opening hook and a call-to-action at the end.`,
         },
       ];
 

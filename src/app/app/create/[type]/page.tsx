@@ -77,7 +77,7 @@ export default function VideoGenerationPage() {
     try {
       await generateStory({
         narration: storyIdea,
-        imageType: selectedContentType?.prompt || "",
+        imageType: selectedVideoType?.imagePrompt || "",
         voiceId: selectedVoice,
       });
     } catch (error) {

@@ -1,7 +1,7 @@
 import { onTaskDispatched } from "firebase-functions/tasks";
 import Replicate from "replicate";
 import { defineSecret } from "firebase-functions/params";
-import axios from "axios"; // Import axios for image download
+import axios from "axios";
 import { db, storage } from "../../../firebaseConfig";
 import { checkAndSetAssetsReady } from "../../helpers/checkAndSetAssetsReady";
 import { checkAndSetSceneStatus } from "../../helpers/checkAndSetSceneStatus";
@@ -28,56 +28,56 @@ export const processImageQueue = onTaskDispatched(
       console.log(
         `🎨 Generating image for video ${videoId}, scene ${sceneIndex}`,
       );
-
-      // Update status: set processing state and initial progress.
       await videoRef.update({
         [`imageStatus.${sceneIndex}.statusMessage`]: "processing",
         [`imageStatus.${sceneIndex}.progress`]: 0.1,
       });
 
-      // Initialize Replicate client
       const replicate = new Replicate({ auth: REPLICATE_API_KEY.value() });
+      // Use the new model with desired parameters.
+      const model = "black-forest-labs/flux-schnell";
+      const currentPrompt = `${imagePrompt} The image shouldn't contain text.`;
 
-      // Start prediction
+      // Initiate the prediction.
       const prediction = await replicate.predictions.create({
-        version:
-          "7762fd07cf82c948538e41f63f77d685e02b063e37e496e96eefd46c929f9bdc",
+        model,
         input: {
-          prompt: `${imagePrompt}. High quality, detailed, professional.`,
-          negative_prompt:
-            "blurry, low quality, distorted, deformed, ugly, bad anatomy",
-          num_inference_steps: 30,
-          scheduler: "DPMSolverMultistep",
-          guidance_scale: 7,
+          prompt: currentPrompt,
+          seed: Math.floor(Math.random() * 1000000),
+          go_fast: true,
+          megapixels: "1",
           num_outputs: 1,
-          width: 1080,
-          height: 1920,
+          aspect_ratio: "9:16",
+          output_format: "jpg",
+          output_quality: 80,
+          num_inference_steps: 4,
+          disable_safety_checker: false,
         },
       });
 
-      // Poll the prediction until it's done or fails
       let result = await replicate.predictions.get(prediction.id);
-      let attempts = 0;
-      const maxAttempts = 90;
-
+      let pollAttempts = 0;
+      const maxPollAttempts = 90;
       while (
         (result.status === "starting" || result.status === "processing") &&
         !result.output &&
-        attempts < maxAttempts
+        pollAttempts < maxPollAttempts
       ) {
         await new Promise((res) => setTimeout(res, 2000));
         result = await replicate.predictions.get(prediction.id);
-        attempts++;
-
-        const progress = Math.min(0.1 + (attempts * 0.9) / maxAttempts, 0.9);
+        pollAttempts++;
+        const progress = Math.min(
+          0.1 + (pollAttempts * 0.9) / maxPollAttempts,
+          0.9,
+        );
         await videoRef.update({
           [`imageStatus.${sceneIndex}.progress`]: progress,
         });
-        console.log(`🔄 Attempt ${attempts}: Status - ${result.status}`);
+        console.log(`🔄 Poll ${pollAttempts}: Status - ${result.status}`);
       }
 
       if (
-        attempts >= maxAttempts ||
+        pollAttempts >= maxPollAttempts ||
         result.status === "failed" ||
         result.error
       ) {
@@ -91,31 +91,26 @@ export const processImageQueue = onTaskDispatched(
         return;
       }
 
-      // Get the final output image URL from the prediction.
       const rawImageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
 
-      // 1. Download the image
       const imageResponse = await axios.get(rawImageUrl, {
         responseType: "arraybuffer",
       });
       const imageBuffer = Buffer.from(imageResponse.data);
 
-      // 2. Upload the image to Storage
       const filePath = `videos/${videoId}/scene_${sceneIndex}.jpg`;
       const fileRef = storage.file(filePath);
       await fileRef.save(imageBuffer, {
         metadata: { contentType: "image/jpeg" },
       });
 
-      // 3. Generate a signed URL for the image
       const [signedUrl] = await fileRef.getSignedUrl({
         action: "read",
-        expires: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
+        expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
       });
 
-      // 4. Update Firestore with the new image URL
       const videoSnapshot = await videoRef.get();
       const currentScenes = videoSnapshot.data()?.scenes || {};
 
@@ -131,9 +126,8 @@ export const processImageQueue = onTaskDispatched(
         [`imageStatus.${sceneIndex}.progress`]: 1,
       });
 
-      // 5. Check that the imageUrl was correctly set in Firestore.
       let checkAttempts = 0;
-      const maxCheckAttempts = 3;
+      const maxCheckAttempts = 10;
       while (checkAttempts < maxCheckAttempts) {
         const updatedSnapshot = await videoRef.get();
         const updatedScenes = updatedSnapshot.data()?.scenes || {};
@@ -145,7 +139,7 @@ export const processImageQueue = onTaskDispatched(
         } else {
           checkAttempts++;
           console.warn(
-            `Image URL missing for video ${videoId}, scene ${sceneIndex} on check attempt ${checkAttempts}. Retrying update.`,
+            `Image URL missing for video ${videoId}, scene ${sceneIndex} on attempt ${checkAttempts}. Retrying update.`,
           );
           await videoRef.update({
             scenes: {
@@ -156,6 +150,7 @@ export const processImageQueue = onTaskDispatched(
               },
             },
           });
+          await new Promise((resolve) => setTimeout(resolve, 2000));
           if (checkAttempts === maxCheckAttempts) {
             console.error(
               `Failed to verify image URL for video ${videoId}, scene ${sceneIndex} after ${maxCheckAttempts} attempts.`,
@@ -176,7 +171,6 @@ export const processImageQueue = onTaskDispatched(
       throw error;
     }
 
-    // Finally, check if all assets are ready
     await checkAndSetSceneStatus(videoId, sceneIndex);
     await checkAndSetAssetsReady(videoId);
   },

@@ -10,6 +10,8 @@ export function getFriendlyStatus(status: string): string {
       return "Draft";
     case "processing:assets":
       return "Processing Assets";
+    case "processing:story":
+      return "Processing Story";
     case "processing:upload":
       return "Uploading Video";
     case "processing:render":

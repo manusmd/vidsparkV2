@@ -45,7 +45,7 @@ export const processStoryRequest = onDocumentCreated(
       console.log("Generated story:", JSON.stringify(story, null, 2));
 
       // Retrieve hashtags.
-      const hashtagsLine = await retrieveHashtags(openaiApiKey);
+      const hashtagsLine = await retrieveHashtags(openaiApiKey, narration);
       console.log("Retrieved hashtags:", hashtagsLine);
 
       // Format description.

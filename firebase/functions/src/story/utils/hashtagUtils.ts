@@ -1,6 +1,9 @@
 import OpenAI from "openai";
 
-export async function retrieveHashtags(apiKey: string): Promise<string> {
+export async function retrieveHashtags(
+  apiKey: string,
+  narration: string,
+): Promise<string> {
   const openaiClient = new OpenAI({
     apiKey,
   });
@@ -16,8 +19,7 @@ export async function retrieveHashtags(apiKey: string): Promise<string> {
     messages: [
       {
         role: "user",
-        content:
-          "For a video based on the provided narration, list the top 10 trending hashtags relevant to this theme. Provide only the hashtags separated by spaces.",
+        content: `For a video with the following narration: "${narration}", list the top 10 trending hashtags that are relevant to its theme. Provide only the hashtags separated by spaces.`,
       },
     ],
   });

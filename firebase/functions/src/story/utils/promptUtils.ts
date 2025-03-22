@@ -1,5 +1,3 @@
-import { StorySchema } from "../../schemas/storySchema";
-
 export function buildGenerationPrompt(
   narration: string,
   imageType?: string,
@@ -22,8 +20,5 @@ Also, output a video description in this exact format (no extra text):
 
 The narration is:
 "${narration}"
-
-Return the result as valid JSON matching this schema:
-${JSON.stringify(StorySchema.shape, null, 2)}
 `;
 }

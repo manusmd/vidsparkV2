@@ -9,11 +9,7 @@ import { Eye } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Video } from "@/app/types";
 import { getFriendlyStatus } from "@/lib/getFriendlyStatus";
-
-function parseDate(dateInput: string | number | Date): Date {
-  const date = new Date(dateInput);
-  return isNaN(date.getTime()) ? new Date() : date;
-}
+import { parseDate } from "@/lib/utils";
 
 interface HistoryItemProps {
   video: Video;
@@ -29,7 +25,7 @@ export const HistoryItem: FC<HistoryItemProps> = ({
   const router = useRouter();
   const createdAt = parseDate(video.createdAt);
 
-  // Adjust the badge color for better readability:
+  // Determine badge color based on video status.
   const badgeColorClass =
     video.status === "draft" || video.status.startsWith("processing")
       ? "bg-yellow-400 text-black"
@@ -39,7 +35,6 @@ export const HistoryItem: FC<HistoryItemProps> = ({
 
   return (
     <Card
-      // Clicking the entire card toggles selection for deletion
       onClick={() => toggleSelection(video.id)}
       className={`cursor-pointer relative p-6 border border-border shadow-lg hover:border-primary transition flex flex-col ${
         isSelected ? "ring-2 ring-primary" : ""
@@ -54,7 +49,7 @@ export const HistoryItem: FC<HistoryItemProps> = ({
           variant="outline"
           size="sm"
           onClick={(e) => {
-            e.stopPropagation(); // Prevent card selection when clicking "View"
+            e.stopPropagation();
             router.push(`/app/videos/${video.id}`);
           }}
         >
@@ -63,7 +58,7 @@ export const HistoryItem: FC<HistoryItemProps> = ({
         </Button>
       </div>
 
-      {/* Middle: title & description */}
+      {/* Middle: title and description */}
       <div className="flex-grow">
         <h3 className="font-semibold text-lg">{video.title}</h3>
         <p className="text-sm text-muted-foreground mt-2">
@@ -73,7 +68,9 @@ export const HistoryItem: FC<HistoryItemProps> = ({
 
       {/* Bottom: creation date */}
       <div className="text-xs text-muted-foreground mt-4">
-        Created {formatDistanceToNow(createdAt, { addSuffix: true })}
+        {createdAt
+          ? `Created ${formatDistanceToNow(createdAt, { addSuffix: true })}`
+          : ""}
       </div>
     </Card>
   );

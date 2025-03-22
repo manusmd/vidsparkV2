@@ -161,6 +161,7 @@ export const VideoComposition: React.FC<Props> = ({
                 if (sceneIndex === 0 && showTitle && pageIndex === 0 && title) {
                   const titlePage: TikTokPage = {
                     startMs: 0,
+                    durationMs: 1,
                     tokens: [{ text: title, fromMs: 0, toMs: 1 }],
                     text: title,
                   };

@@ -13,36 +13,42 @@ import {
 import { Loader2, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Video } from "@/app/types";
-import { HistoryItem } from "@/components/history/HistoryItem.component"; // Import your auth hook
+import { HistoryItem } from "@/components/history/HistoryItem.component";
+import { parseDate } from "@/lib/utils";
 
 export default function HistoryPage() {
-  const { user } = useAuth(); // Get current user from authentication context
+  const { user } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVideos, setSelectedVideos] = useState<string[]>([]);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   useEffect(() => {
-    if (!user) return; // Wait for user authentication
+    if (!user) return;
 
     const fetchVideos = async () => {
       try {
         const response = await fetch(`/api/video/get-user-videos`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${await user.getIdToken()}`, // Secure request
+            Authorization: `Bearer ${await user.getIdToken()}`,
           },
         });
 
         if (!response.ok) throw new Error("Failed to fetch videos");
 
-        const { videos } = await response.json();
-        setVideos(
-          videos.map((video: Video) => ({
-            ...video,
-            createdAt: video.createdAt ? new Date(video.createdAt) : new Date(),
-          })),
-        );
+        const res = await response.json();
+        const mappedVideos: Video[] = res.videos.map((video: Video) => ({
+          ...video,
+          createdAt: video.createdAt ? parseDate(video.createdAt) : null,
+        }));
+        // Sort videos so the newest (latest createdAt) appears first.
+        const sortedVideos = mappedVideos.sort((a, b) => {
+          const aTime = a.createdAt ? a.createdAt.getTime() : 0;
+          const bTime = b.createdAt ? b.createdAt.getTime() : 0;
+          return bTime - aTime;
+        });
+        setVideos(sortedVideos);
       } catch (error) {
         console.error("Error fetching videos:", error);
       }
@@ -89,7 +95,6 @@ export default function HistoryPage() {
       </div>
     );
   }
-
   return (
     <div className="container min-h-screen py-10 px-6 space-y-8">
       <div className="flex justify-between items-center">
@@ -126,7 +131,6 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Confirm Delete Dialog */}
       <Dialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
         <DialogContent>
           <DialogHeader>
