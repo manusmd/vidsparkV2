@@ -3,7 +3,6 @@ import axios from "axios";
 import FormData from "form-data";
 import { defineSecret } from "firebase-functions/params";
 import { db, storage } from "../../../firebaseConfig";
-import { checkAndSetAssetsReady } from "../../helpers/checkAndSetAssetsReady";
 import { checkAndSetSceneStatus } from "../../helpers/checkAndSetSceneStatus";
 
 const ELEVENLABS_API_KEY = defineSecret("ELEVENLABS_API_KEY");
@@ -27,11 +26,11 @@ export const processVoiceQueue = onTaskDispatched(
       console.log(
         `🎙 Generating voice for video ${videoId}, scene ${sceneIndex}`,
       );
-
-      // Update status: set processing state and initial progress.
+      // Update status: set processing state, initial progress, and update timestamp.
       await videoRef.update({
         [`voiceStatus.${sceneIndex}.statusMessage`]: "processing",
         [`voiceStatus.${sceneIndex}.progress`]: 0.1,
+        [`voiceStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
 
       // Generate the voice audio via ElevenLabs TTS API.
@@ -53,7 +52,10 @@ export const processVoiceQueue = onTaskDispatched(
       if (!ttsResponse.data) throw new Error("Failed to generate voice.");
 
       // Update progress mid-way.
-      await videoRef.update({ [`voiceStatus.${sceneIndex}.progress`]: 0.5 });
+      await videoRef.update({
+        [`voiceStatus.${sceneIndex}.progress`]: 0.5,
+        [`voiceStatus.${sceneIndex}.updatedAt`]: Date.now(),
+      });
 
       const audioBuffer = Buffer.from(ttsResponse.data);
       const filePath = `videos/${videoId}/scene_${sceneIndex}.mp3`;
@@ -87,7 +89,6 @@ export const processVoiceQueue = onTaskDispatched(
           },
         },
       );
-      // Expecting transcript text and words array in the response.
       const transcript = sttResponse.data?.text;
       const words = sttResponse.data?.words;
       if (!transcript || !words) {
@@ -95,7 +96,7 @@ export const processVoiceQueue = onTaskDispatched(
         throw new Error("Failed to generate transcript");
       }
 
-      // Update the video document with the generated voice URL, transcript, and words.
+      // Update Firestore with the generated voice URL, transcript, and words.
       const videoSnapshot = await videoRef.get();
       const currentScenes = videoSnapshot.data()?.scenes || {};
       await videoRef.update({
@@ -108,8 +109,10 @@ export const processVoiceQueue = onTaskDispatched(
             captionsWords: words,
           },
         },
+        // Mark voice as completed with an updated timestamp.
         [`voiceStatus.${sceneIndex}.statusMessage`]: "completed",
         [`voiceStatus.${sceneIndex}.progress`]: 1,
+        [`voiceStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
       console.log(
         `✅ Voice and captions generated for video ${videoId}, scene ${sceneIndex}`,
@@ -119,12 +122,11 @@ export const processVoiceQueue = onTaskDispatched(
       await videoRef.update({
         [`voiceStatus.${sceneIndex}.statusMessage`]: "failed",
         [`voiceStatus.${sceneIndex}.progress`]: 0,
+        [`voiceStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
       throw error;
     }
 
-    // Check if there are any tasks left for this video.
     await checkAndSetSceneStatus(videoId, sceneIndex);
-    await checkAndSetAssetsReady(videoId);
   },
 );

@@ -3,7 +3,6 @@ import Replicate from "replicate";
 import { defineSecret } from "firebase-functions/params";
 import axios from "axios";
 import { db, storage } from "../../../firebaseConfig";
-import { checkAndSetAssetsReady } from "../../helpers/checkAndSetAssetsReady";
 import { checkAndSetSceneStatus } from "../../helpers/checkAndSetSceneStatus";
 
 const REPLICATE_API_KEY = defineSecret("REPLICATE_API_KEY");
@@ -28,13 +27,14 @@ export const processImageQueue = onTaskDispatched(
       console.log(
         `🎨 Generating image for video ${videoId}, scene ${sceneIndex}`,
       );
+      // Update status for image processing with a timestamp.
       await videoRef.update({
         [`imageStatus.${sceneIndex}.statusMessage`]: "processing",
         [`imageStatus.${sceneIndex}.progress`]: 0.1,
+        [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
 
       const replicate = new Replicate({ auth: REPLICATE_API_KEY.value() });
-      // Use the new model with desired parameters.
       const model = "black-forest-labs/flux-schnell";
       const currentPrompt = `${imagePrompt} The image shouldn't contain text.`;
 
@@ -72,6 +72,7 @@ export const processImageQueue = onTaskDispatched(
         );
         await videoRef.update({
           [`imageStatus.${sceneIndex}.progress`]: progress,
+          [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
         });
         console.log(`🔄 Poll ${pollAttempts}: Status - ${result.status}`);
       }
@@ -87,6 +88,7 @@ export const processImageQueue = onTaskDispatched(
         await videoRef.update({
           [`imageStatus.${sceneIndex}.statusMessage`]: "failed",
           [`imageStatus.${sceneIndex}.progress`]: 0,
+          [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
         });
         return;
       }
@@ -94,7 +96,6 @@ export const processImageQueue = onTaskDispatched(
       const rawImageUrl = Array.isArray(result.output)
         ? result.output[0]
         : result.output;
-
       const imageResponse = await axios.get(rawImageUrl, {
         responseType: "arraybuffer",
       });
@@ -105,7 +106,6 @@ export const processImageQueue = onTaskDispatched(
       await fileRef.save(imageBuffer, {
         metadata: { contentType: "image/jpeg" },
       });
-
       const [signedUrl] = await fileRef.getSignedUrl({
         action: "read",
         expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
@@ -122,10 +122,13 @@ export const processImageQueue = onTaskDispatched(
             imageUrl: signedUrl,
           },
         },
+        // Mark image as completed with a timestamp.
         [`imageStatus.${sceneIndex}.statusMessage`]: "completed",
         [`imageStatus.${sceneIndex}.progress`]: 1,
+        [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
 
+      // Verify that the imageUrl was updated in Firestore; retry if necessary.
       let checkAttempts = 0;
       const maxCheckAttempts = 10;
       while (checkAttempts < maxCheckAttempts) {
@@ -167,11 +170,11 @@ export const processImageQueue = onTaskDispatched(
       await videoRef.update({
         [`imageStatus.${sceneIndex}.statusMessage`]: "failed",
         [`imageStatus.${sceneIndex}.progress`]: 0,
+        [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
       });
       throw error;
     }
 
     await checkAndSetSceneStatus(videoId, sceneIndex);
-    await checkAndSetAssetsReady(videoId);
   },
 );

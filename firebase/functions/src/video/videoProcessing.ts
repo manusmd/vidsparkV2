@@ -73,6 +73,11 @@ export const processVideoQueue = onDocumentCreated(
     await Promise.all(imageEnqueues);
     console.log("Image tasks enqueued.");
 
+    // Enqueue sync task to check asset readiness.
+    const syncQueue = functions.taskQueue("syncVideoStatus");
+    await syncQueue.enqueue({ videoId });
+    console.log(`Enqueued syncVideoStatus task for video: ${videoId}`);
+
     // Delete the pendingVideos document to prevent re-triggering.
     await db.collection("pendingVideos").doc(pendingVideoId).delete();
     console.log(`Deleted pendingVideos document for video: ${videoId}`);

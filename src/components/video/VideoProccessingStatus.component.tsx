@@ -11,7 +11,7 @@ export function VideoProcessingStatus({ status }: VideoProcessingStatusProps) {
   let message = "";
   let bgClass = "";
 
-  if (status === "draft") {
+  if (status === "draft" || status === "processing:story") {
     title = "Draft Video";
     message =
       "Your video is in draft mode. Generate the video to display the preview.";

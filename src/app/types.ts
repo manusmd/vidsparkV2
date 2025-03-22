@@ -90,11 +90,15 @@ export interface Video {
   scenes: {
     [sceneIndex: number]: Scene;
   };
+  musicVolume: string;
+  musicUrl: string;
   status:
     | "draft"
     | "processing:assets"
     | "processing:upload"
     | "processing:render"
+    | "processing:story"
+    | "processing:video"
     | "render:complete"
     | "render:error"
     | "assets:ready"

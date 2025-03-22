@@ -107,6 +107,10 @@ export const processVideoRender = onDocumentCreated(
         inputProps: {
           scenes: videoData.scenes,
           styling: videoData.styling,
+          musicVolume: videoData.musicVolume
+            ? parseFloat(videoData.musicVolume)
+            : 0,
+          musicUrl: videoData.musicUrl || null,
         },
         codec: "h264",
       });

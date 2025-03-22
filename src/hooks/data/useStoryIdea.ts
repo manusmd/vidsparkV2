@@ -19,14 +19,12 @@ export function useStoryIdea() {
 
   useEffect(() => {
     if (!ideaId || !db) return;
-    console.log("Subscribing to story idea with ID:", ideaId);
     const ideaDocRef = doc(db, "storyIdeas", ideaId);
     const unsubscribe = onSnapshot(
       ideaDocRef,
       (snapshot) => {
         if (snapshot.exists()) {
           const data = snapshot.data() as StoryIdea;
-          console.log("Story idea document data:", data);
           if (data.status === "completed") {
             setStoryIdea(data.narration);
             setIsLoading(false);
@@ -64,7 +62,6 @@ export function useStoryIdea() {
         throw new Error("Failed to generate story idea.");
       }
       const data = await response.json();
-      console.log("API response for story idea:", data);
       setIdeaId(data.ideaId);
     } catch (err: unknown) {
       if (err instanceof Error) {

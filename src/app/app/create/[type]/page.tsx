@@ -36,6 +36,7 @@ export default function VideoGenerationPage() {
     null,
   );
   const [selectedVoice, setSelectedVoice] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // When content type is loaded, update selectedVoice if recommendedVoiceId exists.
   useEffect(() => {
@@ -74,6 +75,7 @@ export default function VideoGenerationPage() {
   };
 
   const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
     try {
       await generateStory({
         narration: storyIdea,
@@ -82,6 +84,8 @@ export default function VideoGenerationPage() {
       });
     } catch (error) {
       console.error("Error generating story:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,7 +138,16 @@ export default function VideoGenerationPage() {
           />
           <div className="flex justify-between mt-4">
             <Button onClick={() => setStep(1)}>Back</Button>
-            <Button onClick={handleFinalSubmit}>Generate Video</Button>
+            <Button onClick={handleFinalSubmit} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <span className="flex items-center space-x-2">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  <span>Generating...</span>
+                </span>
+              ) : (
+                "Generate Video"
+              )}
+            </Button>
           </div>
         </div>
       )}

@@ -182,7 +182,8 @@ export function ProgressSteps({
                     <div className="flex items-center justify-between w-full gap-2 p-2">
                       {headerContent}
                       {step.id === "processing:video" &&
-                        video.status !== "render:complete" && (
+                        (video.status === "assets:ready" ||
+                          video.status === "render:error") && (
                           <Button
                             variant="outline"
                             size="sm"

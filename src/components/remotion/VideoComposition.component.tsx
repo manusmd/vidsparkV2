@@ -42,13 +42,12 @@ export const VideoComposition: React.FC<Props> = ({
   textPosition = "top",
   showTitle = true,
   title,
-  musicVolume = 0,
+  musicVolume = 0.5,
   musicUrl,
 }) => {
   const { fps } = useVideoConfig();
   const currentFrameRef = { current: 0 };
 
-  // Determine alignment class based on textPosition
   const alignmentClass =
     textPosition === "top"
       ? "items-start"
@@ -59,7 +58,6 @@ export const VideoComposition: React.FC<Props> = ({
           : "items-start";
 
   useEffect(() => {
-    // Prefetch scene voice audio URLs
     Object.values(scenes).forEach((scene) => {
       if (scene.voiceUrl) {
         resolveRedirect(scene.voiceUrl)
@@ -79,7 +77,6 @@ export const VideoComposition: React.FC<Props> = ({
     });
   }, [scenes]);
 
-  // Calculate timing for each scene and accumulate total duration in frames.
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
   )
@@ -122,7 +119,6 @@ export const VideoComposition: React.FC<Props> = ({
     })
     .filter((item): item is Exclude<SceneWithTiming, null> => item !== null);
 
-  // Total frames for the entire video
   const totalFrames = currentFrameRef.current;
 
   return (
@@ -222,11 +218,9 @@ export const VideoComposition: React.FC<Props> = ({
         <Audio
           src={musicUrl}
           volume={(frame) => {
-            // If we're before the fade-out range, use the initial volume
             if (frame < totalFrames - 30) {
               return musicVolume;
             }
-            // Fade out from musicVolume to 0 in the last 30 frames
             return interpolate(
               frame,
               [totalFrames - 30, totalFrames],

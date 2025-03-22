@@ -10,6 +10,7 @@ interface TextOptionsProps {
   onTextPositionChange: (value: string) => void;
   showTitle: boolean;
   onShowTitleChange: (value: boolean) => void;
+  disabled?: boolean;
 }
 
 export function TextOptions({
@@ -17,6 +18,7 @@ export function TextOptions({
   onTextPositionChange,
   showTitle,
   onShowTitleChange,
+  disabled = false,
 }: TextOptionsProps) {
   const options = [
     { value: "top", label: "Top" },
@@ -34,12 +36,16 @@ export function TextOptions({
           {options.map((option) => (
             <Card
               key={option.value}
-              onClick={() => onTextPositionChange(option.value)}
+              onClick={() => {
+                if (!disabled) {
+                  onTextPositionChange(option.value);
+                }
+              }}
               className={`cursor-pointer p-3 text-center border-2 ${
                 textPosition === option.value
                   ? "border-primary"
                   : "border-border"
-              }`}
+              } ${disabled ? "opacity-50 pointer-events-none" : ""}`}
             >
               <span className="text-sm font-medium">{option.label}</span>
             </Card>
@@ -56,7 +62,12 @@ export function TextOptions({
         <Switch
           id="display-title"
           checked={showTitle}
-          onCheckedChange={(checked) => onShowTitleChange(checked as boolean)}
+          onCheckedChange={(checked) => {
+            if (!disabled) {
+              onShowTitleChange(checked as boolean);
+            }
+          }}
+          disabled={disabled}
         />
       </div>
     </div>

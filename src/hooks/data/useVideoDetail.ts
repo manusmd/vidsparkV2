@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Scene, Step, Video } from "@/app/types";
 
@@ -50,6 +50,8 @@ export function useVideoDetail(videoId: string) {
             imageStatus: videoData.imageStatus ?? {},
             voiceStatus: videoData.voiceStatus ?? {},
             styling: videoData.styling ?? null,
+            musicVolume: videoData.musicVolume ?? 0,
+            musicUrl: videoData.musicUrl ?? null,
             createdAt: videoData.createdAt?.toDate
               ? videoData.createdAt.toDate()
               : new Date(),
@@ -74,7 +76,6 @@ export function useVideoDetail(videoId: string) {
   }, [videoId]);
 
   function updateSteps(video: Video) {
-    // Instead of using findIndex by video.status directly, we'll override the processing:video step.
     const newSteps: Step[] = processingSteps.map((step) => {
       let effectiveStatus: "complete" | "current" | "failed" | "upcoming";
       if (step.id === "processing:video") {
@@ -89,24 +90,20 @@ export function useVideoDetail(videoId: string) {
           effectiveStatus = "upcoming";
         }
       } else {
-        // For other steps, use the helper function.
         effectiveStatus = computeEffectiveStatus(step);
       }
-
-      const isCompleted = effectiveStatus === "complete";
-      const isCurrent = effectiveStatus === "current";
-      const isFailed = effectiveStatus === "failed";
 
       return {
         id: step.id,
         name: step.name,
-        status: isFailed
-          ? "failed"
-          : isCompleted
-            ? "complete"
-            : isCurrent
-              ? "current"
-              : "upcoming",
+        status:
+          effectiveStatus === "failed"
+            ? "failed"
+            : effectiveStatus === "complete"
+              ? "complete"
+              : effectiveStatus === "current"
+                ? "current"
+                : "upcoming",
         subSteps:
           step.id === "processing:voices"
             ? Object.entries(video.scenes).map(([sceneIndex, scene]) => {
@@ -156,7 +153,22 @@ export function useVideoDetail(videoId: string) {
     }
   }, [video?.scenes, video?.styling]);
 
-  return { video, steps, loading, error, stableAssets };
+  // New method to update music settings.
+  async function updateMusic(
+    newVolume: number,
+    newUrl: string | null,
+  ): Promise<void> {
+    if (!video || !db) return;
+    try {
+      const videoRef = doc(db, "videos", video.id);
+      await updateDoc(videoRef, { musicVolume: newVolume, musicUrl: newUrl });
+    } catch (err) {
+      console.error("Error updating music:", err);
+      throw err;
+    }
+  }
+
+  return { video, steps, loading, error, stableAssets, updateMusic };
 }
 
 /**

@@ -16,6 +16,8 @@ export function getFriendlyStatus(status: string): string {
       return "Uploading Video";
     case "processing:render":
       return "Rendering Video";
+    case "processing:video":
+      return "Processing Video";
     case "render:complete":
       return "Render Complete";
     case "render:error":

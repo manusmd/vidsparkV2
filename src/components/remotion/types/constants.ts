@@ -27,4 +27,6 @@ export const CompositionProps = z.object({
     }),
   ),
   styling: TextDesignSchema,
+  musicVolume: z.number(),
+  musicUrl: z.string().nullable(),
 });

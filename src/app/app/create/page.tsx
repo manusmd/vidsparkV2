@@ -2,9 +2,19 @@
 import React from "react";
 import ContentTypeGrid from "@/app/app/create/ContentTypeGrid.component";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
+import { Loader2 } from "lucide-react";
 
 export default function CreatePage() {
-  const { contentTypes } = useContentTypes();
+  const { contentTypes, loading } = useContentTypes();
+
+  if (loading || !contentTypes || contentTypes.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="animate-spin w-6 h-6 text-muted-foreground" />
+        <p className="ml-2 text-lg text-foreground">Loading content types...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-12 px-4 md:px-8 flex flex-col items-center bg-background text-foreground">

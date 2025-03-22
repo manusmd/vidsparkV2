@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { MusicTrack } from "@/app/types";
+import type { MusicTrack } from "@/app/types";
 
 export function useMusicTracks() {
   const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
@@ -29,7 +29,7 @@ export function useMusicTracks() {
     fetchMusicTracks();
   }, []);
 
-  // New: Function to handle file upload and return the URL.
+  // Function to handle file upload and return the URL.
   const uploadMusicFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
@@ -65,16 +65,12 @@ export function useMusicTracks() {
     setMusicTracks((prev) => [...prev, newTrack]);
   };
 
-  // Update a music track. Optionally, if a file is provided, it is uploaded first.
+  // Update a music track.
+  // Instead of accepting a file, this function expects that the updated musicData contains the new music URL (in the 'src' field).
   const updateMusicTrack = async (
     id: string,
     musicData: Partial<MusicTrack>,
-    file?: File,
   ) => {
-    if (file) {
-      const url = await uploadMusicFile(file);
-      musicData.src = url;
-    }
     const response = await fetch(`/api/music/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },

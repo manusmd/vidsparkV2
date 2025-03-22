@@ -9,9 +9,10 @@ import {
 } from "@/components/ui/popover";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { TextDesignVariant } from "./textDesigns";
-import { textDesignVariants, TextDesignFonts } from "./textDesigns";
+import { TextDesignFonts, textDesignVariants } from "./textDesigns";
 import { useTextDesign } from "@/hooks/useTextDesign";
-import { useParams } from "next/navigation";
+import { z } from "zod";
+import { TextDesignSchema } from "@/components/remotion/types/constants";
 
 const fontOptions: Array<{
   value: string;
@@ -95,14 +96,18 @@ function getCombinedPreviewStyle(
   };
 }
 
-export function TextDesignSelector(): JSX.Element {
-  const { id }: { id: string } = useParams();
+interface TextDesignSelectorProps {
+  disabled?: boolean;
+}
 
-  const { styling, updateStyling } = useTextDesign(id);
-
+export function TextDesignSelector({
+  disabled = false,
+}: TextDesignSelectorProps): JSX.Element {
+  const { styling, updateStyling } = useTextDesign();
+  type FontType = z.infer<typeof TextDesignSchema>["font"];
   // Fallback to defaults if styling is not yet loaded
   const currentVariant: TextDesignVariant = styling?.variant || "default";
-  const currentFont: string = styling?.font || TextDesignFonts.ROBOTO;
+  const currentFont: FontType = styling?.font || TextDesignFonts.ROBOTO;
 
   const variantKeys = Object.keys(textDesignVariants) as TextDesignVariant[];
   const currentVariantIndex = variantKeys.indexOf(currentVariant);
@@ -113,6 +118,7 @@ export function TextDesignSelector(): JSX.Element {
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false);
 
   const handleVariantLeft = async () => {
+    if (disabled) return;
     const newIndex =
       (currentVariantIndex - 1 + variantKeys.length) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
@@ -124,6 +130,7 @@ export function TextDesignSelector(): JSX.Element {
   };
 
   const handleVariantRight = async () => {
+    if (disabled) return;
     const newIndex = (currentVariantIndex + 1) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
     try {
@@ -134,9 +141,10 @@ export function TextDesignSelector(): JSX.Element {
   };
 
   const handleFontLeft = async () => {
+    if (disabled) return;
     const newIndex =
       (currentFontIndex - 1 + fontOptions.length) % fontOptions.length;
-    const newFont = fontOptions[newIndex].value;
+    const newFont: FontType = fontOptions[newIndex].value as FontType;
     try {
       await updateStyling(currentVariant, newFont);
     } catch (err) {
@@ -145,8 +153,9 @@ export function TextDesignSelector(): JSX.Element {
   };
 
   const handleFontRight = async () => {
+    if (disabled) return;
     const newIndex = (currentFontIndex + 1) % fontOptions.length;
-    const newFont = fontOptions[newIndex].value;
+    const newFont: FontType = fontOptions[newIndex].value as FontType;
     try {
       await updateStyling(currentVariant, newFont);
     } catch (err) {
@@ -163,7 +172,7 @@ export function TextDesignSelector(): JSX.Element {
   );
 
   return (
-    <Card className="w-full ">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Design</CardTitle>
       </CardHeader>
@@ -175,6 +184,7 @@ export function TextDesignSelector(): JSX.Element {
               className="p-2 hover:bg-muted rounded-md"
               onClick={handleVariantLeft}
               aria-label="Previous Variant"
+              disabled={disabled}
             >
               <ChevronLeft className="w-8 h-8" />
             </button>
@@ -183,12 +193,15 @@ export function TextDesignSelector(): JSX.Element {
               onOpenChange={setVariantPopoverOpen}
             >
               <PopoverTrigger asChild>
-                <div className={"flex flex-col items-center"}>
-                  <p className={"text-md"}>Variant</p>
+                <div className="flex flex-col items-center">
+                  <p className="text-md">Variant</p>
                   <button
                     className="flex-1 rounded bg-muted hover:bg-muted/80 text-xl font-semibold mx-2 w-full"
-                    onClick={() => setVariantPopoverOpen(!variantPopoverOpen)}
+                    onClick={() => {
+                      if (!disabled) setVariantPopoverOpen(!variantPopoverOpen);
+                    }}
                     style={getVariantStyle(selectedVariantKey)}
+                    disabled={disabled}
                   >
                     {selectedVariantKey.charAt(0).toUpperCase() +
                       selectedVariantKey.slice(1)}
@@ -211,12 +224,15 @@ export function TextDesignSelector(): JSX.Element {
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
                       onClick={async () => {
-                        try {
-                          await updateStyling(key, currentFont);
-                        } catch (err) {
-                          console.error(err);
+                        if (!disabled) {
+                          try {
+                            await updateStyling(key, currentFont);
+                          } catch (err) {
+                            console.error(err);
+                          }
                         }
                       }}
+                      disabled={disabled}
                     >
                       {key.charAt(0).toUpperCase() + key.slice(1)}
                     </button>
@@ -228,6 +244,7 @@ export function TextDesignSelector(): JSX.Element {
               className="p-2 hover:bg-muted rounded-md"
               onClick={handleVariantRight}
               aria-label="Next Variant"
+              disabled={disabled}
             >
               <ChevronRight className="w-8 h-8" />
             </button>
@@ -241,17 +258,21 @@ export function TextDesignSelector(): JSX.Element {
               className="p-2 hover:bg-muted rounded-md"
               onClick={handleFontLeft}
               aria-label="Previous Font"
+              disabled={disabled}
             >
               <ChevronLeft className="w-8 h-8" />
             </button>
             <Popover open={fontPopoverOpen} onOpenChange={setFontPopoverOpen}>
               <PopoverTrigger asChild>
-                <div className={"flex flex-col items-center"}>
-                  <p className={"text-md"}>Font</p>
+                <div className="flex flex-col items-center">
+                  <p className="text-md">Font</p>
                   <button
-                    onClick={() => setFontPopoverOpen(!fontPopoverOpen)}
+                    onClick={() => {
+                      if (!disabled) setFontPopoverOpen(!fontPopoverOpen);
+                    }}
                     style={getFontStyle(selectedFont.value)}
                     className="flex-1 rounded hover:bg-muted/40 text-xl font-semibold mx-2 w-full"
+                    disabled={disabled}
                   >
                     {selectedFont.label}
                   </button>
@@ -273,12 +294,18 @@ export function TextDesignSelector(): JSX.Element {
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
                       onClick={async () => {
-                        try {
-                          await updateStyling(currentVariant, fontOpt.value);
-                        } catch (err) {
-                          console.error(err);
+                        if (!disabled) {
+                          try {
+                            await updateStyling(
+                              currentVariant,
+                              fontOpt.value as FontType,
+                            );
+                          } catch (err) {
+                            console.error(err);
+                          }
                         }
                       }}
+                      disabled={disabled}
                     >
                       {fontOpt.label}
                     </button>
@@ -290,6 +317,7 @@ export function TextDesignSelector(): JSX.Element {
               className="p-2 hover:bg-muted rounded-md"
               onClick={handleFontRight}
               aria-label="Next Font"
+              disabled={disabled}
             >
               <ChevronRight className="w-8 h-8" />
             </button>

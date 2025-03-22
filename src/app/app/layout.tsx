@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { TextDesignProvider } from "@/hooks/useTextDesign";
+import { MusicProvider } from "@/providers/useMusic";
 
 export default function ProtectedLayout({
   children,
@@ -29,5 +30,9 @@ export default function ProtectedLayout({
     );
   }
 
-  return <TextDesignProvider videoId={id}>{children}</TextDesignProvider>;
+  return (
+    <TextDesignProvider videoId={id}>
+      <MusicProvider videoId={id}>{children}</MusicProvider>
+    </TextDesignProvider>
+  );
 }

@@ -11,22 +11,22 @@ import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
 import { NextResponse } from "next/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CollapsibleSection } from "@/components/layout/CollapsibleSection.component";
 import { TextOptions } from "@/components/video/TextOptions.component";
 import { MusicSelector } from "@/components/video/MusicSelector.component";
-import { MusicTrack } from "@/app/types";
+import { useMusic } from "@/providers/useMusic";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
+  const { musicUrl, musicVolume } = useMusic();
   const { video, steps, loading, error, stableAssets } = useVideoDetail(
     id as string,
   );
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState<boolean>(true);
   const [textPosition, setTextPosition] = useState<string>("top");
-  const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
-  const [volume, setVolume] = useState<number>(0);
+  const [currentTab, setCurrentTab] = useState("scenes");
 
   const handleToggleSection = (sectionId: string) => {
     setOpenSection((prev) => (prev === sectionId ? null : sectionId));
@@ -51,7 +51,6 @@ export default function VideoDetailPage() {
           errorData.error || "Failed to trigger video generation",
         );
       }
-      console.log("Video generation triggered successfully");
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error triggering video generation:", error);
@@ -69,16 +68,12 @@ export default function VideoDetailPage() {
       const response = await fetch("/api/video/render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          videoId: video?.id,
-        }),
+        body: JSON.stringify({ videoId: video?.id }),
       });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || "Failed to trigger video rendering");
       }
-      const result = await response.json();
-      console.log("Video rendering triggered successfully:", result);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Error triggering video rendering:", err);
@@ -87,6 +82,14 @@ export default function VideoDetailPage() {
       }
     }
   };
+
+  useEffect(() => {
+    if (video?.renderStatus?.statusMessage === "completed") {
+      if (currentTab === "design") {
+        setCurrentTab("scenes");
+      }
+    }
+  }, [video, currentTab]);
 
   if (loading) {
     return (
@@ -105,6 +108,11 @@ export default function VideoDetailPage() {
     );
   }
 
+  // Determine if we are in a processing:story state.
+  const isProcessingStory = video.status === "processing:story";
+
+  // When the render is complete, disable the "Customize" tab and switch to "Scenes" if necessary.
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col gap-4 bg-background z-10 p-4 rounded shadow">
@@ -119,13 +127,18 @@ export default function VideoDetailPage() {
 
       <div className="flex flex-col lg:flex-row gap-8 p-4">
         <section className="flex-1 space-y-8">
-          <Tabs defaultValue="scenes">
+          <Tabs value={currentTab} onValueChange={setCurrentTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="scenes">Scenes</TabsTrigger>
-              <TabsTrigger value="design">Customize</TabsTrigger>
+              <TabsTrigger
+                value="design"
+                disabled={video.renderStatus?.statusMessage === "completed"}
+              >
+                Customize
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="scenes">
-              <SceneList scenes={video.scenes} />
+              <SceneList scenes={video.scenes} loading={isProcessingStory} />
             </TabsContent>
             <TabsContent value="design">
               <div className="space-y-4">
@@ -135,7 +148,7 @@ export default function VideoDetailPage() {
                   isOpen={openSection === "design"}
                   onToggle={handleToggleSection}
                 >
-                  <TextDesignSelector />
+                  <TextDesignSelector disabled={isProcessingStory} />
                 </CollapsibleSection>
                 <CollapsibleSection
                   id="textOptions"
@@ -148,6 +161,7 @@ export default function VideoDetailPage() {
                     onTextPositionChange={setTextPosition}
                     showTitle={showTitle}
                     onShowTitleChange={setShowTitle}
+                    disabled={isProcessingStory}
                   />
                 </CollapsibleSection>
                 <CollapsibleSection
@@ -156,12 +170,7 @@ export default function VideoDetailPage() {
                   isOpen={openSection === "music"}
                   onToggle={handleToggleSection}
                 >
-                  <MusicSelector
-                    selectedTrack={selectedTrack}
-                    onSelectMusic={setSelectedTrack}
-                    volume={volume}
-                    onVolumeChange={setVolume}
-                  />
+                  <MusicSelector disabled={isProcessingStory} />
                 </CollapsibleSection>
               </div>
             </TabsContent>
@@ -171,7 +180,9 @@ export default function VideoDetailPage() {
         <aside className="w-full lg:w-[420px]">
           <div className="w-full aspect-[9/16] flex items-center justify-center rounded-lg shadow">
             {video.status === "draft" ||
-            video.status === "processing:assets" ? (
+            video.status === "processing:assets" ||
+            video.status === "processing:video" ||
+            isProcessingStory ? (
               <VideoProcessingStatus status={video.status} />
             ) : (
               <VideoPreview
@@ -180,8 +191,8 @@ export default function VideoDetailPage() {
                 textPosition={textPosition}
                 showTitle={showTitle}
                 title={video.title}
-                musicVolume={volume}
-                musicUrl={selectedTrack?.src}
+                musicVolume={musicVolume}
+                musicUrl={musicUrl}
               />
             )}
           </div>

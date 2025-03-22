@@ -1,4 +1,4 @@
-// RemotionRoot.tsx
+"use client";
 import React from "react";
 import { Composition } from "remotion";
 import { VideoComposition } from "@/components/remotion/VideoComposition.component";
@@ -16,11 +16,13 @@ export const RemotionRoot: React.FC = () => {
       width={608}
       height={1080}
       defaultProps={{
-        scenes: {} as { [sceneIndex: number]: Scene },
+        scenes: {} as { [sceneIndex: string]: Scene },
         styling: {
           font: undefined,
           variant: undefined,
         },
+        musicVolume: 0.5, // Set a default nonzero volume here
+        musicUrl: null, // Make sure to supply a valid URL when available
       }}
       calculateMetadata={async ({ props }) => {
         const scenes = props.scenes;

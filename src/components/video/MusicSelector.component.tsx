@@ -1,41 +1,36 @@
 "use client";
-
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useEffect, JSX } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Slash } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMusicTracks } from "@/hooks/data/useMusicTracks";
 import type { MusicTrack } from "@/app/types";
 import { Slider } from "@/components/ui/slider";
-
-interface MusicSelectorProps {
-  selectedTrack: MusicTrack | null;
-  onSelectMusic: (track: MusicTrack | null) => void;
-  volume: number; // Expected as a value between 0 and 1
-  onVolumeChange: (value: number) => void;
-}
+import { useMusicTracks } from "@/hooks/data/useMusicTracks";
+import { useMusic } from "@/providers/useMusic";
 
 export function MusicSelector({
-  selectedTrack,
-  onSelectMusic,
-  volume,
-  onVolumeChange,
-}: MusicSelectorProps) {
+  disabled = false,
+}: {
+  disabled?: boolean;
+}): JSX.Element {
   const { musicTracks, loading, error } = useMusicTracks();
+  const { musicVolume, updateMusic } = useMusic();
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
 
-  // Update the volume of each audio element when the external volume changes
-  useEffect(() => {
-    Object.values(audioRefs.current).forEach((audio) => {
-      if (audio) {
-        audio.volume = volume;
-      }
-    });
-  }, [volume]);
+  const handleSelectMusic = async (track: MusicTrack | null) => {
+    setSelectedTrack(track);
+    await updateMusic(track ? track.src : "", musicVolume);
+  };
+
+  const handleVolumeChange = async (value: number) => {
+    await updateMusic(selectedTrack ? selectedTrack.src : "", value);
+  };
 
   const handlePlayPause = (track: MusicTrack & { id: string }) => {
+    if (disabled) return;
     const audioEl = audioRefs.current[track.id];
     if (!audioEl) return;
     if (playingTrackId && playingTrackId !== track.id) {
@@ -75,19 +70,20 @@ export function MusicSelector({
         </label>
         <div className="flex items-center gap-2">
           <Slider
-            disabled={!selectedTrack}
-            value={[selectedTrack ? volume : 0]}
-            onValueChange={(value) => onVolumeChange(value[0])}
+            disabled={disabled || !selectedTrack}
+            value={[selectedTrack ? musicVolume : 0]}
+            onValueChange={(value) => handleVolumeChange(value[0])}
             max={1}
             step={0.1}
             className="w-full"
           />
           <span className="text-xs font-medium">
-            {Math.round(selectedTrack ? volume * 10 : 0)}
+            {Math.round(selectedTrack ? musicVolume * 10 : 0)}
           </span>
         </div>
       </div>
 
+      {/* Music Selection */}
       <label className="text-sm font-medium mb-2 block">Select Music</label>
       <div
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}
@@ -95,24 +91,26 @@ export function MusicSelector({
       >
         {/* "None" Option */}
         <Card
-          onClick={() => onSelectMusic(null)}
+          onClick={() => !disabled && handleSelectMusic(null)}
           className={cn(
             "h-12 p-2 border rounded-lg transition-colors cursor-pointer flex items-center justify-center",
             selectedTrack === null
               ? "border-primary bg-primary/10"
               : "border-border hover:bg-muted/10",
+            disabled && "opacity-50 pointer-events-none",
           )}
         >
           <div className="flex items-center gap-2 w-full">
-            <div className="w-8 flex items-center justify-center">
+            <div className="w-8 flex-shrink-0 flex items-center justify-center">
               <Button
                 variant="outline"
                 size="icon"
                 className="rounded-full p-2"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectMusic(null);
+                  if (!disabled) handleSelectMusic(null);
                 }}
+                disabled={disabled}
               >
                 <Slash className="h-4 w-4" />
               </Button>
@@ -127,16 +125,17 @@ export function MusicSelector({
         {musicTracks.map((track: MusicTrack & { id: string }) => (
           <Card
             key={track.id}
-            onClick={() => onSelectMusic(track)}
+            onClick={() => !disabled && handleSelectMusic(track)}
             className={cn(
               "h-12 p-2 border rounded-lg transition-colors cursor-pointer flex items-center",
               selectedTrack?.id === track.id
                 ? "border-primary bg-primary/10"
                 : "border-border hover:bg-muted/10",
+              disabled && "opacity-50 pointer-events-none",
             )}
           >
             <div className="flex items-center gap-2 w-full">
-              {/* Fixed play/pause button */}
+              {/* Fixed Play/Pause Button */}
               <div className="w-8 flex-shrink-0 flex items-center justify-center">
                 <Button
                   variant="outline"
@@ -146,6 +145,7 @@ export function MusicSelector({
                     e.stopPropagation();
                     handlePlayPause(track);
                   }}
+                  disabled={disabled}
                 >
                   {playingTrackId === track.id ? (
                     <Pause className="h-5 w-5" />
