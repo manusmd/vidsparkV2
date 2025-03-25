@@ -12,9 +12,10 @@ import { Clock } from "lucide-react";
 interface TimePickerProps {
   time?: Date;
   setTime: (t: Date) => void;
+  buttonId?: string;
 }
 
-export function TimePicker({ time, setTime }: TimePickerProps) {
+export function TimePicker({ time, setTime, buttonId }: TimePickerProps) {
   // Default to 12:00 if no time is provided.
   const initialHours = time ? time.getHours() : 12;
   const initialMinutes = time ? time.getMinutes() : 0;
@@ -33,8 +34,9 @@ export function TimePicker({ time, setTime }: TimePickerProps) {
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={buttonId ? `${buttonId}-hours` : undefined}
             variant="outline"
-            className="w-[100px] justify-start text-left"
+            className="w-full justify-start text-left"
           >
             <Clock className="mr-2" />
             {String(hours).padStart(2, "0")}
@@ -59,8 +61,9 @@ export function TimePicker({ time, setTime }: TimePickerProps) {
       <Popover>
         <PopoverTrigger asChild>
           <Button
+            id={buttonId ? `${buttonId}-minutes` : undefined}
             variant="outline"
-            className="w-[100px] justify-start text-left"
+            className="w-full justify-start text-left"
           >
             <Clock className="mr-2" />
             {String(minutes).padStart(2, "0")}

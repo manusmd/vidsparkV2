@@ -14,15 +14,17 @@ import { format } from "date-fns";
 interface DatePickerProps {
   date?: Date;
   setDate: (d: Date) => void;
+  buttonId?: string;
 }
 
-export function DatePicker({ date, setDate }: DatePickerProps) {
+export function DatePicker({ date, setDate, buttonId }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
+          id={buttonId}
           variant="outline"
-          className="w-[280px] justify-start text-left font-normal"
+          className="w-full justify-start text-left font-normal"
         >
           <CalendarIcon className="mr-2" />
           {date ? format(date, "PPP") : "Pick a date"}
