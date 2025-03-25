@@ -117,50 +117,42 @@ export function TextDesignSelector({
   const [variantPopoverOpen, setVariantPopoverOpen] = useState(false);
   const [fontPopoverOpen, setFontPopoverOpen] = useState(false);
 
-  const handleVariantLeft = async () => {
+  const handleVariantLeft = () => {
     if (disabled) return;
     const newIndex =
       (currentVariantIndex - 1 + variantKeys.length) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
-    try {
-      await updateStyling(newVariant, currentFont);
-    } catch (err) {
+    updateStyling(newVariant, currentFont).catch((err) => {
       console.error(err);
-    }
+    });
   };
 
-  const handleVariantRight = async () => {
+  const handleVariantRight = () => {
     if (disabled) return;
     const newIndex = (currentVariantIndex + 1) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
-    try {
-      await updateStyling(newVariant, currentFont);
-    } catch (err) {
+    updateStyling(newVariant, currentFont).catch((err) => {
       console.error(err);
-    }
+    });
   };
 
-  const handleFontLeft = async () => {
+  const handleFontLeft = () => {
     if (disabled) return;
     const newIndex =
       (currentFontIndex - 1 + fontOptions.length) % fontOptions.length;
     const newFont: FontType = fontOptions[newIndex].value as FontType;
-    try {
-      await updateStyling(currentVariant, newFont);
-    } catch (err) {
+    updateStyling(currentVariant, newFont).catch((err) => {
       console.error(err);
-    }
+    });
   };
 
-  const handleFontRight = async () => {
+  const handleFontRight = () => {
     if (disabled) return;
     const newIndex = (currentFontIndex + 1) % fontOptions.length;
     const newFont: FontType = fontOptions[newIndex].value as FontType;
-    try {
-      await updateStyling(currentVariant, newFont);
-    } catch (err) {
+    updateStyling(currentVariant, newFont).catch((err) => {
       console.error(err);
-    }
+    });
   };
 
   const selectedVariantKey = currentVariant;
@@ -223,13 +215,11 @@ export function TextDesignSelector({
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
-                      onClick={async () => {
+                      onClick={() => {
                         if (!disabled) {
-                          try {
-                            await updateStyling(key, currentFont);
-                          } catch (err) {
+                          updateStyling(key, currentFont).catch((err) => {
                             console.error(err);
-                          }
+                          });
                         }
                       }}
                       disabled={disabled}
@@ -293,16 +283,14 @@ export function TextDesignSelector({
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted hover:text-muted-foreground"
                       }`}
-                      onClick={async () => {
+                      onClick={() => {
                         if (!disabled) {
-                          try {
-                            await updateStyling(
-                              currentVariant,
-                              fontOpt.value as FontType,
-                            );
-                          } catch (err) {
+                          updateStyling(
+                            currentVariant,
+                            fontOpt.value as FontType,
+                          ).catch((err) => {
                             console.error(err);
-                          }
+                          });
                         }
                       }}
                       disabled={disabled}

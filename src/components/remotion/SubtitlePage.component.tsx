@@ -32,7 +32,7 @@ const SubtitlePage: React.FC<SubtitlePageProps> = ({
     config: {
       damping: 200,
     },
-    durationInFrames: 5,
+    durationInFrames: 3, // Reduced from 5 to 3 for faster animation
   });
 
   const alignmentClass =
@@ -46,20 +46,14 @@ const SubtitlePage: React.FC<SubtitlePageProps> = ({
 
   return (
     <AbsoluteFill>
-      <AbsoluteFill>
-        <Sequence
-          from={0}
-          durationInFrames={Infinity}
-          className={alignmentClass}
-        >
-          <TextDesign
-            enterProgress={enter}
-            page={page}
-            textVariant={styling?.font}
-            variant={styling?.variant}
-          />
-        </Sequence>
-      </AbsoluteFill>
+      <Sequence from={0} durationInFrames={Infinity} className={alignmentClass}>
+        <TextDesign
+          enterProgress={enter}
+          page={page}
+          textVariant={styling?.font}
+          variant={styling?.variant}
+        />
+      </Sequence>
     </AbsoluteFill>
   );
 };

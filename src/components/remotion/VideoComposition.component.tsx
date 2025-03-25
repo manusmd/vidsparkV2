@@ -24,7 +24,7 @@ interface MyTikTokPage extends TikTokPage {
   endMs: number;
 }
 
-const COMBINE_TOKENS_MS = 500;
+const COMBINE_TOKENS_MS = 800;
 
 interface Props {
   scenes?: { [sceneIndex: string]: Scene };
@@ -155,17 +155,25 @@ export const VideoComposition: React.FC<Props> = ({
                 if (pageDuration <= 0) return null;
 
                 if (sceneIndex === 0 && showTitle && pageIndex === 0 && title) {
+                  // Split the title into words to create multiple tokens
+                  const words = title.split(" ");
+                  const titleTokens = words.map((word, i) => ({
+                    text: word + (i < words.length - 1 ? " " : ""),
+                    fromMs: 0,
+                    toMs: 1,
+                  }));
+
                   const titlePage: TikTokPage = {
                     startMs: 0,
                     durationMs: 1,
-                    tokens: [{ text: title, fromMs: 0, toMs: 1 }],
+                    tokens: titleTokens,
                     text: title,
                   };
                   return (
                     <Fragment key={`${scene.voiceUrl}-${pageIndex}`}>
                       <PremountedSequence
                         from={0}
-                        durationInFrames={1}
+                        durationInFrames={1} // Changed from 30 to 1 frame as per requirement
                         premountFor={30}
                       >
                         <AbsoluteFill
@@ -176,12 +184,13 @@ export const VideoComposition: React.FC<Props> = ({
                             page={titlePage}
                             textVariant={styling?.font}
                             variant={styling?.variant}
+                            isTitle={true}
                           />
                         </AbsoluteFill>
                       </PremountedSequence>
                       <PremountedSequence
-                        from={pageStartFrame + 1}
-                        durationInFrames={pageDuration - 1}
+                        from={1} // Start after the title page ends (which is 1 frame)
+                        durationInFrames={Math.max(1, pageDuration - 1)} // Ensure duration is at least 1 frame
                         premountFor={30}
                       >
                         <SubtitlePage
@@ -198,7 +207,7 @@ export const VideoComposition: React.FC<Props> = ({
                   <PremountedSequence
                     key={pageIndex}
                     from={pageStartFrame}
-                    durationInFrames={pageDuration}
+                    durationInFrames={Math.max(1, pageDuration)} // Ensure duration is at least 1 frame
                     premountFor={30}
                   >
                     <SubtitlePage

@@ -40,64 +40,64 @@ export interface TextDesignStyle {
 export const textDesignVariants: Record<TextDesignVariant, TextDesignStyle> = {
   default: {
     color: "#FFFFFF",
-    stroke: "#000000",
+    stroke: "#000000", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "none",
+    textShadow: "0 0 12px rgba(0, 0, 0, 1), 0 0 6px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.9)", // Enhanced shadow for better readability without borders
   },
   cool: {
-    color: "#c1f5ff",
-    stroke: "#0099cc",
+    color: "#E0FFFF", // Lighter cyan for better contrast
+    stroke: "#006699", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "0 0 4px #0099cc",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 0 0 4px #006699", // Enhanced shadow for better readability without borders
   },
   retro: {
-    color: "#ffdd99",
-    stroke: "#663300",
+    color: "#FFE0A0", // Slightly adjusted warm color
+    stroke: "#663300", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "2px 2px 2px #000",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 2px 2px 3px #663300", // Enhanced shadow for better readability without borders
   },
   classic: {
     color: "#FFFFFF",
-    stroke: "transparent",
-    background: "linear-gradient(180deg, #2A2A2A, #1E1E1E)", // the only background
-    textShadow: "none",
+    stroke: "#333333", // Kept for compatibility, but not used due to WebkitTextStroke: none
+    background: "transparent", // Changed to transparent as per requirement
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 0 0 3px rgba(0, 0, 0, 0.7)", // Enhanced shadow for better readability without borders
   },
   vivid: {
-    color: "#ff0088",
-    stroke: "#ffd700",
+    color: "#FF3399", // Brighter pink
+    stroke: "#990066", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "2px 2px 5px rgba(255, 0, 136, 0.6)",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 2px 2px 5px rgba(255, 51, 153, 0.7)", // Enhanced shadow for better readability without borders
   },
   fancy: {
-    color: "#fff2cc",
-    stroke: "#8b4513",
+    color: "#FFF8E0", // Slightly warmer white
+    stroke: "#8B4513", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "2px 2px 4px rgba(0,0,0,0.7)",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 2px 2px 4px rgba(139,69,19,0.7)", // Enhanced shadow for better readability without borders
   },
   comic: {
-    // Comic style: yellow text with a red outline and red tinted shadow.
-    color: "#FFFF00", // bright yellow text
-    stroke: "#FF0000", // red stroke
+    // Comic style with better matching colors
+    color: "#FFFF66", // Slightly softer yellow
+    stroke: "#CC0000", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "2px 2px 3px rgba(255,0,0,0.8)",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.8), 2px 2px 3px rgba(204,0,0,0.8)", // Enhanced shadow for better readability without borders
   },
   tiktok: {
-    // TikTok style: white text with a subtle outline/shadow.
+    // Modern TikTok style with enhanced readability
     color: "#FFFFFF",
-    stroke: "#000000",
+    stroke: "#000000", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "0 0 2px rgba(0,0,0,0.5)",
+    textShadow: "0 0 15px rgba(0, 0, 0, 1), 0 0 8px rgba(0, 0, 0, 0.9), 0 0 3px rgba(0, 0, 0, 0.9)", // Enhanced shadow for better readability without borders
   },
   horror: {
-    color: "#ff1a1a",
-    stroke: "#000000",
+    color: "#FF3333", // Brighter red
+    stroke: "#000000", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "2px 2px 5px rgba(0, 0, 0, 0.9)",
+    textShadow: "0 0 12px rgba(0, 0, 0, 1), 2px 2px 5px rgba(0, 0, 0, 0.9), 0 0 15px rgba(255, 0, 0, 0.7)", // Enhanced shadow with red glow for better readability without borders
   },
   futuristic: {
-    color: "#00faff",
-    stroke: "#00faff",
+    color: "#80FFFF", // Slightly softer cyan
+    stroke: "#00CCCC", // Kept for compatibility, but not used due to WebkitTextStroke: none
     background: "transparent",
-    textShadow: "0 0 6px #00faff, 0 0 12px #00faff",
+    textShadow: "0 0 12px rgba(0, 0, 0, 0.9), 0 0 8px #00CCCC, 0 0 15px #00CCCC", // Enhanced shadow for better readability without borders
   },
 };
