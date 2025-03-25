@@ -133,10 +133,13 @@ export interface Video {
 
 export type Account = {
   id: string;
-  provider: string;
-  accountName: string;
   accountId: string;
-  createdAt?: Date;
-  channelThumbnail: string;
+  accountName: string;
   channelDescription: string;
+  channelThumbnail: string;
+  createdAt: string;
+  provider: string;
+  refreshToken: string;
+  token: string;
+  userId: string;
 };

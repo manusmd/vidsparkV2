@@ -21,6 +21,7 @@
     "axios": "^1.8.1",
     "firebase-admin": "^13.1.0",
     "firebase-functions": "^6.3.2",
+    "googleapis": "^148.0.0",
     "openai": "^4.87.3",
     "remotion": "4.0.279",
     "replicate": "^1.0.1",

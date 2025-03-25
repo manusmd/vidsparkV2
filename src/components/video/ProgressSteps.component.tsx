@@ -30,6 +30,7 @@ interface ProgressStepsProps {
   video: Video;
   onGenerate?: () => void;
   onRender?: () => Promise<void>;
+  onUpload?: () => void;
 }
 
 export function ProgressSteps({
@@ -37,6 +38,7 @@ export function ProgressSteps({
   video,
   onGenerate,
   onRender,
+  onUpload,
 }: ProgressStepsProps) {
   const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>(
     {},
@@ -190,6 +192,18 @@ export function ProgressSteps({
                             onClick={onRender}
                           >
                             Render Video
+                          </Button>
+                        )}
+                      {step.id === "processing:upload" &&
+                        (video.status === "assets:ready" ||
+                          video.status === "render:complete" ||
+                          video.status === "render:error") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onUpload}
+                          >
+                            Upload to YouTube 🚀
                           </Button>
                         )}
                     </div>

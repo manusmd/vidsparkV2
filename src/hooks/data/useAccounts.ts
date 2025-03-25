@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
 import type { Account } from "@/app/types";
-import {
-  getAuth,
-  GoogleAuthProvider,
-  inMemoryPersistence,
-  setPersistence,
-  signInWithPopup,
-  signOut,
-} from "firebase/auth";
-import { getApp, getApps, initializeApp } from "firebase/app";
-import { firebaseConfig } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 
 export function useAccounts() {
@@ -17,7 +7,6 @@ export function useAccounts() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // Helper to get the Authorization header with a Bearer token.
   const getAuthHeader = async (): Promise<Record<string, string>> => {
     if (user) {
       const token = await user.getIdToken();
@@ -42,55 +31,35 @@ export function useAccounts() {
     fetchAccounts();
   }, []);
 
-  const getSecondaryAuth = () => {
-    const appName = "Secondary";
-    let secondaryApp;
-    if (!getApps().find((app) => app.name === appName)) {
-      secondaryApp = initializeApp(firebaseConfig, appName);
-    } else {
-      secondaryApp = getApp(appName);
-    }
-    return getAuth(secondaryApp);
-  };
-
+  /**
+   * Initiates the OAuth flow to connect a YouTube account.
+   * 
+   * This method calls the server-side API route that handles the OAuth flow.
+   * The API route uses environment variables to access the Google client ID and secret,
+   * which is the standard approach for Next.js API routes.
+   * 
+   * The Firebase Functions that handle YouTube uploads use Firebase Functions Secrets
+   * to access the same Google client ID and secret, which is the recommended approach
+   * for Firebase Functions.
+   */
   const connectAccount = async () => {
     try {
-      const secondaryAuth = getSecondaryAuth();
-      await setPersistence(secondaryAuth, inMemoryPersistence);
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: "select_account" });
-      provider.addScope("https://www.googleapis.com/auth/youtube.readonly");
-      const result = await signInWithPopup(secondaryAuth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      const token = credential?.accessToken;
-      const refreshToken = result.user.refreshToken;
+      if (!user) {
+        throw new Error("User not authenticated");
+      }
+      const res = await fetch(`/api/accounts/connect?userId=${user.uid}`);
+      const { url } = await res.json();
+      const popupWindow = window.open(url, "_blank", "width=500,height=600");
 
-      // Fetch channel details from YouTube Data API using the access token.
-      const channelRes = await fetch(
-        `https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true&access_token=${token}`,
-      );
-      const channelData = await channelRes.json();
-      const channelSnippet = channelData.items[0]?.snippet || {};
-      const channelDescription = channelSnippet.description || "";
-      const channelThumbnail = channelSnippet.thumbnails?.default?.url || "";
-
-      const headers = await getAuthHeader();
-      await fetch("/api/accounts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
-        body: JSON.stringify({
-          provider: "google",
-          accountName: result.user.displayName,
-          accountId: result.user.uid,
-          token,
-          refreshToken,
-          channelDescription,
-          channelThumbnail,
-          userId: user?.uid,
-        }),
-      });
-      await signOut(secondaryAuth);
-      await fetchAccounts();
+      // Poll for window closure to refresh accounts
+      if (popupWindow) {
+        const checkClosed = setInterval(() => {
+          if (popupWindow.closed) {
+            clearInterval(checkClosed);
+            fetchAccounts(); // Refresh the accounts list
+          }
+        }, 1000);
+      }
     } catch (err) {
       throw err;
     }

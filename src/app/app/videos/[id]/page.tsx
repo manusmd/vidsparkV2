@@ -9,27 +9,63 @@ import { SceneList } from "@/components/video/SceneList.component";
 import { VideoPreview } from "@/components/remotion/VideoPreview.component";
 import { VideoProcessingStatus } from "@/components/video/VideoProccessingStatus.component";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
-import { NextResponse } from "next/server";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React, { useEffect, useState } from "react";
 import { CollapsibleSection } from "@/components/layout/CollapsibleSection.component";
 import { TextOptions } from "@/components/video/TextOptions.component";
 import { MusicSelector } from "@/components/video/MusicSelector.component";
 import { useMusic } from "@/providers/useMusic";
+import { YoutubeUploadModal } from "@/components/modals/YouTubeUploadModal.component";
+import { useAccounts } from "@/hooks/data/useAccounts";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
   const { musicUrl, musicVolume } = useMusic();
-  const { video, steps, loading, error, stableAssets } = useVideoDetail(
-    id as string,
-  );
+  const { accounts } = useAccounts();
+  const { video, steps, loading, error, stableAssets, uploadToYoutube } =
+    useVideoDetail(id as string);
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState<boolean>(true);
   const [textPosition, setTextPosition] = useState<string>("top");
   const [currentTab, setCurrentTab] = useState("scenes");
 
-  const handleToggleSection = (sectionId: string) => {
-    setOpenSection((prev) => (prev === sectionId ? null : sectionId));
+  // State for YouTube Upload Modal
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  // When render is complete, if the current tab is "design", switch to "scenes"
+  useEffect(() => {
+    if (
+      video?.renderStatus?.statusMessage === "completed" &&
+      currentTab === "design"
+    ) {
+      setCurrentTab("scenes");
+    }
+  }, [video, currentTab]);
+
+  // onUpload opens the YouTube Upload Modal.
+  const onUpload = () => {
+    setUploadModalOpen(true);
+  };
+
+  // onRender and onGenerate are implemented as needed.
+  const onRender = async () => {
+    try {
+      const response = await fetch("/api/video/render", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ videoId: video?.id }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to trigger video rendering");
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error triggering video rendering:", err);
+      } else {
+        console.error("Error triggering video rendering:", err);
+      }
+    }
   };
 
   const onGenerate = async () => {
@@ -57,39 +93,8 @@ export default function VideoDetailPage() {
       } else {
         console.error("Error triggering video generation:", error);
       }
-      const message =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      return NextResponse.json({ error: message }, { status: 500 });
     }
   };
-
-  const onRender = async () => {
-    try {
-      const response = await fetch("/api/video/render", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ videoId: video?.id }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to trigger video rendering");
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error("Error triggering video rendering:", err);
-      } else {
-        console.error("Error triggering video rendering:", err);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (video?.renderStatus?.statusMessage === "completed") {
-      if (currentTab === "design") {
-        setCurrentTab("scenes");
-      }
-    }
-  }, [video, currentTab]);
 
   if (loading) {
     return (
@@ -108,10 +113,7 @@ export default function VideoDetailPage() {
     );
   }
 
-  // Determine if we are in a processing:story state.
   const isProcessingStory = video.status === "processing:story";
-
-  // When the render is complete, disable the "Customize" tab and switch to "Scenes" if necessary.
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -122,9 +124,9 @@ export default function VideoDetailPage() {
           video={video}
           onGenerate={video.status === "draft" ? onGenerate : undefined}
           onRender={onRender}
+          onUpload={onUpload}
         />
       </div>
-
       <div className="flex flex-col lg:flex-row gap-8 p-4">
         <section className="flex-1 space-y-8">
           <Tabs value={currentTab} onValueChange={setCurrentTab}>
@@ -146,7 +148,7 @@ export default function VideoDetailPage() {
                   id="design"
                   title="Design"
                   isOpen={openSection === "design"}
-                  onToggle={handleToggleSection}
+                  onToggle={(id) => setOpenSection(id)}
                 >
                   <TextDesignSelector disabled={isProcessingStory} />
                 </CollapsibleSection>
@@ -154,7 +156,7 @@ export default function VideoDetailPage() {
                   id="textOptions"
                   title="Text Options"
                   isOpen={openSection === "textOptions"}
-                  onToggle={handleToggleSection}
+                  onToggle={(id) => setOpenSection(id)}
                 >
                   <TextOptions
                     textPosition={textPosition}
@@ -168,7 +170,7 @@ export default function VideoDetailPage() {
                   id="music"
                   title="Music Selection"
                   isOpen={openSection === "music"}
-                  onToggle={handleToggleSection}
+                  onToggle={(id) => setOpenSection(id)}
                 >
                   <MusicSelector disabled={isProcessingStory} />
                 </CollapsibleSection>
@@ -198,6 +200,24 @@ export default function VideoDetailPage() {
           </div>
         </aside>
       </div>
+      {/* YouTube Upload Modal */}
+      <YoutubeUploadModal
+        open={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onSubmit={async (data) => {
+          try {
+            // Convert publishAt (Date) to an ISO string
+            const uploadData = {
+              ...data,
+              publishAt: data.publishAt.toISOString(),
+            };
+            await uploadToYoutube(uploadData);
+          } catch (err) {
+            console.error("Upload to YouTube failed:", err);
+          }
+        }}
+        channels={accounts}
+      />{" "}
     </div>
   );
 }

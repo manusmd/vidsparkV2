@@ -168,7 +168,38 @@ export function useVideoDetail(videoId: string) {
     }
   }
 
-  return { video, steps, loading, error, stableAssets, updateMusic };
+  // New method to upload the video to YouTube.
+  async function uploadToYoutube(uploadData: {
+    channelId: string;
+    publishAt: string; // ISO string
+    timezone: string;
+    privacy: "public" | "private" | "unlisted";
+  }): Promise<void> {
+    if (!video) return;
+    try {
+      await fetch("/api/video/youtube/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          videoId: video.id,
+          ...uploadData,
+        }),
+      });
+    } catch (err) {
+      console.error("Error uploading video to YouTube:", err);
+      throw err;
+    }
+  }
+
+  return {
+    video,
+    steps,
+    loading,
+    error,
+    stableAssets,
+    updateMusic,
+    uploadToYoutube,
+  };
 }
 
 /**
