@@ -22,6 +22,14 @@ export function TimePicker({ time, setTime, buttonId }: TimePickerProps) {
   const [hours, setHours] = useState<number>(initialHours);
   const [minutes, setMinutes] = useState<number>(initialMinutes);
 
+  // Update internal state when time prop changes
+  useEffect(() => {
+    if (time) {
+      setHours(time.getHours());
+      setMinutes(time.getMinutes());
+    }
+  }, [time]);
+
   useEffect(() => {
     const newTime = new Date();
     newTime.setHours(hours, minutes, 0, 0);
@@ -32,7 +40,7 @@ export function TimePicker({ time, setTime, buttonId }: TimePickerProps) {
     <div className="flex gap-2">
       {/* Hours Selector */}
       <Popover>
-        <PopoverTrigger asChild>
+        <PopoverTrigger className={"flex-1"} asChild>
           <Button
             id={buttonId ? `${buttonId}-hours` : undefined}
             variant="outline"
@@ -59,7 +67,7 @@ export function TimePicker({ time, setTime, buttonId }: TimePickerProps) {
       </Popover>
       {/* Minutes Selector */}
       <Popover>
-        <PopoverTrigger asChild>
+        <PopoverTrigger className={"flex-1"} asChild>
           <Button
             id={buttonId ? `${buttonId}-minutes` : undefined}
             variant="outline"

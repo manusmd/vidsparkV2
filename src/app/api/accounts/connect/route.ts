@@ -25,6 +25,7 @@ export async function GET(request: Request) {
   const scopes = [
     "https://www.googleapis.com/auth/youtube.readonly",
     "https://www.googleapis.com/auth/youtube.upload",
+    "https://www.googleapis.com/auth/youtube.analytics.readonly",
   ];
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
