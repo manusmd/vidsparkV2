@@ -11,13 +11,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ROUTES from "@/lib/routes";
 
 const NAV_ITEMS = [
-  { name: "Content Types", path: "/app/admin/content-types" },
-  { name: "Video Types", path: "/app/admin/video-types" },
-  { name: "Music", path: "/app/admin/music" },
-  { name: "Users", path: "/app/admin/users" },
-  { name: "Settings", path: "/app/admin/settings" },
+  { name: "Content Types", path: ROUTES.PAGES.APP.ADMIN.CONTENT_TYPES },
+  { name: "Video Types", path: ROUTES.PAGES.APP.ADMIN.VIDEO_TYPES },
+  { name: "Music", path: ROUTES.PAGES.APP.ADMIN.MUSIC },
+  { name: "Users", path: ROUTES.PAGES.APP.ADMIN.USERS },
+  { name: "Settings", path: ROUTES.PAGES.APP.ADMIN.SETTINGS },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -34,7 +35,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           </SelectTrigger>
           <SelectContent>
             {NAV_ITEMS.map((item) => (
-              <SelectItem key={item.path} value={item.path}>
+              <SelectItem key={item.name} value={item.path}>
                 {item.name}
               </SelectItem>
             ))}
@@ -48,7 +49,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <aside className="hidden md:flex w-64 bg-card border-r border-border p-6 flex-col space-y-4 md:sticky md:top-20 md:h-[calc(100vh-80px)] overflow-hidden">
           <h2 className="text-xl font-semibold">Admin Settings</h2>
           {NAV_ITEMS.map((item) => (
-            <Link key={item.path} href={item.path}>
+            <Link key={item.name} href={item.path}>
               <Button
                 variant={pathname === item.path ? "default" : "outline"}
                 className="w-full justify-start"

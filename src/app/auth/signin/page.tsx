@@ -21,6 +21,7 @@ import {
 import { GrGoogle } from "react-icons/gr";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
+import ROUTES from "@/lib/routes";
 
 export default function SignIn() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function SignIn() {
   // If user is already signed in, redirect them.
   useEffect(() => {
     if (user) {
-      router.push("/app/create");
+      router.push(ROUTES.PAGES.APP.CREATE);
     }
   }, [user, router]);
 
@@ -43,7 +44,7 @@ export default function SignIn() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push("/create");
+      router.push(ROUTES.PAGES.CREATE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -59,7 +60,7 @@ export default function SignIn() {
     setIsLoading(true);
     try {
       await signInWithPopup(auth, new GoogleAuthProvider());
-      router.push("/app/create");
+      router.push(ROUTES.PAGES.APP.CREATE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);

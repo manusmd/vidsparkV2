@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import type { Video } from "@/app/types";
+import ROUTES from "@/lib/routes";
 
 export function useStory() {
   const { user } = useAuth();
@@ -39,7 +40,7 @@ export function useStory() {
   useEffect(() => {
     // When videoId is set, navigate to the video page.
     if (videoId) {
-      router.push(`/app/videos/${videoId}`);
+      router.push(ROUTES.PAGES.APP.VIDEOS.DETAIL(videoId));
     }
   }, [videoId, router]);
 
@@ -52,7 +53,7 @@ export function useStory() {
     setError(null);
     if (!user) return;
     try {
-      const res = await fetch("/api/openai/storyrequest", {
+      const res = await fetch(ROUTES.API.OPENAI.STORY_REQUEST, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

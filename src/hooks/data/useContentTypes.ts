@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { ContentType } from "@/app/types";
+import ROUTES from "@/lib/routes";
 
 export function useContentTypes() {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
@@ -9,7 +10,7 @@ export function useContentTypes() {
   const fetchContentTypes = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/contenttypes");
+      const res = await fetch(ROUTES.API.CONTENT_TYPES.BASE);
       if (!res.ok) {
         throw new Error("Failed to fetch content types");
       }
@@ -32,7 +33,7 @@ export function useContentTypes() {
 
   const createContentType = async (contentData: Partial<ContentType>) => {
     try {
-      const res = await fetch("/api/contenttypes", {
+      const res = await fetch(ROUTES.API.CONTENT_TYPES.BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(contentData),
@@ -57,7 +58,7 @@ export function useContentTypes() {
     contentData: Partial<ContentType>,
   ) => {
     try {
-      const res = await fetch(`/api/contenttypes/${id}`, {
+      const res = await fetch(ROUTES.API.CONTENT_TYPES.DETAIL(id), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(contentData),
@@ -81,7 +82,7 @@ export function useContentTypes() {
 
   const deleteContentType = async (id: string) => {
     try {
-      const res = await fetch(`/api/contenttypes/${id}`, {
+      const res = await fetch(ROUTES.API.CONTENT_TYPES.DETAIL(id), {
         method: "DELETE",
       });
       if (!res.ok) {

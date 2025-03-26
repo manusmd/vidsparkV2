@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
+import ROUTES from "@/lib/routes";
 
 // Extend the schema to include a description field.
 const videoTypeSchema = z.object({
@@ -65,7 +66,7 @@ export function VideoTypeForm({
     if (!imagePrompt) return;
     setGenerating(true);
     try {
-      const res = await fetch("/api/videotypes/generateImage", {
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.GENERATE_IMAGE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: imagePrompt }),

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { VideoType } from "@/app/types";
+import ROUTES from "@/lib/routes";
 
 export function useVideoTypes() {
   const [videoTypes, setVideoTypes] = useState<VideoType[]>([]);
@@ -9,7 +10,7 @@ export function useVideoTypes() {
   const fetchVideoTypes = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/videotypes");
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.BASE);
       if (!res.ok) {
         throw new Error("Failed to fetch video types");
       }
@@ -32,7 +33,7 @@ export function useVideoTypes() {
 
   const createVideoType = async (videoTypeData: Partial<VideoType>) => {
     try {
-      const res = await fetch("/api/videotypes", {
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(videoTypeData),
@@ -57,7 +58,7 @@ export function useVideoTypes() {
     videoTypeData: Partial<VideoType>,
   ) => {
     try {
-      const res = await fetch(`/api/videotypes/${id}`, {
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.DETAIL(id), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(videoTypeData),
@@ -81,7 +82,7 @@ export function useVideoTypes() {
 
   const deleteVideoType = async (id: string) => {
     try {
-      const res = await fetch(`/api/videotypes/${id}`, {
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.DETAIL(id), {
         method: "DELETE",
       });
       if (!res.ok) {
@@ -99,7 +100,7 @@ export function useVideoTypes() {
 
   const generateVideoTypeImage = async (prompt: string): Promise<string> => {
     try {
-      const res = await fetch("/api/videotypes/generateImage", {
+      const res = await fetch(ROUTES.API.VIDEO_TYPES.GENERATE_IMAGE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),

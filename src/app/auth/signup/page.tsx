@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import ROUTES from "@/lib/routes";
 
 export default function SignUp() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function SignUp() {
   useEffect(() => {
     // If the user is already signed in, redirect them
     if (auth.currentUser) {
-      router.push("/create");
+      router.push(ROUTES.PAGES.CREATE);
     }
   }, [router]);
 
@@ -61,7 +62,7 @@ export default function SignUp() {
       });
       // Force token refresh so that updated custom claims are available
       await user.getIdToken(true);
-      router.push("/create");
+      router.push(ROUTES.PAGES.CREATE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -77,7 +78,7 @@ export default function SignUp() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push("/profile");
+      router.push(ROUTES.PAGES.PROFILE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Google Sign-In Error:", err.message);

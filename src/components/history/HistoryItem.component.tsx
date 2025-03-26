@@ -10,6 +10,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Video } from "@/app/types";
 import { getFriendlyStatus } from "@/lib/getFriendlyStatus";
 import { parseDate } from "@/lib/utils";
+import ROUTES from "@/lib/routes";
 
 interface HistoryItemProps {
   video: Video;
@@ -50,7 +51,7 @@ export const HistoryItem: FC<HistoryItemProps> = ({
           size="sm"
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/app/videos/${video.id}`);
+            router.push(ROUTES.PAGES.APP.VIDEOS.DETAIL(video.id));
           }}
         >
           <Eye className="w-4 h-4 mr-2" />

@@ -6,6 +6,7 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { TextDesignProvider } from "@/hooks/useTextDesign";
 import { MusicProvider } from "@/providers/useMusic";
+import ROUTES from "@/lib/routes";
 
 export default function ProtectedLayout({
   children,
@@ -18,7 +19,7 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/auth/signin");
+      router.push(ROUTES.PAGES.AUTH.SIGNIN);
     }
   }, [user, loading, router]);
 

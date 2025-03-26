@@ -11,12 +11,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ROUTES from "@/lib/routes";
 
 const NAV_ITEMS = [
-  { name: "Profile", path: "/app/settings/profile" },
-  { name: "Connected Accounts", path: "/app/settings/connected-accounts" },
-  { name: "Preferences", path: "/app/settings/preferences" },
-  { name: "Billing", path: "/app/settings/billing" },
+  { name: "Profile", path: ROUTES.PAGES.APP.SETTINGS.PROFILE },
+  {
+    name: "Connected Accounts",
+    path: ROUTES.PAGES.APP.SETTINGS.CONNECTED_ACCOUNTS,
+  },
+  { name: "Preferences", path: ROUTES.PAGES.APP.SETTINGS.PREFERENCES },
+  { name: "Billing", path: ROUTES.PAGES.APP.SETTINGS.BILLING },
 ];
 
 export default function UserSettingsLayout({
@@ -37,7 +41,7 @@ export default function UserSettingsLayout({
           </SelectTrigger>
           <SelectContent>
             {NAV_ITEMS.map((item) => (
-              <SelectItem key={item.path} value={item.path}>
+              <SelectItem key={item.name} value={item.path}>
                 {item.name}
               </SelectItem>
             ))}

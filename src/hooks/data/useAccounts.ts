@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Account } from "@/app/types";
 import { useAuth } from "@/hooks/useAuth";
+import ROUTES from "@/lib/routes";
 
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -18,7 +19,7 @@ export function useAccounts() {
   const fetchAccounts = async () => {
     try {
       const headers = await getAuthHeader();
-      const res = await fetch("/api/accounts", { headers });
+      const res = await fetch(ROUTES.API.ACCOUNTS.BASE, { headers });
       const data = await res.json();
       setAccounts(data.accounts);
     } catch (err: unknown) {
@@ -47,7 +48,7 @@ export function useAccounts() {
       if (!user) {
         throw new Error("User not authenticated");
       }
-      const res = await fetch(`/api/accounts/connect?userId=${user.uid}`);
+      const res = await fetch(`${ROUTES.API.ACCOUNTS.CONNECT}?userId=${user.uid}`);
       const { url } = await res.json();
       const popupWindow = window.open(url, "_blank", "width=500,height=600");
 
@@ -68,7 +69,7 @@ export function useAccounts() {
   const deleteAccount = async (id: string) => {
     try {
       const headers = await getAuthHeader();
-      const res = await fetch(`/api/accounts/${id}`, {
+      const res = await fetch(ROUTES.API.ACCOUNTS.DETAIL(id), {
         method: "DELETE",
         headers,
       });

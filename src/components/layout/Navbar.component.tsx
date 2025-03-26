@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter, usePathname } from "next/navigation";
+import ROUTES from "@/lib/routes";
 
 export default function Navbar() {
   const { user, isAdmin, loading } = useAuth();
@@ -24,10 +25,10 @@ export default function Navbar() {
   const pathname = usePathname();
 
   const navLinks = [
-    { href: "/app/create", label: "Create" },
-    { href: "/app/history", label: "History" },
-    { href: "/app/settings", label: "Settings" },
-    { href: "/app/admin", label: "Admin" },
+    { href: ROUTES.PAGES.APP.CREATE, label: "Create" },
+    { href: ROUTES.PAGES.APP.HISTORY, label: "History" },
+    { href: ROUTES.PAGES.APP.SETTINGS.INDEX, label: "Settings" },
+    { href: ROUTES.PAGES.APP.ADMIN.INDEX, label: "Admin" },
   ];
 
   const navLinksToRender = navLinks.filter((link) =>
@@ -45,8 +46,9 @@ export default function Navbar() {
   };
 
   const handleSignOut = async () => {
+    if (!auth) return;
     await signOut(auth);
-    router.push("/");
+    router.push(ROUTES.PAGES.HOME);
   };
 
   return (
@@ -57,7 +59,7 @@ export default function Navbar() {
       <div className="container mx-auto px-6 flex justify-between items-center h-full">
         {/* Logo */}
         <Link
-          href="/"
+          href={ROUTES.PAGES.HOME}
           className="text-3xl font-extrabold tracking-tight transition-all hover:opacity-80 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
         >
           VidSpark
@@ -68,7 +70,7 @@ export default function Navbar() {
           <NavigationMenu>
             <NavigationMenuList className="flex gap-6">
               {navLinksToRender.map(({ href, label }) => (
-                <NavigationMenuItem key={href}>
+                <NavigationMenuItem key={label}>
                   <Link href={href} passHref className={getLinkClasses(href)}>
                     {label}
                   </Link>
@@ -104,7 +106,7 @@ export default function Navbar() {
                 style={{ zIndex: 9999 }}
               >
                 <div className="flex flex-col space-y-1">
-                  <Link href="/profile" passHref legacyBehavior>
+                  <Link href={ROUTES.PAGES.PROFILE} passHref legacyBehavior>
                     <a className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md">
                       Profile
                     </a>
@@ -120,12 +122,12 @@ export default function Navbar() {
             </Popover>
           ) : (
             <>
-              <Link href="/auth/signin" passHref legacyBehavior>
+              <Link href={ROUTES.PAGES.AUTH.SIGNIN} passHref legacyBehavior>
                 <a>
                   <Button variant="ghost">Sign In</Button>
                 </a>
               </Link>
-              <Link href="/auth/signup" passHref legacyBehavior>
+              <Link href={ROUTES.PAGES.AUTH.SIGNUP} passHref legacyBehavior>
                 <a>
                   <Button>Sign Up</Button>
                 </a>

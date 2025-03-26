@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MusicTrack } from "@/app/types";
+import ROUTES from "@/lib/routes";
 
 export function useMusicTracks() {
   const [musicTracks, setMusicTracks] = useState<MusicTrack[]>([]);
@@ -11,7 +12,7 @@ export function useMusicTracks() {
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch("/api/music");
+        const response = await fetch(ROUTES.API.MUSIC.BASE);
         if (!response.ok) {
           throw new Error(
             `Failed to fetch music tracks: ${response.statusText}`,
@@ -33,7 +34,7 @@ export function useMusicTracks() {
   const uploadMusicFile = async (file: File): Promise<string> => {
     const formData = new FormData();
     formData.append("file", file);
-    const response = await fetch("/api/music/upload", {
+    const response = await fetch(ROUTES.API.MUSIC.UPLOAD, {
       method: "POST",
       body: formData,
     });
@@ -53,7 +54,7 @@ export function useMusicTracks() {
       const url = await uploadMusicFile(file);
       musicData.src = url;
     }
-    const response = await fetch("/api/music", {
+    const response = await fetch(ROUTES.API.MUSIC.BASE, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(musicData),
@@ -71,7 +72,7 @@ export function useMusicTracks() {
     id: string,
     musicData: Partial<MusicTrack>,
   ) => {
-    const response = await fetch(`/api/music/${id}`, {
+    const response = await fetch(ROUTES.API.MUSIC.DETAIL(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(musicData),
@@ -86,7 +87,7 @@ export function useMusicTracks() {
   };
 
   const deleteMusicTrack = async (id: string) => {
-    const response = await fetch(`/api/music/${id}`, {
+    const response = await fetch(ROUTES.API.MUSIC.DETAIL(id), {
       method: "DELETE",
     });
     if (!response.ok) {

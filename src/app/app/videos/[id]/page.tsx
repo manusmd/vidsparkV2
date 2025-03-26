@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import ROUTES from "@/lib/routes";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
 import { useVideoDetail } from "@/hooks/data/useVideoDetail";
@@ -50,7 +51,7 @@ export default function VideoDetailPage() {
   // onRender and onGenerate are implemented as needed.
   const onRender = async () => {
     try {
-      const response = await fetch("/api/video/render", {
+      const response = await fetch(ROUTES.API.VIDEO.RENDER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ videoId: video?.id }),
@@ -70,7 +71,7 @@ export default function VideoDetailPage() {
 
   const onGenerate = async () => {
     try {
-      const response = await fetch("/api/video/generate", {
+      const response = await fetch(ROUTES.API.VIDEO.GENERATE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
