@@ -29,7 +29,7 @@ export default function MusicManager() {
     setIsSubmitting(true);
     try {
       if (editingId) {
-        await updateMusicTrack(editingId, musicData, file);
+        await updateMusicTrack(editingId, musicData);
       } else {
         await createMusicTrack(musicData, file);
       }

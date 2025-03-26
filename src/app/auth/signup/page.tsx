@@ -37,8 +37,8 @@ export default function SignUp() {
 
   useEffect(() => {
     // If the user is already signed in, redirect them
-    if (auth.currentUser) {
-      router.push(ROUTES.PAGES.CREATE);
+    if (auth && auth.currentUser) {
+      router.push(ROUTES.PAGES.APP.CREATE);
     }
   }, [router]);
 
@@ -48,6 +48,7 @@ export default function SignUp() {
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!auth) return;
     setError("");
     setIsLoading(true);
     try {
@@ -62,7 +63,7 @@ export default function SignUp() {
       });
       // Force token refresh so that updated custom claims are available
       await user.getIdToken(true);
-      router.push(ROUTES.PAGES.CREATE);
+      router.push(ROUTES.PAGES.APP.CREATE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -74,11 +75,13 @@ export default function SignUp() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
+
     setError("");
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      router.push(ROUTES.PAGES.PROFILE);
+      router.push(ROUTES.PAGES.APP.SETTINGS.PROFILE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         console.error("Google Sign-In Error:", err.message);

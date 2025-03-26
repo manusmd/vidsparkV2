@@ -271,7 +271,7 @@ export const YoutubeUploadModal: React.FC<YouTubeUploadModalProps> = ({
                             <div className="relative">
                               <Avatar className="h-16 w-16 border-2 shadow-md">
                                 <AvatarImage
-                                  src={channel.channelThumbnail}
+                                  src={`/api/proxy/image?url=${encodeURIComponent(channel.channelThumbnail)}`}
                                   alt={channel.accountName}
                                 />
                                 <AvatarFallback className="text-lg">

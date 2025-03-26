@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  * @param handler The route handler function
  * @returns A wrapped handler function that includes error handling
  */
-export const withErrorHandling = <T extends Record<string, string>>(
+export const withErrorHandling = <T extends Record<string, Promise<string>>>(
   handler: (req: Request, context: { params: T }) => Promise<NextResponse>
 ) => {
   return async (req: Request, context: { params: T }) => {
@@ -13,14 +13,14 @@ export const withErrorHandling = <T extends Record<string, string>>(
       return await handler(req, context);
     } catch (error: unknown) {
       console.error("API error:", error);
-      
+
       // Determine the error message and status code
       let message = "An unexpected error occurred";
       let statusCode = 500;
-      
+
       if (error instanceof Error) {
         message = error.message;
-        
+
         // Handle specific error types
         if (error.name === "ValidationError") {
           statusCode = 400;
@@ -32,7 +32,7 @@ export const withErrorHandling = <T extends Record<string, string>>(
           statusCode = 403;
         }
       }
-      
+
       return NextResponse.json({ error: message }, { status: statusCode });
     }
   };

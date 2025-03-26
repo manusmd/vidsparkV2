@@ -6,14 +6,18 @@ import admin from "firebase-admin";
  * @param handler The route handler function
  * @returns A wrapped handler function that includes authentication
  */
-export const withAuth = <T extends Record<string, string>>(
+export const withAuth = (
   handler: (
     req: Request,
-    context: { params: T },
-    userId: string
-  ) => Promise<NextResponse>
+    {
+      params,
+    }: {
+      params: Record<string, Promise<string>>;
+    },
+    userId: string,
+  ) => Promise<NextResponse<unknown>>,
 ) => {
-  return async (req: Request, context: { params: T }) => {
+  return async (req: Request, context: { params: Record<string, Promise<string>> }) => {
     try {
       // Extract the authorization header
       const authHeader = req.headers.get("Authorization");

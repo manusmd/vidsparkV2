@@ -1,6 +1,6 @@
 import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth as firebaseGetAuth } from "firebase-admin/auth";
 import { getFunctions } from "firebase-admin/functions";
 import { adminEnvironment } from "@/lib/adminEnvironment";
 import { getStorage } from "firebase-admin/storage";
@@ -17,8 +17,11 @@ const app =
     : getApps()[0];
 
 const db = getFirestore(app);
-const auth = getAuth(app);
+const auth = firebaseGetAuth(app);
 const storage = getStorage(app);
 const functions = getFunctions();
 
-export { db, auth, functions, storage };
+// Function to return the auth instance for compatibility with API routes
+const getAuth = () => auth;
+
+export { db, auth, functions, storage, getAuth };

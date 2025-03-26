@@ -7,27 +7,17 @@ import {
 import { getAccountById } from "@/services/accounts/accountService";
 import { getChannelAnalytics } from "@/services/accounts/analyticsService";
 
-/**
- * GET handler for /api/accounts/[id]/analytics
- * Returns analytics data for a YouTube channel
- */
 export const GET = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      { params }: { params: { id: string } },
+      { params }: { params: Record<string, Promise<string>> },
       userId: string,
     ) => {
       try {
-        const accountId = params.id;
-
-        // Get account data and verify ownership
-        const accountData = await getAccountById(accountId, userId);
-
-        // Get analytics data
-        const analyticsData = await getChannelAnalytics(accountData, accountId);
-
-        // Return success response
+        const id = await params.id;
+        const accountData = await getAccountById(id, userId);
+        const analyticsData = await getChannelAnalytics(accountData, id);
         return successResponse(analyticsData);
       } catch (error) {
         console.error("Error fetching analytics:", error);

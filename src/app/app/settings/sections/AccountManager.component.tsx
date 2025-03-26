@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAccounts } from "@/hooks/data/useAccounts";
 import { AccountsList } from "@/app/app/settings/components/AccountsList.component";
 
@@ -21,25 +22,32 @@ export default function AccountsManager() {
   };
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">
-          Manage Connected Accounts
-        </h1>
-        <Button onClick={handleConnectGoogle} disabled={loading}>
-          <Plus className="w-4 h-4 sm:mr-2" />
-          <span className="hidden sm:inline">Connect YouTube</span>
-        </Button>
-      </div>
-      {error && <p className="text-red-500 text-sm">Error: {error}</p>}
-      <AccountsList
-        accounts={accounts}
-        onDelete={(id) =>
-          deleteAccount(id).catch((err) =>
-            console.error("Error deleting account:", err),
-          )
-        }
-      />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Connected Accounts</CardTitle>
+            <CardDescription>
+              Manage your connected social media accounts.
+            </CardDescription>
+          </div>
+          <Button onClick={handleConnectGoogle} disabled={loading}>
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Connect YouTube</span>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {error && <p className="text-red-500 text-sm mb-4">Error: {error}</p>}
+          <AccountsList
+            accounts={accounts}
+            onDelete={(id) =>
+              deleteAccount(id).catch((err) =>
+                console.error("Error deleting account:", err),
+              )
+            }
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -43,8 +43,11 @@ export default function SignIn() {
     setError("");
     setIsLoading(true);
     try {
+      if (!auth) {
+        throw new Error("Authentication service is not available");
+      }
       await signInWithEmailAndPassword(auth, email, password);
-      router.push(ROUTES.PAGES.CREATE);
+      router.push(ROUTES.PAGES.APP.CREATE);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -59,6 +62,9 @@ export default function SignIn() {
     setError("");
     setIsLoading(true);
     try {
+      if (!auth) {
+        throw new Error("Authentication service is not available");
+      }
       await signInWithPopup(auth, new GoogleAuthProvider());
       router.push(ROUTES.PAGES.APP.CREATE);
     } catch (err: unknown) {

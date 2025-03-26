@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       title: "Pending Story",
       description: "",
       status: "processing:story",
-      videoType: imageType || "",
+      imageType: imageType || "",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     const videoRef = await db.collection("videos").add(videoData);

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
-import Navbar from "@/components/layout/Navbar.component";
+import LayoutWrapper from "@/components/layout/LayoutWrapper.component";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import WaitForAuth from "@/components/layout/WaitForAuth.component";
 
@@ -36,10 +36,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <WaitForAuth>
-              <Navbar />
-              <main className="flex-1 flex flex-col items-center justify-center w-full pt-[64px]">
-                {children}
-              </main>
+              <LayoutWrapper>{children}</LayoutWrapper>
             </WaitForAuth>
           </AuthProvider>
         </ThemeProvider>

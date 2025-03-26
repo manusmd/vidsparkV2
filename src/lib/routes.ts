@@ -17,26 +17,46 @@ export const PAGES = {
 
   // App pages (authenticated)
   APP: {
+    // Dashboard
+    DASHBOARD: "/app/dashboard",
+    // Content Creation
     CREATE: "/app/create",
+    MY_VIDEOS: {
+      INDEX: "/app/my-videos",
+      ALL: "/app/my-videos/all",
+      DRAFTS: "/app/my-videos/drafts",
+      PUBLISHED: "/app/my-videos/published",
+      ARCHIVED: "/app/my-videos/archived",
+    },
+    // Legacy - to be removed after migration
     HISTORY: "/app/history",
     VIDEOS: {
       INDEX: "/app/videos",
       DETAIL: (id: string) => `/app/videos/${id}`,
     },
+    // Account Management
+    ANALYTICS: {
+      INDEX: "/app/analytics",
+      OVERVIEW: "/app/analytics/overview",
+      CHANNEL: "/app/analytics/channel",
+      VIDEO: "/app/analytics/video",
+    },
     SETTINGS: {
       INDEX: "/app/settings",
       PROFILE: "/app/settings/profile",
       CONNECTED_ACCOUNTS: "/app/settings/connected-accounts",
-      PREFERENCES: "/app/settings/preferences",
       BILLING: "/app/settings/billing",
+      CREDITS: "/app/settings/credits",
     },
+    // Administration
     ADMIN: {
       INDEX: "/app/admin",
       CONTENT_TYPES: "/app/admin/content-types",
-      VIDEO_TYPES: "/app/admin/video-types",
+      IMAGE_TYPES: "/app/admin/image-types",
       MUSIC: "/app/admin/music",
       USERS: "/app/admin/users",
       SETTINGS: "/app/admin/settings",
+      PRODUCTS: "/app/admin/products",
     },
   },
 };
@@ -72,11 +92,11 @@ export const API = {
     DETAIL: (id: string) => `/api/contenttypes/${id}`,
   },
 
-  // Video types
-  VIDEO_TYPES: {
-    BASE: "/api/videotypes",
-    GENERATE_IMAGE: "/api/videotypes/generateImage",
-    DETAIL: (id: string) => `/api/videotypes/${id}`,
+  // Image types
+  IMAGE_TYPES: {
+    BASE: "/api/imagetypes",
+    GENERATE_IMAGE: "/api/imagetypes/generateImage",
+    DETAIL: (id: string) => `/api/imagetypes/${id}`,
   },
 
   // Music

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { ContentType } from "@/app/types";
 import ROUTES from "@/lib/routes";
 
+
 export function useContentTypes() {
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,7 @@ export function useContentTypes() {
         throw new Error("Failed to fetch content types");
       }
       const data: ContentType[] = await res.json();
+
       setContentTypes(data);
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -42,7 +44,11 @@ export function useContentTypes() {
         throw new Error("Failed to create content type");
       }
       const newType = await res.json();
-      setContentTypes((prev) => [...prev, newType]);
+
+      // Update state
+      const updatedTypes = [...contentTypes, newType];
+      setContentTypes(updatedTypes);
+
       return newType;
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -67,9 +73,11 @@ export function useContentTypes() {
         throw new Error("Failed to update content type");
       }
       const updatedType = await res.json();
-      setContentTypes((prev) =>
-        prev.map((ct) => (ct.id === id ? updatedType : ct)),
-      );
+
+      // Update state
+      const updatedTypes = contentTypes.map((ct) => (ct.id === id ? updatedType : ct));
+      setContentTypes(updatedTypes);
+
       return updatedType;
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -88,7 +96,10 @@ export function useContentTypes() {
       if (!res.ok) {
         throw new Error("Failed to delete content type");
       }
-      setContentTypes((prev) => prev.filter((ct) => ct.id !== id));
+
+      // Update state
+      const updatedTypes = contentTypes.filter((ct) => ct.id !== id);
+      setContentTypes(updatedTypes);
     } catch (err: unknown) {
       if (err instanceof Error) {
         throw new Error(err.message);

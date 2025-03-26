@@ -113,7 +113,7 @@ export async function getChannelAnalytics(
 
       videosResponse.data.items?.forEach((video) => {
         const publishedAt = video.snippet?.publishedAt;
-        const viewCount = parseInt(video.statistics?.viewCount || "0");
+        const viewCount = parseInt(video.statistics?.viewCount || "0") || 0;
 
         if (publishedAt) {
           const publishDate = new Date(publishedAt);
@@ -233,7 +233,7 @@ function processAnalyticsData(
         hoursByDay[day][hour] = {
           hour,
           day,
-          hourFormatted: formatHour(parseInt(hour)),
+          hourFormatted: formatHour(parseInt(hour) || 0),
           totalViews: 0,
           totalWatchTime: 0,
           count: 0,
@@ -265,8 +265,8 @@ function processAnalyticsData(
         if (!dayMap[dayOfWeek]) {
           dayMap[dayOfWeek] = { day: dayOfWeek, totalViews: 0, totalWatchTime: 0, count: 0 };
         }
-        dayMap[dayOfWeek].totalViews += parseInt(views);
-        dayMap[dayOfWeek].totalWatchTime += parseInt(watchTime);
+        dayMap[dayOfWeek].totalViews += parseInt(views) || 0;
+        dayMap[dayOfWeek].totalWatchTime += parseInt(watchTime) || 0;
         dayMap[dayOfWeek].count++;
       });
     };
@@ -290,7 +290,7 @@ function processAnalyticsData(
   const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const formattedTopDays = topDays.map(d => ({
     ...d,
-    dayName: dayNames[parseInt(d.day)],
+    dayName: dayNames[parseInt(d.day) || 0],
   }));
 
   // General recommendations for posting times
@@ -337,7 +337,7 @@ function processAnalyticsData(
         }))
         .sort((a, b) => {
           const watchTimeDiff = b.avgWatchTime - a.avgWatchTime;
-          return watchTimeDiff !== 0 ? watchTimeDiff : parseInt(a.hour) - parseInt(b.hour);
+          return watchTimeDiff !== 0 ? watchTimeDiff : (parseInt(a.hour) || 0) - (parseInt(b.hour) || 0);
         })
         .slice(0, 3);
     }
@@ -389,9 +389,9 @@ function processAnalyticsData(
   // Return formatted response
   return {
     channelStats: {
-      viewCount: parseInt(channelStats.viewCount || "0"),
-      subscriberCount: parseInt(channelStats.subscriberCount || "0"),
-      videoCount: parseInt(channelStats.videoCount || "0"),
+      viewCount: parseInt(channelStats.viewCount || "0") || 0,
+      subscriberCount: parseInt(channelStats.subscriberCount || "0") || 0,
+      videoCount: parseInt(channelStats.videoCount || "0") || 0,
     },
     bestPostingTimes: {
       days: formattedTopDays,

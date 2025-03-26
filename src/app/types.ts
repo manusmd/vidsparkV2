@@ -34,7 +34,7 @@ export interface MusicTrack {
   src: string;
 }
 
-export type VideoType = {
+export type ImageType = {
   id: string;
   title: string;
   description: string;

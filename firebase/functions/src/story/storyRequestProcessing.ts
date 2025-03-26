@@ -77,7 +77,7 @@ export const processStoryRequest = onDocumentCreated(
           imageStatus: imgStatus,
           voiceStatus,
           status: "draft",
-          videoType: data.videoType || "",
+          imageType: data.imageType || "",
         });
       console.log("Video document updated successfully for video:", videoId);
 

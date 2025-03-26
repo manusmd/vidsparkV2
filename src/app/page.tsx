@@ -1,21 +1,36 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import HeroSection from "@/components/sections/HeroSection.component";
-import FeaturesSection from "@/components/sections/FeaturesSection.component";
 import HowSection from "@/components/sections/HowSection.component";
 import TestimonialsSection from "@/components/sections/TestimonialSection.component";
 import PricingSection from "@/components/sections/PricingSection.component";
 import FooterSection from "@/components/sections/FooterSection.component";
+import { useProducts } from "@/hooks/useProducts";
 
 export default function LandingPage() {
   const [mounted, setMounted] = useState(false);
+  const { products, loading, error } = useProducts();
 
+  // Set mounted state
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Log any errors
+  useEffect(() => {
+    if (error) {
+      console.error("Error fetching products:", error);
+    }
+  }, [error]);
+
   if (!mounted) return <div className="min-h-screen w-full bg-background" />;
+
+  if (loading && mounted) {
+    return <div className="min-h-screen w-full bg-background flex items-center justify-center">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+    </div>;
+  }
 
   return (
     <div className="relative pb-8 flex flex-col items-center justify-center min-h-screen w-full overflow-hidden transition-colors duration-300 bg-gradient-to-br from-gray-900 to-black text-foreground">
@@ -37,7 +52,6 @@ export default function LandingPage() {
         </svg>
       </motion.div>
       <HeroSection />
-      <FeaturesSection />
       <HowSection />
       <PricingSection />
       <TestimonialsSection />

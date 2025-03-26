@@ -6,6 +6,7 @@ import ROUTES from "@/lib/routes";
 export function useAccounts() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const { user } = useAuth();
 
   const getAuthHeader = async (): Promise<Record<string, string>> => {
@@ -18,13 +19,23 @@ export function useAccounts() {
 
   const fetchAccounts = async () => {
     try {
+      setLoading(true);
       const headers = await getAuthHeader();
       const res = await fetch(ROUTES.API.ACCOUNTS.BASE, { headers });
       const data = await res.json();
-      setAccounts(data.accounts);
+
+      // Ensure accounts is always an array
+      if (data && data.data && Array.isArray(data.data.accounts)) {
+        setAccounts(data.data.accounts);
+      } else {
+        console.warn("Accounts data is not in the expected format:", data);
+        setAccounts([]);
+      }
     } catch (err: unknown) {
       console.error("Error fetching accounts:", err);
       setError((err as Error).message || "Error fetching accounts");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,5 +91,5 @@ export function useAccounts() {
     }
   };
 
-  return { accounts, error, connectAccount, deleteAccount };
+  return { accounts, error, loading, connectAccount, deleteAccount };
 }

@@ -9,10 +9,10 @@ import { Loader2 } from "lucide-react";
 import { ContentTypeDetails } from "@/app/app/create/[type]/ContentTypeDetails.component";
 import { NarrationForm } from "@/app/app/create/[type]/forms/NarrationForm.component";
 import LoadingOverlay from "@/app/app/create/[type]/StoryLoadingOverlay.component";
-import { ContentType, VideoType } from "@/app/types";
+import { ContentType, ImageType } from "@/app/types";
 import { useStory } from "@/hooks/data/useStory";
-import { useVideoTypes } from "@/hooks/data/useVideoTypes";
-import { VideoTypeSelector } from "@/components/video/VideoTypeSelector.component";
+import { useImageTypes } from "@/hooks/data/useImageTypes";
+import { ImageTypeSelector } from "@/components/image/ImageTypeSelector.component";
 import { VoiceSelector } from "@/components/video/VoiceSelector.component";
 import { useVoices } from "@/hooks/data/useVoices";
 import { Button } from "@/components/ui/button";
@@ -24,15 +24,15 @@ export default function VideoGenerationPage() {
   const { storyIdea, isGenerating, generateStoryIdea } = useStoryIdea();
   const { generateStory, isGenerating: isStoryGenerating } = useStory();
   const {
-    videoTypes,
-    loading: videoTypesLoading,
-    error: videoTypesError,
-  } = useVideoTypes();
+    imageTypes,
+    loading: imageTypesLoading,
+    error: imageTypesError,
+  } = useImageTypes();
   const { voices } = useVoices();
 
   const [selectedContentType, setSelectedContentType] =
     useState<ContentType | null>(null);
-  const [selectedVideoType, setSelectedVideoType] = useState<VideoType | null>(
+  const [selectedImageType, setSelectedImageType] = useState<ImageType | null>(
     null,
   );
   const [selectedVoice, setSelectedVoice] = useState<string>("");
@@ -65,9 +65,9 @@ export default function VideoGenerationPage() {
     setStep(2);
   };
 
-  const handleVideoTypeSelect = (videoTypeId: string) => {
-    const vt = videoTypes.find((v) => v.id === videoTypeId) || null;
-    setSelectedVideoType(vt);
+  const handleImageTypeSelect = (imageTypeId: string) => {
+    const it = imageTypes.find((i) => i.id === imageTypeId) || null;
+    setSelectedImageType(it);
   };
 
   const handleVoiceSelect = (voiceId: string) => {
@@ -79,7 +79,7 @@ export default function VideoGenerationPage() {
     try {
       await generateStory({
         narration: storyIdea,
-        imageType: selectedVideoType?.imagePrompt || "",
+        imageType: selectedImageType?.imagePrompt || "",
         voiceId: selectedVoice,
       });
     } catch (error) {
@@ -91,7 +91,7 @@ export default function VideoGenerationPage() {
 
   const [step, setStep] = useState<number>(1);
 
-  if (contentTypesLoading || videoTypesLoading) {
+  if (contentTypesLoading || imageTypesLoading) {
     return (
       <div className="flex items-center space-x-2">
         <Loader2 className="animate-spin w-5 h-5 text-muted-foreground" />
@@ -128,13 +128,13 @@ export default function VideoGenerationPage() {
             onSelectVoice={handleVoiceSelect}
             availableVoices={voices}
           />
-          <h2 className="text-xl font-semibold mb-4">Select Video Type</h2>
-          <VideoTypeSelector
-            value={selectedVideoType?.id || null}
-            onChange={handleVideoTypeSelect}
-            videoTypes={videoTypes}
-            loading={videoTypesLoading}
-            error={videoTypesError}
+          <h2 className="text-xl font-semibold mb-4">Select Image Type</h2>
+          <ImageTypeSelector
+            value={selectedImageType?.id || null}
+            onChange={handleImageTypeSelect}
+            imageTypes={imageTypes}
+            loading={imageTypesLoading}
+            error={imageTypesError}
           />
           <div className="flex justify-between mt-4">
             <Button onClick={() => setStep(1)}>Back</Button>

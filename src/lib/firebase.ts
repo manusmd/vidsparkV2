@@ -18,43 +18,7 @@ export const firebaseConfig = {
 const app =
   typeof window !== "undefined" ? initializeApp(firebaseConfig) : null;
 const db = app ? getFirestore(app) : null;
-/*
-const storage = getStorage(app);
-*/
 const auth = app ? getAuth(app) : null;
-/*
-const functions = getFunctions(app);
-*/
-
-/* Emulator connection logic is commented out
-if (process.env.NEXT_PUBLIC_APP_ENV === "emulato") {
-  // Use emulator settings for Firestore
-  const firestorePath =
-    process.env.NEXT_PUBLIC_EMULATOR_FIRESTORE_PATH || "localhost:8080";
-  const [firestoreHost, firestorePort] = firestorePath.split(":");
-  connectFirestoreEmulator(db, firestoreHost, parseInt(firestorePort, 10));
-
-  // Use emulator settings for Auth
-  const authPath =
-    process.env.NEXT_PUBLIC_EMULATOR_AUTH_PATH || "localhost:9099";
-  const [authHost, authPort] = authPath.split(":");
-  connectAuthEmulator(auth, `http://${authHost}:${authPort}`, {
-    disableWarnings: true,
-  });
-
-  // Use emulator settings for Storage
-  const storagePath =
-    process.env.NEXT_PUBLIC_EMULATOR_STORAGE_PATH || "localhost:9199";
-  const [storageHost, storagePort] = storagePath.split(":");
-  connectStorageEmulator(storage, storageHost, parseInt(storagePort, 10));
-
-  // Use emulator settings for Functions
-  const functionsPath =
-    process.env.NEXT_PUBLIC_EMULATOR_FUNCTIONS_PATH || "localhost:5001";
-  const [functionHost, functionPort] = functionsPath.split(":");
-  connectFunctionsEmulator(functions, functionHost, parseInt(functionPort, 10));
-}
-*/
 
 const analytics =
   typeof window !== "undefined" &&
@@ -63,11 +27,23 @@ const analytics =
     ? getAnalytics(app)
     : null;
 
-const payments = app
-  ? getStripePayments(app, {
+let payments = null;
+try {
+  if (app) {
+    payments = getStripePayments(app, {
       productsCollection: "products",
       customersCollection: "customers",
-    })
-  : null;
+    });
+  }
+} catch (error) {
+  console.error("Error initializing Stripe payments:", error);
+}
+
+export const getFirebaseApp = () => {
+  if (!app) {
+    throw new Error("Firebase app is not initialized");
+  }
+  return app;
+};
 
 export { app, analytics, db, auth, payments };

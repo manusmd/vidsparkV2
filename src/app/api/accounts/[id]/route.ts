@@ -6,24 +6,16 @@ import {
 } from "@/lib/api/responses/apiResponse";
 import { deleteAccount } from "@/services/accounts/accountService";
 
-/**
- * DELETE handler for /api/accounts/[id]
- * Deletes an account by ID
- */
 export const DELETE = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      { params }: { params: { id: string } },
+      { params }: { params: Record<string, Promise<string>> },
       userId: string,
     ) => {
       try {
-        const accountId = params.id;
-
-        // Delete the account (this will also verify ownership)
-        await deleteAccount(accountId, userId);
-
-        // Return success response
+        const id = await params.id;
+        await deleteAccount(id, userId);
         return successResponse({ message: "Account deleted successfully" });
       } catch (error) {
         console.error("Error deleting account:", error);

@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, FolderOpen, Folder } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function CollapsibleSection({
@@ -16,14 +16,22 @@ export function CollapsibleSection({
   children: React.ReactNode;
 }) {
   return (
-    <div className="border border-border rounded-md">
+    <div className={`rounded-md transition-colors ${isOpen ? 'bg-indigo-50/5' : ''}`}>
       <button
         onClick={() => onToggle(id)}
-        className="w-full flex items-center justify-between px-4 py-2"
+        className="w-full flex items-center justify-between px-3 py-2 hover:bg-indigo-50/10 rounded-md transition-colors"
+        aria-expanded={isOpen}
       >
-        <span className="text-sm font-medium">{title}</span>
+        <div className="flex items-center gap-2 text-sm font-medium">
+          {isOpen ? (
+            <FolderOpen className="w-4 h-4 text-indigo-400" />
+          ) : (
+            <Folder className="w-4 h-4 text-indigo-300" />
+          )}
+          <span className={isOpen ? 'text-indigo-400' : ''}>{title}</span>
+        </div>
         <ChevronDown
-          className={`transition-transform ${isOpen ? "rotate-180" : "rotate-0"}`}
+          className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180 text-indigo-400" : "rotate-0"}`}
         />
       </button>
       <AnimatePresence>
@@ -33,10 +41,10 @@ export function CollapsibleSection({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="p-4 border-t border-border">{children}</div>
+            <div className="py-1 px-2 ml-2 border-l-2 border-indigo-200/20">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>

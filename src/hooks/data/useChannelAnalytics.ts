@@ -48,6 +48,7 @@ interface ChannelAnalytics {
   videoAnalysis: VideoAnalysis;
 }
 
+
 export function useChannelAnalytics(channelId: string) {
   const [analytics, setAnalytics] = useState<ChannelAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -77,8 +78,10 @@ export function useChannelAnalytics(channelId: string) {
         throw new Error(errorData.error || "Failed to fetch analytics");
       }
 
-      const data = await res.json();
-      setAnalytics(data);
+      const responseData = await res.json();
+      const analyticsData = responseData.data;
+
+      setAnalytics(analyticsData);
     } catch (err: unknown) {
       console.error("Error fetching channel analytics:", err);
       setError((err as Error).message || "Error fetching analytics");
