@@ -1,49 +1,53 @@
-import { NextResponse } from "next/server";
-import { db } from "@/lib/firebaseAdmin";
-import admin from "firebase-admin";
+import { withAuth } from "@/lib/api/middleware/withAuth";
+import { withErrorHandling } from "@/lib/api/middleware/withErrorHandling";
+import { successResponse, errorResponse } from "@/lib/api/responses/apiResponse";
+import { getUserAccounts, createAccount } from "@/services/accounts/accountService";
 
-export async function GET(req: Request) {
-  try {
-    // Expect the Firebase ID token in the Authorization header as a Bearer token.
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+/**
+ * GET handler for /api/accounts
+ * Returns all accounts for the authenticated user
+ */
+export const GET = withErrorHandling(
+  withAuth(async (req: Request, context: { params: Record<string, never> }, userId: string) => {
+    try {
+      // Get all accounts for the user
+      const accounts = await getUserAccounts(userId);
+
+      // Return success response
+      return successResponse({ accounts });
+    } catch (error) {
+      console.error("Error fetching accounts:", error);
+      const message = error instanceof Error ? error.message : "Unknown error occurred";
+      return errorResponse(message, 500);
     }
-    const token = authHeader.replace("Bearer ", "").trim();
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const uid = decodedToken.uid;
+  })
+);
 
-    // Query accounts for the current user.
-    const snapshot = await db
-      .collection("accounts")
-      .where("userId", "==", uid)
-      .get();
+/**
+ * POST handler for /api/accounts
+ * Creates a new account
+ */
+export const POST = withErrorHandling(
+  withAuth(async (req: Request, context: { params: Record<string, never> }, userId: string) => {
+    try {
+      // Parse request body
+      const body = await req.json();
 
-    const accounts = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return NextResponse.json({ accounts });
-  } catch (error: unknown) {
-    console.error("Error fetching accounts:", error);
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
+      // Add userId to the account data
+      const accountData = {
+        ...body,
+        userId,
+      };
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const docRef = await db.collection("accounts").add({
-      ...body,
-      createdAt: new Date().toISOString(),
-    });
-    return NextResponse.json({ id: docRef.id });
-  } catch (error: unknown) {
-    console.error("Error connecting account:", error);
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred";
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
-}
+      // Create the account
+      const accountId = await createAccount(accountData);
+
+      // Return success response
+      return successResponse({ id: accountId }, 201);
+    } catch (error) {
+      console.error("Error creating account:", error);
+      const message = error instanceof Error ? error.message : "Unknown error occurred";
+      return errorResponse(message, 500);
+    }
+  })
+);

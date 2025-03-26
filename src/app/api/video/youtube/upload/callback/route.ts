@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 
+// Define interface for parsed state
+interface ParsedState {
+  channelId?: string;
+  [key: string]: unknown;
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const code = url.searchParams.get("code");
@@ -14,10 +20,10 @@ export async function GET(req: NextRequest) {
   }
 
   // Parse state (for example, to get the channelId)
-  let parsedState = {};
+  let parsedState: ParsedState = {};
   if (state) {
     try {
-      parsedState = JSON.parse(state);
+      parsedState = JSON.parse(state) as ParsedState;
     } catch (err) {
       console.error("Failed to parse state:", err);
     }
@@ -45,8 +51,8 @@ export async function GET(req: NextRequest) {
     if (tokens.refresh_token) {
       redirectUrl.searchParams.set("refresh_token", tokens.refresh_token);
     }
-    if (parsedState && (parsedState as any).channelId) {
-      redirectUrl.searchParams.set("channelId", (parsedState as any).channelId);
+    if (parsedState && parsedState.channelId) {
+      redirectUrl.searchParams.set("channelId", parsedState.channelId);
     }
 
     return NextResponse.redirect(redirectUrl);
