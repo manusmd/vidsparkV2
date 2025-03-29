@@ -55,7 +55,7 @@ async function authenticate(request: NextRequest): Promise<{ userId: string } | 
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { priceId: string } }
+  { params }: { params: Promise<{ priceId: string }> }
 ) {
   try {
     // Authenticate the request
@@ -77,7 +77,7 @@ export async function GET(
     }
 
     // Get the price ID from the URL
-    const priceId = await params.priceId;
+    const { priceId } = await params;
     if (!priceId) {
       return NextResponse.json(
         { error: 'Price ID is required' },
@@ -112,7 +112,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { priceId: string } }
+  { params }: { params: Promise<{ priceId: string }> }
 ) {
   try {
     // Authenticate the request
@@ -134,7 +134,7 @@ export async function PUT(
     }
 
     // Get the price ID from the URL
-    const priceId = await params.priceId;
+    const { priceId } = await params;
     if (!priceId) {
       return NextResponse.json(
         { error: 'Price ID is required' },
@@ -188,7 +188,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { priceId: string } }
+  { params }: { params: Promise<{ priceId: string }> }
 ) {
   try {
     // Authenticate the request
@@ -210,7 +210,7 @@ export async function DELETE(
     }
 
     // Get the price ID from the URL
-    const priceId = await params.priceId;
+    const { priceId } = await params;
     if (!priceId) {
       return NextResponse.json(
         { error: 'Price ID is required' },

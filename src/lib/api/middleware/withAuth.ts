@@ -12,12 +12,12 @@ export const withAuth = (
     {
       params,
     }: {
-      params: Record<string, Promise<string>>;
+      params: Promise<{ [key: string]: string }>;
     },
     userId: string,
   ) => Promise<NextResponse<unknown>>,
 ) => {
-  return async (req: Request, context: { params: Record<string, Promise<string>> }) => {
+  return async (req: Request, context: { params: Promise<{ [key: string]: string }> }) => {
     try {
       // Extract the authorization header
       const authHeader = req.headers.get("Authorization");

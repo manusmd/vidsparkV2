@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  * @param handler The route handler function
  * @returns A wrapped handler function that includes error handling
  */
-export const withErrorHandling = <T extends Record<string, Promise<string>>>(
+export const withErrorHandling = <T extends Promise<{ [key: string]: string }>>(
   handler: (req: Request, context: { params: T }) => Promise<NextResponse>
 ) => {
   return async (req: Request, context: { params: T }) => {

@@ -60,7 +60,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Authenticate the request
@@ -76,7 +76,7 @@ export async function POST(
     }
 
     // Get the product ID from the URL
-    const productId = await params.id;
+    const { id: productId } = await params;
     const validationError = validateRequiredParam(productId, "Product ID");
     if (validationError) {
       return validationError;

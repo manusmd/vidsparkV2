@@ -12,7 +12,7 @@ import {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Authenticate the request
@@ -28,7 +28,7 @@ export async function GET(
     }
 
     // Get the product ID from the URL
-    const productId = await params.id;
+    const { id: productId } = await params;
     const validationError = validateRequiredParam(productId, "Product ID");
     if (validationError) {
       return validationError;
@@ -46,7 +46,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Authenticate the request
@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     // Get the product ID from the URL
-    const productId = await params.id;
+    const { id: productId } = await params;
     const validationError = validateRequiredParam(productId, "Product ID");
     if (validationError) {
       return validationError;
@@ -95,7 +95,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     // Authenticate the request
@@ -111,7 +111,7 @@ export async function DELETE(
     }
 
     // Get the product ID from the URL
-    const productId = await params.id;
+    const { id: productId } = await params;
     const validationError = validateRequiredParam(productId, "Product ID");
     if (validationError) {
       return validationError;

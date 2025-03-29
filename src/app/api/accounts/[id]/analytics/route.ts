@@ -11,11 +11,11 @@ export const GET = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      { params }: { params: Record<string, Promise<string>> },
+      { params }: { params: Promise<{ [key: string]: string }> },
       userId: string,
     ) => {
       try {
-        const id = await params.id;
+        const { id } = await params;
         const accountData = await getAccountById(id, userId);
         const analyticsData = await getChannelAnalytics(accountData, id);
         return successResponse(analyticsData);
