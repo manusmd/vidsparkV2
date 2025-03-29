@@ -1,14 +1,22 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { BarChart, LineChart, PieChart, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AnalyticsResponse } from "@/services/accounts/analyticsService";
 
 export default function OverviewPage() {
   const { user } = useAuth();
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsResponse | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,44 +27,52 @@ export default function OverviewPage() {
       try {
         setLoading(true);
 
-        // Fetch connected accounts
-        const accountsResponse = await fetch('/api/accounts', {
+        const accountsResponse = await fetch("/api/accounts", {
           headers: {
-            Authorization: `Bearer ${await user.getIdToken()}`
-          }
+            Authorization: `Bearer ${await user.getIdToken()}`,
+          },
         });
 
         if (!accountsResponse.ok) {
-          throw new Error('Failed to fetch accounts');
+          throw new Error("Failed to fetch accounts");
         }
 
         const accountsData = await accountsResponse.json();
 
-        if (!accountsData.accounts || accountsData.accounts.length === 0) {
-          setError('No connected accounts found. Please connect a YouTube account to view analytics.');
+        if (
+          !accountsData.data ||
+          !accountsData.data.accounts ||
+          accountsData.data.accounts.length === 0
+        ) {
+          setError(
+            "No connected accounts found. Please connect a YouTube account to view analytics.",
+          );
           setLoading(false);
           return;
         }
 
-        // Use the first account for analytics
-        const accountId = accountsData.accounts[0].id;
+        const accountId = accountsData.data.accounts[0].id;
 
-        // Fetch analytics for this account
-        const analyticsResponse = await fetch(`/api/accounts/${accountId}/analytics`, {
-          headers: {
-            Authorization: `Bearer ${await user.getIdToken()}`
-          }
-        });
+        const analyticsResponse = await fetch(
+          `/api/accounts/${accountId}/analytics`,
+          {
+            headers: {
+              Authorization: `Bearer ${await user.getIdToken()}`,
+            },
+          },
+        );
 
         if (!analyticsResponse.ok) {
-          throw new Error('Failed to fetch analytics data');
+          throw new Error("Failed to fetch analytics data");
         }
 
         const responseData = await analyticsResponse.json();
         setAnalyticsData(responseData.data);
       } catch (err) {
-        console.error('Error fetching analytics:', err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        console.error("Error fetching analytics:", err);
+        setError(
+          err instanceof Error ? err.message : "An unknown error occurred",
+        );
       } finally {
         setLoading(false);
       }
@@ -65,14 +81,26 @@ export default function OverviewPage() {
     fetchAnalytics();
   }, [user]);
 
-  // Format large numbers
   const formatNumber = (num: number): string => {
     if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
+      return (num / 1000000).toFixed(1) + "M";
     } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
+      return (num / 1000).toFixed(1) + "K";
     }
     return num.toString();
+  };
+
+  const formatDate = (dateString: string): string => {
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(date);
+    } catch {
+      return dateString;
+    }
   };
 
   if (loading) {
@@ -111,7 +139,9 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analyticsData ? formatNumber(analyticsData.channelStats.viewCount) : '0'}
+              {analyticsData
+                ? formatNumber(analyticsData.channelStats.viewCount)
+                : "0"}
             </div>
             <p className="text-xs text-muted-foreground">
               From your YouTube channel
@@ -126,7 +156,9 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analyticsData ? formatNumber(analyticsData.channelStats.subscriberCount) : '0'}
+              {analyticsData
+                ? formatNumber(analyticsData.channelStats.subscriberCount)
+                : "0"}
             </div>
             <p className="text-xs text-muted-foreground">
               Total YouTube subscribers
@@ -141,7 +173,9 @@ export default function OverviewPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {analyticsData ? formatNumber(analyticsData.channelStats.videoCount) : '0'}
+              {analyticsData
+                ? formatNumber(analyticsData.channelStats.videoCount)
+                : "0"}
             </div>
             <p className="text-xs text-muted-foreground">
               Total videos published
@@ -164,9 +198,15 @@ export default function OverviewPage() {
                 <h3 className="text-sm font-medium mb-3">Best Days to Post</h3>
                 <div className="space-y-2">
                   {analyticsData.bestPostingTimes.days.map((day, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-muted/20 rounded-md">
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-2 bg-muted/20 rounded-md"
+                    >
                       <span>{day.dayName}</span>
-                      <span className="text-sm font-medium">{day.avgViews ? formatNumber(day.avgViews) : '0'} avg. views</span>
+                      <span className="text-sm font-medium">
+                        {day.avgViews ? formatNumber(day.avgViews) : "0"} avg.
+                        views
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -175,9 +215,14 @@ export default function OverviewPage() {
                 <h3 className="text-sm font-medium mb-3">Best Hours to Post</h3>
                 <div className="space-y-2">
                   {analyticsData.bestPostingTimes.hours.map((hour, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-muted/20 rounded-md">
+                    <div
+                      key={index}
+                      className="flex justify-between items-center p-2 bg-muted/20 rounded-md"
+                    >
                       <span>{hour.hourFormatted}</span>
-                      <span className="text-sm font-medium">High engagement</span>
+                      <span className="text-sm font-medium">
+                        High engagement
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -194,17 +239,23 @@ export default function OverviewPage() {
       <Card>
         <CardHeader>
           <CardTitle>Analytics Source</CardTitle>
-          <CardDescription>
-            Information about the data source
-          </CardDescription>
+          <CardDescription>Information about the data source</CardDescription>
         </CardHeader>
         <CardContent>
           {analyticsData ? (
             <div className="space-y-2">
-              <p><strong>Data Source:</strong> {analyticsData.videoAnalysis.dataSource === 'channel_videos' ? 'Channel Videos' : 'Analytics API'}</p>
-              <p><strong>Videos Analyzed:</strong> {analyticsData.videoAnalysis.videosAnalyzed}</p>
-              <p><strong>Date Range:</strong> {analyticsData.videoAnalysis.dateRange.start} to {analyticsData.videoAnalysis.dateRange.end}</p>
-              <p className="text-muted-foreground text-sm mt-2">{analyticsData.videoAnalysis.description}</p>
+              <p>
+                <strong>Videos Analyzed:</strong>{" "}
+                {analyticsData.videoAnalysis.videosAnalyzed}
+              </p>
+              <p>
+                <strong>Date Range:</strong>{" "}
+                {formatDate(analyticsData.videoAnalysis.dateRange.start)} to{" "}
+                {formatDate(analyticsData.videoAnalysis.dateRange.end)}
+              </p>
+              <p className="text-muted-foreground text-sm mt-2">
+                {analyticsData.videoAnalysis.description}
+              </p>
             </div>
           ) : (
             <div className="h-[100px] flex items-center justify-center border border-dashed rounded-md">

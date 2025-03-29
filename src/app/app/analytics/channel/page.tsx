@@ -1,120 +1,222 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Users, ThumbsUp, MessageSquare } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BarChart, Users, ThumbsUp, MessageSquare, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { AnalyticsResponse } from "@/services/accounts/analyticsService";
 
 export default function ChannelAnalyticsPage() {
+  const { user } = useAuth();
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchAnalytics() {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+
+        const accountsResponse = await fetch('/api/accounts', {
+          headers: {
+            Authorization: `Bearer ${await user.getIdToken()}`
+          }
+        });
+
+        if (!accountsResponse.ok) {
+          throw new Error('Failed to fetch accounts');
+        }
+
+        const accountsData = await accountsResponse.json();
+
+        if (!accountsData.data || !accountsData.data.accounts || accountsData.data.accounts.length === 0) {
+          setError('No connected accounts found. Please connect a YouTube account to view analytics.');
+          setLoading(false);
+          return;
+        }
+
+        const accountId = accountsData.data.accounts[0].id;
+
+        const analyticsResponse = await fetch(`/api/accounts/${accountId}/analytics`, {
+          headers: {
+            Authorization: `Bearer ${await user.getIdToken()}`
+          }
+        });
+
+        if (!analyticsResponse.ok) {
+          throw new Error('Failed to fetch analytics data');
+        }
+
+        const responseData = await analyticsResponse.json();
+        setAnalyticsData(responseData.data);
+      } catch (err) {
+        console.error('Error fetching analytics:', err);
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAnalytics();
+  }, [user]);
+
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + 'K';
+    }
+    return num.toString();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+        <p>Loading analytics data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <Card className="p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium">Unable to load analytics</h3>
+            <p className="text-muted-foreground mt-2">{error}</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <p className="text-muted-foreground">
-        Analyze performance metrics for your connected channels and accounts.
+        Analyze performance metrics for your YouTube channel.
       </p>
 
-      <Tabs defaultValue="youtube">
-        <TabsList>
-          <TabsTrigger value="youtube">YouTube</TabsTrigger>
-          <TabsTrigger value="tiktok">TikTok</TabsTrigger>
-          <TabsTrigger value="instagram">Instagram</TabsTrigger>
-        </TabsList>
+      <div className="grid gap-6 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData ? formatNumber(analyticsData.channelStats.subscriberCount) : '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total YouTube subscribers
+            </p>
+          </CardContent>
+        </Card>
 
-        <TabsContent value="youtube" className="space-y-6 mt-6">
-          <div className="grid gap-6 md:grid-cols-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Subscribers</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">12.5K</div>
-                <p className="text-xs text-muted-foreground">
-                  +342 new this month
-                </p>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Views</CardTitle>
+            <BarChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData ? formatNumber(analyticsData.channelStats.viewCount) : '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              From your YouTube channel
+            </p>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Views</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">1.2M</div>
-                <p className="text-xs text-muted-foreground">
-                  +15.3% from last month
-                </p>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Videos</CardTitle>
+            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData ? formatNumber(analyticsData.channelStats.videoCount) : '0'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total videos published
+            </p>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Likes</CardTitle>
-                <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">45.2K</div>
-                <p className="text-xs text-muted-foreground">
-                  +18.7% from last month
-                </p>
-              </CardContent>
-            </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Best Day</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {analyticsData && analyticsData.bestPostingTimes.days.length > 0 
+                ? analyticsData.bestPostingTimes.days[0].dayName 
+                : 'N/A'}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Best day to post content
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Comments</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">3.8K</div>
-                <p className="text-xs text-muted-foreground">
-                  +22.1% from last month
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscriber Growth</CardTitle>
-              <CardDescription>
-                Track your subscriber growth over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
-                <p className="text-muted-foreground">Subscriber growth chart will be displayed here</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Best Posting Times</CardTitle>
+          <CardDescription>
+            Recommended times to post based on your audience engagement
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {analyticsData ? (
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <h3 className="text-sm font-medium mb-3">Best Days to Post</h3>
+                <div className="space-y-2">
+                  {analyticsData.bestPostingTimes.days.map((day, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-muted/20 rounded-md">
+                      <span>{day.dayName}</span>
+                      <span className="text-sm font-medium">{day.avgViews ? formatNumber(day.avgViews) : '0'} avg. views</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Audience Demographics</CardTitle>
-              <CardDescription>
-                Understand your audience better
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
-                <p className="text-muted-foreground">Demographics charts will be displayed here</p>
+              <div>
+                <h3 className="text-sm font-medium mb-3">Best Hours to Post</h3>
+                <div className="space-y-2">
+                  {analyticsData.bestPostingTimes.hours.map((hour, index) => (
+                    <div key={index} className="flex justify-between items-center p-2 bg-muted/20 rounded-md">
+                      <span>{hour.hourFormatted}</span>
+                      <span className="text-sm font-medium">High engagement</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
+          ) : (
+            <div className="h-[200px] flex items-center justify-center border border-dashed rounded-md">
+              <p className="text-muted-foreground">No data available</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-        <TabsContent value="tiktok" className="space-y-6 mt-6">
-          <div className="flex items-center justify-center h-[200px] border border-dashed rounded-md">
-            <p className="text-muted-foreground">Connect your TikTok account to view analytics</p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Audience Demographics</CardTitle>
+          <CardDescription>
+            Understand your audience better
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center border border-dashed rounded-md">
+            <p className="text-muted-foreground">Demographics charts will be displayed here</p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="instagram" className="space-y-6 mt-6">
-          <div className="flex items-center justify-center h-[200px] border border-dashed rounded-md">
-            <p className="text-muted-foreground">Connect your Instagram account to view analytics</p>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
