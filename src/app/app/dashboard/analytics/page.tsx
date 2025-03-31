@@ -8,14 +8,14 @@ import { useAccounts } from "@/hooks/data/useAccounts";
 import { AnalyticsResponse } from "@/services/accounts/analyticsService";
 
 // Import components
-import { StatsCards } from "./components/StatsCards.component";
-import { RecentActivity } from "./components/RecentActivity.component";
-import { BestPostingTimes } from "./components/BestPostingTimes.component";
-import { EmptyState } from "./components/EmptyState.component";
-import { DashboardHeader } from "./components/DashboardHeader.component";
+import { StatsCards } from "../components/StatsCards.component";
+import { RecentActivity } from "../components/RecentActivity.component"; 
+import { BestPostingTimes } from "../components/BestPostingTimes.component";
+import { EmptyState } from "../components/EmptyState.component";
+import { DashboardHeader } from "../components/DashboardHeader.component";
 
 // Import utilities
-import { formatNumber } from "./utils/formatters";
+import { formatNumber } from "../utils/formatters";
 
 export default function DashboardPage() {
   const { user } = useAuth();

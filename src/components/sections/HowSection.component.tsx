@@ -44,6 +44,7 @@ const itemVariants = {
 export default function HowSection() {
   return (
     <motion.section
+      id="how-it-works"
       className="z-10 mt-20 max-w-6xl mx-auto px-4 text-center"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

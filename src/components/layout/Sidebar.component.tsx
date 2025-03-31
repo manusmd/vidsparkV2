@@ -27,18 +27,15 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
-  // Check if a link is active
   const isActive = (href: string) => pathname.startsWith(href);
 
-  // Get classes for links
   const getLinkClasses = (href: string) => {
     const base = "flex items-center gap-2 px-4 py-2 rounded-md transition-all";
     const active = "bg-indigo-600 text-white";
     const inactive = "hover:bg-indigo-500/10 hover:text-indigo-600";
     return isActive(href) ? `${base} ${active}` : `${base} ${inactive}`;
   };
-
-  // Navigation sections with simplified structure (max 1 submenu level)
+  
   const navigationSections = [
     {
       id: "dashboard",
@@ -46,8 +43,13 @@ export default function Sidebar() {
       icon: <BarChart className="w-5 h-5" />,
       items: [
         {
-          href: ROUTES.PAGES.APP.DASHBOARD,
-          label: "Dashboard",
+          href: ROUTES.PAGES.APP.DASHBOARD.VIDSPARK,
+          label: "VidSpark",
+          icon: <Film className="w-4 h-4" />,
+        },
+        {
+          href: ROUTES.PAGES.APP.DASHBOARD.ANALYTICS,
+          label: "Analytics",
           icon: <BarChart className="w-4 h-4" />,
         },
       ],
@@ -67,11 +69,6 @@ export default function Sidebar() {
           label: "My Videos",
           icon: <Film className="w-4 h-4" />,
         },
-        {
-          href: ROUTES.PAGES.APP.ANALYTICS.INDEX,
-          label: "Analytics",
-          icon: <BarChart className="w-4 h-4" />,
-        },
       ],
     },
     {
@@ -85,12 +82,12 @@ export default function Sidebar() {
           icon: <User className="w-4 h-4" />,
         },
         {
-          href: ROUTES.PAGES.APP.SETTINGS.CONNECTED_ACCOUNTS,
+          href: ROUTES.PAGES.APP.SETTINGS.INDEX,
           label: "Accounts",
           icon: <LinkIcon className="w-4 h-4" />,
         },
         {
-          href: ROUTES.PAGES.APP.SETTINGS.BILLING,
+          href: ROUTES.PAGES.APP.SETTINGS.CREDITS,
           label: "Billing",
           icon: <CreditCard className="w-4 h-4" />,
         },
@@ -209,7 +206,6 @@ export default function Sidebar() {
           onClick={() => setIsMobileOpen(false)}
         />
       )}
-
     </>
   );
 }

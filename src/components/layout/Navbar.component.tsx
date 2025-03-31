@@ -8,12 +8,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { signOut } from "firebase/auth";
-import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter, usePathname } from "next/navigation";
 import ROUTES from "@/lib/routes";
-import { RocketIcon } from "@radix-ui/react-icons";
 import { BsCreditCard } from "react-icons/bs";
 import { ShimmeringText } from "@/components/ui/ShimmeringText.component";
 
@@ -28,13 +26,13 @@ export default function Navbar() {
     : "";
 
   // Single dashboard link for logged-in users
-  const dashboardLink = { href: ROUTES.PAGES.APP.DASHBOARD, label: "Go To Dashboard" };
+  const dashboardLink = { href: ROUTES.PAGES.APP.DASHBOARD.VIDSPARK, label: "Go To Dashboard" };
 
   const getLinkClasses = (href: string) => {
     const base =
-      "transition-all text-lg font-medium px-4 py-2 rounded-lg text-xl cool-button";
-    const active = "bg-gradient-to-r from-[#6366f1] via-[#a855f7] to-[#ec4899] text-white";
-    const inactive = "hover:bg-gradient-to-r hover:from-[#6366f1] hover:via-[#a855f7] hover:to-[#ec4899] hover:text-white";
+      "transition-all text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-1.5";
+    const active = "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md shadow-blue-500/20";
+    const inactive = "bg-white/10 text-white hover:bg-white/20 backdrop-blur-md";
     return pathname.startsWith(href)
       ? `${base} ${active}`
       : `${base} ${inactive}`;
@@ -49,7 +47,7 @@ export default function Navbar() {
   return (
     <nav
       style={{ zIndex: 1000 }}
-      className="w-full fixed top-0 left-0 bg-background border-b border-border shadow-md h-[72px]"
+      className="w-full fixed top-0 left-0 bg-background/80 backdrop-blur-md border-b border-white/10 shadow-lg h-[72px]"
     >
       <div className="container mx-auto px-6 flex justify-between items-center h-full">
         {/* Logo with Framer Motion shimmering effect */}
@@ -174,67 +172,74 @@ export default function Navbar() {
             <>
               {/* Dashboard button positioned to the left of the avatar */}
               <Link href={dashboardLink.href} className={getLinkClasses(dashboardLink.href)}>
-                <span className="flex items-center gap-2">
-                  <RocketIcon className="h-5 w-5" />
-                  {dashboardLink.label}
-                </span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span>Dashboard</span>
               </Link>
 
               {/* Credits display */}
               <Link 
                 href={ROUTES.PAGES.APP.SETTINGS.CREDITS} 
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:from-blue-600 hover:to-purple-600 transition-all"
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/15 transition-all group"
               >
-                <BsCreditCard className="h-5 w-5" />
+                <BsCreditCard className="h-4 w-4 text-blue-400 group-hover:text-blue-300 transition-colors" />
                 <span className="text-sm font-medium">
-                  {creditsLoading ? "..." : credits?.availableCredits || 0} Credits
+                  {creditsLoading ? "..." : 
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                      {credits?.availableCredits || 0}
+                    </span>
+                  } Credits
                 </span>
               </Link>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="cursor-pointer focus:outline-none transition-transform hover:scale-105">
-                    <div className="rounded-full border-2 border-white p-1">
-                      <Avatar>
-                        <AvatarImage
-                          key={`user-avatar-${user.uid}`}
-                          src={userAvatarUrl}
-                          alt="User Avatar"
-                          crossOrigin="anonymous"
-                        />
-                        <AvatarFallback>
-                          {user.displayName ? user.displayName[0] : "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                  <button className="cursor-pointer focus:outline-none transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-purple-500/20">
+                    <div className="rounded-full bg-gradient-to-r p-[2px] from-blue-500 to-purple-600">
+                      <div className="rounded-full bg-gray-900 p-[2px]">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage
+                            key={`user-avatar-${user.uid}`}
+                            src={userAvatarUrl}
+                            alt="User Avatar"
+                            crossOrigin="anonymous"
+                          />
+                          <AvatarFallback className="bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                            {user.displayName ? user.displayName[0] : "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
                     </div>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent
-                  className="w-40 p-2 mt-3 rounded-md shadow-xl overflow-hidden bg-gradient-to-r from-gray-800 to-gray-700"
+                  className="w-48 p-2 mt-3 rounded-lg shadow-xl overflow-hidden bg-gray-900/90 backdrop-blur-md border border-white/10"
                   style={{ zIndex: 9999 }}
                 >
                   <div className="flex flex-col space-y-1">
                     <Link
                       href={ROUTES.PAGES.APP.SETTINGS.PROFILE}
-                      passHref
-                      legacyBehavior
+                      className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-white/90 transition-all duration-300 ease-in-out hover:bg-white/10 hover:text-white rounded-md"
                     >
-                      <a className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md">
-                        Profile
-                      </a>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                      Profile
                     </Link>
                     <Link
                       href={ROUTES.PAGES.APP.SETTINGS.CREDITS}
-                      passHref
-                      legacyBehavior
+                      className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-white/90 transition-all duration-300 ease-in-out hover:bg-white/10 hover:text-white rounded-md"
                     >
-                      <a className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md">
-                        Credits
-                      </a>
+                      <BsCreditCard className="h-4 w-4 text-purple-400" />
+                      Credits
                     </Link>
                     <button
                       onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-sm text-white transition-all duration-300 ease-in-out hover:bg-gray-600 hover:scale-[1.02] hover:rounded-md"
+                      className="flex items-center gap-2 w-full text-left px-4 py-2.5 text-sm text-white/90 transition-all duration-300 ease-in-out hover:bg-red-500/20 hover:text-red-300 rounded-md mt-1"
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V7.414l-5-5H3zm7 5a1 1 0 10-2 0v4a1 1 0 102 0V8zm-1 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
                       Sign Out
                     </button>
                   </div>
@@ -242,18 +247,20 @@ export default function Navbar() {
               </Popover>
             </>
           ) : (
-            <>
-              <Link href={ROUTES.PAGES.AUTH.SIGNIN} passHref legacyBehavior>
-                <a>
-                  <Button variant="ghost">Sign In</Button>
-                </a>
+            <div className="flex items-center gap-3">
+              <Link 
+                href={ROUTES.PAGES.AUTH.SIGNIN}
+                className="px-4 py-2 text-sm font-medium text-white/90 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+              >
+                Sign In
               </Link>
-              <Link href={ROUTES.PAGES.AUTH.SIGNUP} passHref legacyBehavior>
-                <a>
-                  <Button>Sign Up</Button>
-                </a>
+              <Link 
+                href={ROUTES.PAGES.AUTH.SIGNUP}
+                className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 transition-all hover:translate-y-[-1px]"
+              >
+                Sign Up
               </Link>
-            </>
+            </div>
           )}
         </div>
       </div>

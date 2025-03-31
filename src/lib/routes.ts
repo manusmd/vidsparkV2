@@ -17,8 +17,19 @@ export const PAGES = {
 
   // App pages (authenticated)
   APP: {
-    // Dashboard
-    DASHBOARD: "/app/dashboard",
+    INDEX: "/app",
+    DASHBOARD: {
+      INDEX: "/app/dashboard",
+      ANALYTICS: "/app/dashboard/analytics",
+      VIDSPARK: "/app/dashboard/vidspark",
+    },
+    SETTINGS: {
+      INDEX: "/app/settings",
+      PROFILE: "/app/settings/profile",
+      CREDITS: "/app/settings/credits",
+      CONNECTED_ACCOUNTS: "/app/settings/connected-accounts",
+      BILLING: "/app/settings/billing",
+    },
     // Content Creation
     CREATE: "/app/create",
     MY_VIDEOS: {
@@ -40,13 +51,6 @@ export const PAGES = {
       OVERVIEW: "/app/analytics/overview",
       CHANNEL: "/app/analytics/channel",
       VIDEO: "/app/analytics/video",
-    },
-    SETTINGS: {
-      INDEX: "/app/settings",
-      PROFILE: "/app/settings/profile",
-      CONNECTED_ACCOUNTS: "/app/settings/connected-accounts",
-      BILLING: "/app/settings/billing",
-      CREDITS: "/app/settings/credits",
     },
     // Administration
     ADMIN: {
