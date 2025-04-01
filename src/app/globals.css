@@ -120,9 +120,244 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base radius token */
+    --radius: 0.625rem;
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
+    --radius-full: 9999px;
+    
+    /* Shadow tokens */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
+    --shadow-none: none;
+    
+    /* Purple accent shadows */
+    --shadow-purple-sm: 0 1px 2px 0 rgb(117 89 255 / 0.05);
+    --shadow-purple-md: 0 4px 6px -1px rgb(117 89 255 / 0.1), 0 2px 4px -2px rgb(117 89 255 / 0.1);
+    --shadow-purple-lg: 0 10px 15px -3px rgb(117 89 255 / 0.1), 0 4px 6px -4px rgb(117 89 255 / 0.1);
+    --shadow-purple-xl: 0 20px 25px -5px rgb(117 89 255 / 0.15), 0 8px 10px -6px rgb(117 89 255 / 0.15);
+    
+    /* Dark theme colors only */
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    
+    --card: oklch(0.145 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    
+    --popover: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    
+    --primary: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.145 0 0);
+    
+    --secondary: oklch(0.48 0.24 264.376);
+    --secondary-foreground: oklch(0.985 0 0);
+    
+    --muted: oklch(0.2 0 0);
+    --muted-foreground: oklch(0.7 0 0);
+    
+    --accent: oklch(0.2 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    
+    --border: oklch(0.3 0 0);
+    --input: oklch(0.3 0 0);
+    --ring: oklch(0.48 0.24 264.376);
+    
+    /* Brand colors */
+    --brand-primary: oklch(0.55 0.21 290);
+    --brand-secondary: oklch(0.48 0.24 264.376);
+    --brand-accent: oklch(0.627 0.265 303.9);
+    
+    /* Chart colors */
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+
+    /* Component-specific tokens */
+    
+    /* Button tokens */
+    --button-default-bg: var(--primary);
+    --button-default-text: var(--primary-foreground);
+    --button-default-border: var(--primary);
+    --button-default-hover-bg: color-mix(in oklch, var(--primary), black 10%);
+    --button-default-focus-ring: var(--ring);
+    
+    --button-secondary-bg: var(--secondary);
+    --button-secondary-text: var(--secondary-foreground);
+    --button-secondary-border: var(--secondary);
+    --button-secondary-hover-bg: color-mix(in oklch, var(--secondary), black 20%);
+    
+    --button-destructive-bg: var(--destructive);
+    --button-destructive-text: var(--destructive-foreground);
+    --button-destructive-border: var(--destructive);
+    --button-destructive-hover-bg: color-mix(in oklch, var(--destructive), black 10%);
+    
+    /* Card tokens */
+    --card-bg: var(--card);
+    --card-text: var(--card-foreground);
+    --card-border: var(--border);
+    --card-shadow: var(--shadow-md);
+    --card-hover-shadow: var(--shadow-lg);
+    
+    /* Input tokens */
+    --input-bg: transparent;
+    --input-text: var(--foreground);
+    --input-border: var(--input);
+    --input-focus-border: var(--ring);
+    --input-focus-ring: color-mix(in oklch, var(--ring), transparent 80%);
+    --input-placeholder: var(--muted-foreground);
+    
+    /* Chart tokens */
+    --chart-bar-color-1: var(--chart-1);
+    --chart-bar-color-2: var(--chart-2);
+    --chart-bar-color-3: var(--chart-3);
+    --chart-bar-color-4: var(--chart-4);
+    --chart-bar-color-5: var(--chart-5);
+    --chart-line-color: var(--chart-1);
+    --chart-axis-line: rgba(255, 255, 255, 0.1);
+    --chart-axis-text: rgba(255, 255, 255, 0.65);
+    --chart-grid: rgba(255, 255, 255, 0.1);
+    --chart-tooltip-bg: color-mix(in oklch, var(--background), transparent 5%);
+    --chart-tooltip-border: var(--border);
+    
+    /* Background component tokens */
+    --bg-lines-stroke-width: 2.3px;
+    
+    /* Dialog/Modal tokens */
+    --dialog-overlay-bg: rgba(0, 0, 0, 0.8);
+    --dialog-content-bg: var(--background);
+    --dialog-content-text: var(--foreground);
+    --dialog-content-border: var(--border);
+    --dialog-content-shadow: var(--shadow-lg);
+    
+    /* Checkbox tokens */
+    --checkbox-border: var(--input-border);
+    --checkbox-bg-checked: var(--primary);
+    --checkbox-text-checked: var(--primary-foreground);
+    --checkbox-border-checked: var(--primary);
+    --checkbox-focus-ring: var(--ring);
+    
+    /* Switch tokens */
+    --switch-bg-checked: var(--primary);
+    --switch-bg-unchecked: var(--input);
+    --switch-thumb-bg: var(--background);
+    --switch-thumb-checked-bg: var(--primary-foreground);
+    --switch-focus-ring: var(--ring);
+    
+    /* Radio Group tokens */
+    --radio-border: var(--input-border);
+    --radio-bg-checked: var(--primary);
+    --radio-fill: var(--primary);
+    --radio-focus-ring: var(--ring);
+    
+    /* Navigation tokens */
+    --nav-bg: transparent;
+    --nav-text: var(--foreground);
+    --nav-border: var(--border);
+    --nav-hover-bg: var(--accent);
+    --nav-hover-text: var(--accent-foreground);
+    --nav-active-bg: var(--accent);
+    --nav-active-text: var(--accent-foreground);
+    --nav-indicator: var(--primary);
+    --nav-content-bg: var(--popover);
+    --nav-content-text: var(--popover-foreground);
+    --nav-content-border: var(--border);
+    --nav-content-shadow: var(--shadow);
+    
+    /* Table tokens */
+    --table-bg: var(--background);
+    --table-text: var(--foreground);
+    --table-border: var(--border);
+    --table-header-bg: var(--muted);
+    --table-header-text: var(--muted-foreground);
+    --table-cell-bg: transparent;
+    --table-row-hover-bg: var(--muted);
+    --table-caption-text: var(--muted-foreground);
+    
+    /* Badge tokens */
+    --badge-default-bg: var(--primary);
+    --badge-default-text: var(--primary-foreground);
+    --badge-default-border: var(--primary);
+    --badge-default-hover-bg: color-mix(in oklch, var(--primary), black 10%);
+    
+    --badge-secondary-bg: var(--secondary);
+    --badge-secondary-text: var(--secondary-foreground);
+    --badge-secondary-border: var(--secondary);
+    --badge-secondary-hover-bg: color-mix(in oklch, var(--secondary), black 10%);
+    
+    --badge-destructive-bg: var(--destructive);
+    --badge-destructive-text: white;
+    --badge-destructive-border: var(--destructive);
+    --badge-destructive-hover-bg: color-mix(in oklch, var(--destructive), black 10%);
+    
+    --badge-outline-bg: transparent;
+    --badge-outline-text: var(--foreground);
+    --badge-outline-border: var(--border);
+    --badge-outline-hover-bg: var(--accent);
+    --badge-outline-hover-text: var(--accent-foreground);
+    
+    /* Progress tokens */
+    --progress-bg: color-mix(in oklch, var(--primary), transparent 80%);
+    --progress-indicator: var(--primary);
+    
+    /* Skeleton tokens */
+    --skeleton-bg: var(--accent);
+    
+    /* Popover tokens */
+    --popover-bg: var(--popover);
+    --popover-text: var(--popover-foreground);
+    --popover-border: var(--border);
+    --popover-shadow: var(--shadow);
+    
+    /* Background Lines tokens */
+    --bg-lines-color-1: var(--chart-1);
+    --bg-lines-color-2: var(--chart-2);
+    --bg-lines-color-3: var(--chart-3);
+    --bg-lines-color-4: var(--chart-4);
+    --bg-lines-color-5: var(--chart-5);
+    --bg-lines-color-6: var(--brand-primary);
+    --bg-lines-color-7: var(--brand-secondary);
+    --bg-lines-color-8: var(--brand-accent);
+    
+    /* Background Gradient tokens */
+    --bg-gradient-start: var(--brand-primary);
+    --bg-gradient-mid: var(--brand-secondary);
+    --bg-gradient-end: var(--brand-accent);
+    --bg-gradient: radial-gradient(circle at top right, var(--bg-gradient-start), transparent), 
+                   radial-gradient(circle at bottom left, var(--bg-gradient-mid), transparent);
+    
+    /* Aurora Background tokens */
+    --aurora-primary-gradient: repeating-linear-gradient(100deg, 
+                               var(--brand-primary) 10%, 
+                               var(--brand-secondary) 15%, 
+                               var(--brand-accent) 20%, 
+                               var(--chart-4) 25%, 
+                               var(--chart-1) 30%);
+  }
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
     @apply bg-background text-foreground;

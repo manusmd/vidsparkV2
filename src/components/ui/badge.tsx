@@ -10,13 +10,13 @@ const badgeVariants = cva(
     variants: {
       variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+          "border-[var(--badge-default-border)] bg-[var(--badge-default-bg)] text-[var(--badge-default-text)] [a&]:hover:bg-[var(--badge-default-hover-bg)]",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+          "border-[var(--badge-secondary-border)] bg-[var(--badge-secondary-bg)] text-[var(--badge-secondary-text)] [a&]:hover:bg-[var(--badge-secondary-hover-bg)]",
         destructive:
-          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
+          "border-[var(--badge-destructive-border)] bg-[var(--badge-destructive-bg)] text-[var(--badge-destructive-text)] [a&]:hover:bg-[var(--badge-destructive-hover-bg)] focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40",
         outline:
-          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
+          "border-[var(--badge-outline-border)] bg-[var(--badge-outline-bg)] text-[var(--badge-outline-text)] [a&]:hover:bg-[var(--badge-outline-hover-bg)] [a&]:hover:text-[var(--badge-outline-hover-text)]",
       },
     },
     defaultVariants: {

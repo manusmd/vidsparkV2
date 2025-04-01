@@ -105,14 +105,14 @@ export function PieChart({
     const config: ChartConfig = {
       [dataKey]: {
         label: dataKey,
-        color: "hsl(var(--chart-1))",
+        color: "var(--chart-bar-color-1)",
       },
     };
 
     data.forEach((item, index) => {
       config[item[nameKey] as string] = {
         label: item.label || (item[nameKey] as string),
-        color: item.fill ? String(item.fill) : `hsl(var(--chart-${index + 1}))`,
+        color: item.fill ? String(item.fill) : `var(--chart-bar-color-${(index % 5) + 1})`,
       };
     });
 
@@ -164,7 +164,7 @@ export function PieChart({
           {data.map((entry, index) => (
             <Cell
               key={`cell-${index}`}
-              fill={entry.fill ? String(entry.fill) : `var(--chart-${index + 1}, #8884d8)`}
+              fill={entry.fill ? String(entry.fill) : `var(--chart-bar-color-${(index % 5) + 1})`}
             />
           ))}
         </Pie>

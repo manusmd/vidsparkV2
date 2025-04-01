@@ -137,7 +137,7 @@ export function BarChart({
             strokeDasharray="3 3"
             vertical={!isHorizontal}
             horizontal={true}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke="var(--chart-grid)"
           />
         )}
         {isHorizontal ? (
@@ -147,23 +147,23 @@ export function BarChart({
               type="category"
               width={140}
               tick={{ 
-                fill: "#FFFFFF", 
+                fill: "var(--chart-axis-text)", 
                 fontSize: 13,
                 textAnchor: "end",
                 fontWeight: 500,
                 letterSpacing: 0.2,
               }}
               tickLine={false}
-              axisLine={{ stroke: "rgba(255, 255, 255, 0.2)" }}
-              stroke="rgba(255, 255, 255, 0.1)"
+              axisLine={{ stroke: "var(--chart-axis-line)" }}
+              stroke="var(--chart-axis-line)"
               tickMargin={12}
             />
             <XAxis
               type="number"
-              tick={{ fill: "rgba(255, 255, 255, 0.65)", fontSize: 12 }}
+              tick={{ fill: "var(--chart-axis-text)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              stroke="rgba(255, 255, 255, 0.1)"
+              stroke="var(--chart-axis-line)"
               tickFormatter={valueFormatter}
             />
           </>
@@ -171,17 +171,17 @@ export function BarChart({
           <>
             <XAxis
               dataKey="name"
-              tick={{ fill: "rgba(255, 255, 255, 0.65)", fontSize: 12 }}
-              axisLine={{ stroke: "rgba(255, 255, 255, 0.1)" }}
+              tick={{ fill: "var(--chart-axis-text)", fontSize: 12 }}
+              axisLine={{ stroke: "var(--chart-axis-line)" }}
               tickLine={false}
-              stroke="rgba(255, 255, 255, 0.1)"
+              stroke="var(--chart-axis-line)"
               tickMargin={8}
             />
             <YAxis
-              tick={{ fill: "rgba(255, 255, 255, 0.65)", fontSize: 12 }}
+              tick={{ fill: "var(--chart-axis-text)", fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              stroke="rgba(255, 255, 255, 0.1)"
+              stroke="var(--chart-axis-line)"
               width={40}
               tickFormatter={valueFormatter}
             />
@@ -199,7 +199,11 @@ export function BarChart({
                 const endColor = entry.endColor || colors[1] || barColor;
                 
                 return (
-                  <div className="rounded-lg border border-white/10 bg-background/95 backdrop-blur-sm p-3 shadow-xl text-sm">
+                  <div className="rounded-lg border border-white/10 bg-background/95 backdrop-blur-sm p-3 shadow-xl text-sm"
+                       style={{
+                         backgroundColor: "var(--chart-tooltip-bg)",
+                         borderColor: "var(--chart-tooltip-border)"
+                       }}>
                     <div className="font-bold mb-1 text-white">
                       {entry.name}
                     </div>
@@ -319,22 +323,22 @@ export function LineChart({
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
-            stroke="rgba(255, 255, 255, 0.1)"
+            stroke="var(--chart-axis-line)"
           />
         )}
         <XAxis
           dataKey="name"
-          tick={{ fill: "rgba(255, 255, 255, 0.65)", fontSize: 12 }}
-          axisLine={{ stroke: "rgba(255, 255, 255, 0.1)" }}
+          tick={{ fill: "var(--chart-axis-text)", fontSize: 12 }}
+          axisLine={{ stroke: "var(--chart-axis-line)" }}
           tickLine={false}
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="var(--chart-axis-line)"
           dy={10}
         />
         <YAxis
-          tick={{ fill: "rgba(255, 255, 255, 0.65)", fontSize: 12 }}
+          tick={{ fill: "var(--chart-axis-text)", fontSize: 12 }}
           axisLine={false}
           tickLine={false}
-          stroke="rgba(255, 255, 255, 0.1)"
+          stroke="var(--chart-axis-line)"
           width={40}
           tickFormatter={(value) => Math.round(value).toString()}
           allowDecimals={false}
@@ -504,7 +508,7 @@ export function PieChart({
           dataKey="value"
           onMouseEnter={onPieEnter}
           strokeWidth={2}
-          stroke="rgba(0, 0, 0, 0.2)"
+          stroke="var(--chart-axis-line)"
           className="focus:outline-none drop-shadow-md"
           label={false}
         >

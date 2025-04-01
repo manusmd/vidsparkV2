@@ -71,7 +71,7 @@ export function BarChart({
     return bars.reduce((config, bar, index) => {
       config[bar.dataKey] = {
         label: bar.name || bar.dataKey,
-        color: bar.fill || `hsl(var(--chart-${index + 1}))`,
+        color: bar.fill || `var(--chart-bar-color-${(index % 5) + 1})`,
       };
       return config;
     }, {} as ChartConfig);
@@ -90,7 +90,7 @@ export function BarChart({
         }}
         barSize={maxBarSize}
       >
-        {showGrid && <CartesianGrid strokeDasharray="3 3" className={gridClassName} />}
+        {showGrid && <CartesianGrid strokeDasharray="3 3" className={gridClassName} stroke="var(--chart-grid)" />}
         <XAxis 
           dataKey={layout === "horizontal" ? xAxisDataKey : undefined}
           type={layout === "horizontal" ? "category" : "number"}
@@ -98,6 +98,8 @@ export function BarChart({
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          stroke="var(--chart-axis-line)"
+          tick={{ fill: "var(--chart-axis-text)" }}
         />
         <YAxis 
           dataKey={layout === "vertical" ? xAxisDataKey : undefined}
@@ -106,15 +108,17 @@ export function BarChart({
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          stroke="var(--chart-axis-line)"
+          tick={{ fill: "var(--chart-axis-text)" }}
         />
         {showTooltip && <ChartTooltip cursor={false} content={<ChartTooltipContent />} />}
         {showLegend && <ChartLegend content={<ChartLegendContent />} />}
 
-        {bars.map((bar) => (
+        {bars.map((bar, barIndex) => (
           <Bar
             key={bar.dataKey}
             dataKey={bar.dataKey}
-            fill={`var(--color-${bar.dataKey})`}
+            fill={bar.fill || `var(--chart-bar-color-${(barIndex % 5) + 1})`}
             name={bar.name || bar.dataKey}
             stackId={bar.stackId}
             fillOpacity={bar.fillOpacity || 1}
@@ -128,7 +132,7 @@ export function BarChart({
                 key={`cell-${index}`} 
                 fill={typeof entry[bar.dataKey] === 'number' 
                   ? `hsl(${Math.min(entry[bar.dataKey] as number * 0.5, 120)}, 70%, 50%)`
-                  : `var(--color-${bar.dataKey})`
+                  : bar.fill || `var(--chart-bar-color-${(barIndex % 5) + 1})`
                 } 
               />
             ))}

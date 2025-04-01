@@ -30,7 +30,7 @@ import {
 const sampleChartConfig = {
   desktop: {
     label: "Desktop",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-line-color)",
   },
 } satisfies ChartConfig;
 
@@ -97,7 +97,7 @@ export function LineChart({
     return lines.reduce((config, line, index) => {
       config[line.dataKey] = {
         label: line.name || line.dataKey,
-        color: line.stroke || `hsl(var(--chart-${index + 1}))`,
+        color: line.stroke || `var(--chart-bar-color-${(index % 5) + 1})`,
       };
       return config;
     }, {} as ChartConfig);
@@ -114,12 +114,14 @@ export function LineChart({
           right: 12,
         }}
       >
-        {showGrid && <CartesianGrid vertical={false} />}
+        {showGrid && <CartesianGrid vertical={false} stroke="var(--chart-grid)" />}
         <XAxis
           dataKey={xAxisDataKey}
           tickLine={false}
           axisLine={false}
           tickMargin={8}
+          stroke="var(--chart-axis-line)"
+          tick={{ fill: "var(--chart-axis-text)" }}
           tickFormatter={(value) =>
             typeof value === "string" ? value.slice(0, 3) : value
           }
@@ -131,21 +133,21 @@ export function LineChart({
           />
         )}
         {showLegend && <ChartLegend content={<ChartLegendContent />} />}
-        {lines.map((line) => (
+        {lines.map((line, lineIndex) => (
           <React.Fragment key={line.dataKey}>
             {areaUnderCurve && (
               <Area
                 type={line.type || "natural"}
                 dataKey={line.dataKey}
-                fill={`var(--color-${line.dataKey})`}
-                stroke={`var(--color-${line.dataKey})`}
+                fill={line.fill || `var(--chart-bar-color-${(lineIndex % 5) + 1})`}
+                stroke={line.stroke || `var(--chart-bar-color-${(lineIndex % 5) + 1})`}
                 fillOpacity={line.fillOpacity || 0.2}
               />
             )}
             <Line
               dataKey={line.dataKey}
               type={line.type || "natural"}
-              stroke={`var(--color-${line.dataKey})`}
+              stroke={line.stroke || `var(--chart-bar-color-${(lineIndex % 5) + 1})`}
               strokeWidth={line.strokeWidth || 2}
               dot={line.dot === undefined ? false : line.dot}
               activeDot={line.activeDot}
