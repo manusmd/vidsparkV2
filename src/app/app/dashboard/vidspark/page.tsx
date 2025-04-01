@@ -8,6 +8,7 @@ import { Video as VideoType } from "@/app/types";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader.component";
 import { KPISection } from "@/components/dashboard/KPISection.component";
 import { RecentVideosSection } from "@/components/dashboard/RecentVideosSection.component";
+import { QuickActions } from "@/components/dashboard/QuickActions.component";
 
 interface Video extends VideoType {
   youtubeVideoId?: string;
@@ -90,20 +91,32 @@ export default function VidSparkDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <DashboardHeader 
-        title="VidSpark Dashboard" 
-        subtitle="Your VidSpark activity and resources" 
-      />
+    // Add a subtle gradient background to the entire page
+    <div className="relative min-h-screen pb-10">
+      {/* Page background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-background/80 z-0"></div>
+      
+      <div className="container mx-auto px-4 py-6 space-y-8 relative z-10">
+        <DashboardHeader 
+          title="VidSpark Dashboard" 
+          subtitle="Your VidSpark activity and resources" 
+        />
+        
+        <QuickActions />
 
-      <KPISection 
-        totalVideos={videos.length}
-        availableCredits={availableCredits}
-        videosInProduction={videosInProduction}
-        formatNumber={formatNumber}
-      />
+        <KPISection 
+          totalVideos={videos.length}
+          availableCredits={availableCredits}
+          videosInProduction={videosInProduction}
+          formatNumber={formatNumber}
+        />
 
-      <RecentVideosSection videos={videos} />
+        <div className="grid lg:grid-cols-3 gap-6 mt-2">
+          <div className="lg:col-span-3">
+            <RecentVideosSection videos={videos} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 
