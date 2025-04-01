@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Video, CreditCard, Upload, Plus } from "lucide-react";
-import { HistoryItem } from "@/components/history/HistoryItem.component";
+import { Loader2 } from "lucide-react";
 import { parseDate } from "@/lib/utils";
 import { Video as VideoType } from "@/app/types";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader.component";
+import { KPISection } from "@/components/dashboard/KPISection.component";
+import { RecentVideosSection } from "@/components/dashboard/RecentVideosSection.component";
 
 interface Video extends VideoType {
   youtubeVideoId?: string;
@@ -19,10 +19,14 @@ interface Video extends VideoType {
 }
 
 export default function VidSparkDashboard() {
-  const { user } = useAuth();
+  const { user, credits: userCredits } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
-  const [credits, setCredits] = useState<number>(0);
+
+  // Extract available credits from the userCredits object
+  const availableCredits = typeof userCredits === 'object' ? 
+    userCredits?.availableCredits || 0 : 
+    userCredits || 0;
 
   useEffect(() => {
     if (!user) return;
@@ -53,19 +57,6 @@ export default function VidSparkDashboard() {
         });
         
         setVideos(sortedVideos);
-
-        // Fetch credits
-        const creditsResponse = await fetch(`/api/credits`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${await user.getIdToken()}`,
-          },
-        });
-
-        if (creditsResponse.ok) {
-          const creditsData = await creditsResponse.json();
-          setCredits(creditsData.availableCredits || 0);
-        }
       } catch (error) {
         console.error("Error fetching data:", error);
       }
@@ -84,6 +75,11 @@ export default function VidSparkDashboard() {
     return num.toString();
   };
 
+  // Calculate videos in production
+  const videosInProduction = videos.filter(
+    v => v.status === 'draft' || v.status.includes('processing')
+  ).length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
@@ -94,75 +90,20 @@ export default function VidSparkDashboard() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">VidSpark Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Your VidSpark activity and resources
-        </p>
-      </div>
+    <div className="container mx-auto p-6 space-y-8">
+      <DashboardHeader 
+        title="VidSpark Dashboard" 
+        subtitle="Your VidSpark activity and resources" 
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Videos Created</CardTitle>
-            <CardDescription>Total videos created with VidSpark</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{formatNumber(videos.length)}</p>
-          </CardContent>
-        </Card>
+      <KPISection 
+        totalVideos={videos.length}
+        availableCredits={availableCredits}
+        videosInProduction={videosInProduction}
+        formatNumber={formatNumber}
+      />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Credits Available</CardTitle>
-            <CardDescription>Credits for video creation</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{credits}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Videos Uploaded</CardTitle>
-            <CardDescription>Videos uploaded to YouTube</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">
-              {formatNumber(videos.filter(v => v.status === 'completed').length)}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Recent Videos</h2>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Create New Video
-        </Button>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {videos.slice(0, 6).map((video) => (
-          <HistoryItem
-            key={video.id}
-            video={video}
-            isSelected={false}
-            toggleSelection={() => {}}
-          />
-        ))}
-      </div>
-
-      {videos.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-[40vh]">
-          <Video className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-muted-foreground text-lg">
-            No videos created yet. Start by creating your first video!
-          </p>
-        </div>
-      )}
+      <RecentVideosSection videos={videos} />
     </div>
   );
 } 
