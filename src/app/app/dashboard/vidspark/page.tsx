@@ -9,6 +9,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader.componen
 import { KPISection } from "@/components/dashboard/KPISection.component";
 import { RecentVideosSection } from "@/components/dashboard/RecentVideosSection.component";
 import { QuickActions } from "@/components/dashboard/QuickActions.component";
+import { ChartsSection } from "@/components/dashboard/ChartsSection.component";
 
 interface Video extends VideoType {
   youtubeVideoId?: string;
@@ -108,6 +109,11 @@ export default function VidSparkDashboard() {
           totalVideos={videos.length}
           availableCredits={availableCredits}
           videosInProduction={videosInProduction}
+          formatNumber={formatNumber}
+        />
+
+        <ChartsSection 
+          videos={videos}
           formatNumber={formatNumber}
         />
 
