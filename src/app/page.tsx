@@ -1,7 +1,8 @@
 import HeroSection from "@/components/sections/HeroSection.component";
 import HowSection from "@/components/sections/HowSection.component";
 import TestimonialsSection from "@/components/sections/TestimonialSection.component";
-import PricingSection from "@/components/sections/PricingSection.component";
+// Temporarily commenting out pricing section
+// import PricingSection from "@/components/sections/PricingSection.component";
 import FooterSection from "@/components/sections/FooterSection.component";
 import AnimatedBackground from "@/components/layout/AnimatedBackground";
 import { Suspense } from "react";
@@ -16,6 +17,11 @@ function LoadingSpinner() {
 }
 
 export default function LandingPage() {
+  // Reminder to manually add the screenshot image
+  if (typeof window !== 'undefined') {
+    console.log('IMPORTANT: Please manually add the create-stories-screenshot.png file to the public directory');
+  }
+  
   return (
     <div className="relative pb-8 flex flex-col items-center justify-center min-h-screen w-full overflow-hidden transition-colors duration-300 bg-gradient-to-br from-gray-900 to-black text-foreground">
       {/* Client-side animated background */}
@@ -25,7 +31,8 @@ export default function LandingPage() {
       <Suspense fallback={<LoadingSpinner />}>
         <HeroSection />
         <HowSection />
-        <PricingSection />
+        {/* Temporarily removed pricing section */}
+        {/* <PricingSection /> */}
         <TestimonialsSection />
         <FooterSection />
       </Suspense>

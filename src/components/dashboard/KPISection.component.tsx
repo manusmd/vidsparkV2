@@ -1,19 +1,25 @@
 "use client";
 
-import { Video, CreditCard, FileText } from "lucide-react";
+import React from "react";
 import { MetricCard } from "./MetricCard.component";
+import { 
+  Video, 
+  FileText,
+  Share2,
+  TrendingUp
+} from "lucide-react";
 
-interface KPISectionProps {
+type KPISectionProps = {
   totalVideos: number;
-  availableCredits: number;
   videosInProduction: number;
-  formatNumber: (num: number) => string;
-}
+  activeVideos: number;
+  formatNumber: (value: number | undefined) => string;
+};
 
 export const KPISection = ({
   totalVideos,
-  availableCredits,
   videosInProduction,
+  activeVideos,
   formatNumber
 }: KPISectionProps) => {
   return (
@@ -26,10 +32,10 @@ export const KPISection = ({
       />
       
       <MetricCard 
-        icon={<CreditCard className="w-5 h-5" />} 
-        value={formatNumber(availableCredits)} 
-        label="Available Credits" 
-        description="Credits for video creation" 
+        icon={<Share2 className="w-5 h-5" />} 
+        value={formatNumber(activeVideos)} 
+        label="Active Videos" 
+        description="Videos ready for viewing" 
       />
       
       <MetricCard 

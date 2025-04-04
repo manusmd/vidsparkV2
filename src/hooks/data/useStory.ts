@@ -8,7 +8,12 @@ import { useRouter } from "next/navigation";
 import type { Video } from "@/app/types";
 import ROUTES from "@/lib/routes";
 
-export function useStory() {
+interface UseStoryOptions {
+  skipNavigation?: boolean;
+}
+
+export function useStory(options: UseStoryOptions = {}) {
+  const { skipNavigation = false } = options;
   const { user } = useAuth();
   const router = useRouter();
   const [story, setStory] = useState<Video | null>(null);
@@ -38,11 +43,11 @@ export function useStory() {
   }, [videoId]);
 
   useEffect(() => {
-    // When videoId is set, navigate to the video page.
-    if (videoId) {
+    // When videoId is set, navigate to the video page only if skipNavigation is false
+    if (videoId && !skipNavigation) {
       router.push(ROUTES.PAGES.APP.VIDEOS.DETAIL(videoId));
     }
-  }, [videoId, router]);
+  }, [videoId, router, skipNavigation]);
 
   const generateStory = async (params: {
     narration: string;

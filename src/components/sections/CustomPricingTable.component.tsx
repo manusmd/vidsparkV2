@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useProducts } from "@/hooks/useProducts";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,54 +14,49 @@ import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/lib/routes";
 import { motion, AnimatePresence } from "framer-motion";
+import { useStripePayments } from "@/hooks/useStripePayments";
 
 export default function CustomPricingTable() {
-  const { products, loading, error } = useProducts();
+  const { products, prices, isLoading, checkoutSessionProcessing, createCheckoutSession } = useStripePayments();
   const { user } = useAuth();
   const router = useRouter();
-  const [processingPriceId, setProcessingPriceId] = useState<string | null>(
-    null,
-  );
+  const [processingPriceId, setProcessingPriceId] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<"month" | "year">("month");
 
   const handleSubscribe = async (priceId: string) => {
-    if (!user) {
-      router.push(ROUTES.PAGES.AUTH.SIGNIN);
-      return;
-    }
-
     try {
       setProcessingPriceId(priceId);
-
-      // Get the user's ID token for authentication
-      const idToken = await user.getIdToken();
-
-      // Call the checkout API endpoint
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({ priceId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to create checkout session");
+      
+      // If user is not logged in, redirect to sign in page
+      if (!user) {
+        router.push(ROUTES.PAGES.AUTH.SIGNIN);
+        return;
       }
-
-      const data = await response.json();
-      window.location.href = data.checkoutUrl;
+      
+      // Create checkout session and redirect to payment
+      const checkoutUrl = await createCheckoutSession(priceId);
+      window.location.href = checkoutUrl;
     } catch (error) {
       console.error("Error creating checkout session:", error);
-      alert("Failed to create checkout session. Please try again.");
+      // Provide more user-friendly error message
+      const errorMessage = error instanceof Error 
+        ? error.message
+        : "Unknown error occurred";
+        
+      // Check for common error types
+      if (errorMessage.includes("No such customer")) {
+        alert("Account setup required. Please try again in a moment.");
+      } else if (errorMessage.includes("Timeout")) {
+        alert("Payment processing is taking longer than expected. Please try again.");
+      } else {
+        alert(`Payment setup failed: ${errorMessage}. Please try again.`);
+      }
     } finally {
       setProcessingPriceId(null);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center py-16 space-y-4">
         <motion.div
@@ -79,33 +73,6 @@ export default function CustomPricingTable() {
           Loading pricing plans...
         </motion.p>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center py-16 px-4 max-w-md mx-auto"
-      >
-        <div className="bg-red-900/20 border border-red-500/50 rounded-lg p-6">
-          <X className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-red-500">
-            Error loading pricing plans
-          </h3>
-          <p className="mt-2 text-gray-300">
-            We&apos;re having trouble loading the pricing information. Please
-            try again later or contact support.
-          </p>
-          <Button
-            className="mt-6 bg-red-600 hover:bg-red-700"
-            onClick={() => window.location.reload()}
-          >
-            Try Again
-          </Button>
-        </div>
-      </motion.div>
     );
   }
 
@@ -373,8 +340,7 @@ export default function CustomPricingTable() {
                       </h4>
                       <ul className="space-y-3">
                         {/* Credits information */}
-                        {(product.metadata?.credits ||
-                          product.stripe_metadata_credits) && (
+                        {product.metadata?.credits && (
                           <li className="flex items-start">
                             <div
                               className={`rounded-full p-1 mr-3 ${product.metadata?.popular === "true" ? "bg-purple-500/20 text-purple-400" : "bg-gray-800 text-blue-500"}`}
@@ -383,8 +349,7 @@ export default function CustomPricingTable() {
                             </div>
                             <span className="text-gray-300">
                               <span className="font-semibold">
-                                {product.metadata?.credits ||
-                                  product.stripe_metadata_credits}
+                                {product.metadata?.credits}
                               </span>{" "}
                               credits included
                             </span>
@@ -392,10 +357,7 @@ export default function CustomPricingTable() {
                         )}
 
                         {/* Basic features fallback */}
-                        {!(
-                          product.metadata?.credits ||
-                          product.stripe_metadata_credits
-                        ) && (
+                        {!product.metadata?.credits && (
                           <li className="flex items-start">
                             <div className="rounded-full p-1 bg-gray-800 text-green-500 mr-3">
                               <Check className="h-4 w-4" />
@@ -525,16 +487,14 @@ export default function CustomPricingTable() {
                         </h4>
                         <ul className="space-y-3">
                           {/* Credits information */}
-                          {(product.metadata?.credits ||
-                            product.stripe_metadata_credits) && (
+                          {product.metadata?.credits && (
                             <li className="flex items-start">
                               <div className="rounded-full p-1 mr-3 bg-gray-800 text-blue-500">
                                 <Check className="h-4 w-4" />
                               </div>
                               <span className="text-gray-300">
                                 <span className="font-semibold">
-                                  {product.metadata?.credits ||
-                                    product.stripe_metadata_credits}
+                                  {product.metadata?.credits}
                                 </span>{" "}
                                 credits included
                               </span>
@@ -542,10 +502,7 @@ export default function CustomPricingTable() {
                           )}
 
                           {/* Basic functionality fallback */}
-                          {!(
-                            product.metadata?.credits ||
-                            product.stripe_metadata_credits
-                          ) && (
+                          {!product.metadata?.credits && (
                             <li className="flex items-start">
                               <div className="rounded-full p-1 bg-gray-800 text-blue-500 mr-3">
                                 <Check className="h-4 w-4" />

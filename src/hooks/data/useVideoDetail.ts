@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Scene, Step, Video } from "@/app/types";
 
@@ -153,15 +153,99 @@ export function useVideoDetail(videoId: string) {
     }
   }, [video?.scenes, video?.styling]);
 
+  // Method to update video details (title and description)
+  async function updateVideoDetails(
+    title: string,
+    description: string
+  ): Promise<void> {
+    if (!video) return;
+    try {
+      const response = await fetch(`/api/video/${video.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, description }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update video details");
+      }
+    } catch (err) {
+      console.error("Error updating video details:", err);
+      throw err;
+    }
+  }
+
+  // Method to update scenes 
+  async function updateScenes(
+    updatedScenes: { [key: number]: Scene }
+  ): Promise<void> {
+    if (!video) return;
+    try {
+      const response = await fetch(`/api/video/${video.id}/scenes`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ scenes: updatedScenes }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update video scenes");
+      }
+    } catch (err) {
+      console.error("Error updating scenes:", err);
+      throw err;
+    }
+  }
+
+  // Method to add a new scene to the video
+  async function addScene(narration: string = "New scene"): Promise<void> {
+    if (!video) return;
+    try {
+      const response = await fetch(`/api/video/${video.id}/scene`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ narration }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add new scene");
+      }
+    } catch (err) {
+      console.error("Error adding new scene:", err);
+      throw err;
+    }
+  }
+
   // New method to update music settings.
   async function updateMusic(
     newVolume: number,
     newUrl: string | null,
   ): Promise<void> {
-    if (!video || !db) return;
+    if (!video) return;
     try {
-      const videoRef = doc(db, "videos", video.id);
-      await updateDoc(videoRef, { musicVolume: newVolume, musicUrl: newUrl });
+      const response = await fetch(`/api/video/${video.id}/music`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          musicVolume: newVolume,
+          musicUrl: newUrl
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update music settings");
+      }
     } catch (err) {
       console.error("Error updating music:", err);
       throw err;
@@ -197,6 +281,9 @@ export function useVideoDetail(videoId: string) {
     loading,
     error,
     stableAssets,
+    updateVideoDetails,
+    updateScenes,
+    addScene,
     updateMusic,
     uploadToYoutube,
   };

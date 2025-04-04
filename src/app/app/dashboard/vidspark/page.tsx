@@ -21,14 +21,9 @@ interface Video extends VideoType {
 }
 
 export default function VidSparkDashboard() {
-  const { user, credits: userCredits } = useAuth();
+  const { user } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Extract available credits from the userCredits object
-  const availableCredits = typeof userCredits === 'object' ? 
-    userCredits?.availableCredits || 0 : 
-    userCredits || 0;
 
   useEffect(() => {
     if (!user) return;
@@ -68,7 +63,8 @@ export default function VidSparkDashboard() {
     fetchData();
   }, [user]);
 
-  const formatNumber = (num: number): string => {
+  const formatNumber = (num: number | undefined): string => {
+    if (!num) return "0";
     if (num >= 1000000) {
       return (num / 1000000).toFixed(1) + "M";
     } else if (num >= 1000) {
@@ -80,6 +76,11 @@ export default function VidSparkDashboard() {
   // Calculate videos in production
   const videosInProduction = videos.filter(
     v => v.status === 'draft' || v.status.includes('processing')
+  ).length;
+
+  // Calculate active videos (completed or uploaded to platforms)
+  const activeVideos = videos.filter(
+    v => v.status === 'completed' || v.status.includes('ready')
   ).length;
 
   if (loading) {
@@ -107,7 +108,7 @@ export default function VidSparkDashboard() {
 
         <KPISection 
           totalVideos={videos.length}
-          availableCredits={availableCredits}
+          activeVideos={activeVideos}
           videosInProduction={videosInProduction}
           formatNumber={formatNumber}
         />

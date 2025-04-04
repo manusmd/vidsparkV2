@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { useCredits } from "@/hooks/useCredits";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Card,
   CardContent,
@@ -10,85 +9,82 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { BsCreditCard } from "react-icons/bs";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import CustomerPortal from "./customer-portal";
+import { useRouter } from "next/navigation";
+import ROUTES from "@/lib/routes";
+import { useStripePayments } from "@/hooks/useStripePayments";
 
 export default function CreditsPage() {
-  const { credits, transactions, packages, isLoading, purchaseCredits } =
-    useCredits();
-  const [purchasingPackageId, setPurchasingPackageId] = useState<string | null>(
-    null,
-  );
+  const { user, credits, creditsLoading } = useAuth();
+  const { products, prices, isLoading: productsLoading, createCheckoutSession } = useStripePayments();
+  const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
+  const [processingPriceId, setProcessingPriceId] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Handle credit purchase
-  const handlePurchase = async (packageId: string) => {
+  // Filter products by billing interval
+  const filteredPrices = prices.filter(price => 
+    price.type === 'recurring' && 
+    price.recurring?.interval === billingInterval
+  );
+  
+  // Group prices by product
+  const productsByInterval = filteredPrices.map(price => {
+    const product = products.find(p => p.id === price.product_id);
+    return {
+      priceId: price.id,
+      price: price.unit_amount / 100,
+      interval: price.recurring?.interval || '',
+      name: product?.name || '',
+      description: product?.description || '',
+      features: getProductFeatures(product),
+      popular: product?.metadata?.popular === 'true'
+    };
+  });
+
+  // Extract features from product metadata
+  function getProductFeatures(product: any) {
+    const features = [];
+    
+    if (product?.metadata?.credits) {
+      features.push(`${product.metadata.credits} Credits`);
+    }
+    
+    features.push('All VidSpark Features');
+    features.push(`${billingInterval === 'month' ? 'Monthly' : 'Yearly'} Billing`);
+    
+    if (billingInterval === 'year') {
+      features.push('Save 16%');
+    }
+    
+    return features;
+  }
+
+  // Handle subscription
+  const handleSubscribe = async (priceId: string) => {
+    if (!user) {
+      // If not logged in, redirect to sign in page
+      router.push(ROUTES.PAGES.AUTH.SIGNIN);
+      return;
+    }
+    
     try {
-      setPurchasingPackageId(packageId);
-      const checkoutUrl = await purchaseCredits(packageId);
+      setProcessingPriceId(priceId);
+      // Create checkout session and redirect to Stripe
+      const checkoutUrl = await createCheckoutSession(priceId);
       window.location.href = checkoutUrl;
     } catch (error) {
-      console.error("Error purchasing credits:", error);
-      alert("Failed to initiate purchase. Please try again.");
+      console.error("Error creating checkout session:", error);
+      alert("Failed to create checkout session. Please try again.");
     } finally {
-      setPurchasingPackageId(null);
+      setProcessingPriceId(null);
     }
   };
 
-  // Format transaction date
-  const formatTransactionDate = (
-    timestamp: { toDate?: () => Date } | Date | number | string,
-  ) => {
-    if (!timestamp) return "Unknown";
-
-    let date: Date;
-
-    if (
-      typeof timestamp === "object" &&
-      "toDate" in timestamp &&
-      typeof timestamp.toDate === "function"
-    ) {
-      date = timestamp.toDate();
-    } else if (timestamp instanceof Date) {
-      date = timestamp;
-    } else if (typeof timestamp === "number" || typeof timestamp === "string") {
-      date = new Date(timestamp);
-    } else {
-      // Fallback for any other case
-      date = new Date();
-    }
-
-    return formatDistanceToNow(date, { addSuffix: true });
-  };
-
-  // Get transaction type display
-  const getTransactionTypeDisplay = (type: string) => {
-    switch (type) {
-      case "purchase":
-        return "Purchase";
-      case "usage":
-        return "Usage";
-      case "refund":
-        return "Refund";
-      case "expiration":
-        return "Expiration";
-      case "plan_allocation":
-        return "Plan Allocation";
-      default:
-        return type;
-    }
-  };
-
-  if (isLoading) {
+  if (creditsLoading || productsLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <ReloadIcon className="h-8 w-8 animate-spin" />
@@ -122,109 +118,101 @@ export default function CreditsPage() {
               </div>
             </div>
           </div>
+          {user && (
+            <div className="mt-4 flex justify-end">
+              <CustomerPortal />
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {/* Tabs for Packages and Transactions */}
-      <Tabs defaultValue="packages" className="mb-8">
-        <TabsList className="mb-4">
-          <TabsTrigger value="packages">Buy Credits</TabsTrigger>
-          <TabsTrigger value="transactions">Transaction History</TabsTrigger>
-        </TabsList>
-
-        {/* Credit Packages */}
-        <TabsContent value="packages">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {packages.map((pkg) => (
-              <Card key={pkg.id} className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
-                  <CardTitle>{pkg.name}</CardTitle>
-                  <CardDescription className="text-white opacity-90">
-                    {pkg.credits} Credits
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <div className="text-3xl font-bold mb-2">
-                    ${(pkg.price / 100).toFixed(2)}
-                  </div>
-                  <div className="text-sm text-muted-foreground mb-4">
-                    ${(pkg.price / 100 / pkg.credits).toFixed(2)} per credit
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    onClick={() => handlePurchase(pkg.id)}
-                    disabled={purchasingPackageId === pkg.id}
-                  >
-                    {purchasingPackageId === pkg.id ? (
-                      <>
-                        <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      "Purchase"
-                    )}
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+      {/* Pricing Section */}
+      <div className="my-8">
+        <h2 className="text-2xl font-bold mb-4">Get More Credits</h2>
+        
+        {/* Billing Interval Toggle */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-muted inline-flex p-1 rounded-lg">
+            <button
+              onClick={() => setBillingInterval("month")}
+              className={`px-4 py-2 rounded-md ${
+                billingInterval === "month" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-muted-foreground/10"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setBillingInterval("year")}
+              className={`px-4 py-2 rounded-md ${
+                billingInterval === "year" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "hover:bg-muted-foreground/10"
+              }`}
+            >
+              Yearly
+            </button>
           </div>
-        </TabsContent>
-
-        {/* Transaction History */}
-        <TabsContent value="transactions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>Your recent credit transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-4">
-                        No transactions yet
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    transactions.map((transaction) => (
-                      <TableRow key={transaction.paymentId}>
-                        <TableCell>
-                          {formatTransactionDate(transaction.createdAt)}
-                        </TableCell>
-                        <TableCell>
-                          {getTransactionTypeDisplay(transaction.type)}
-                        </TableCell>
-                        <TableCell>{transaction.description}</TableCell>
-                        <TableCell
-                          className={`text-right ${transaction.amount > 0 ? "text-green-600" : "text-red-600"}`}
-                        >
-                          {transaction.amount > 0 ? "+" : ""}
-                          {transaction.amount}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {transaction.balance}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+        
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+          {productsByInterval.map((plan) => (
+            <Card key={plan.priceId} className={`overflow-hidden ${plan.popular ? 'border-primary' : ''}`}>
+              {plan.popular && (
+                <div className="bg-primary text-primary-foreground text-center py-2">
+                  <p className="text-sm font-medium">Most Popular</p>
+                </div>
+              )}
+              <CardHeader>
+                <CardTitle>{plan.name}</CardTitle>
+                <CardDescription>
+                  {plan.description}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4">
+                  <span className="text-3xl font-bold">${plan.price.toFixed(2)}</span>
+                  <span className="text-muted-foreground">/{plan.interval}</span>
+                </div>
+                
+                <ul className="space-y-2 mb-6">
+                  {plan.features.map((feature, i) => (
+                    <li key={i} className="flex items-center">
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="24" 
+                        height="24" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        className="h-5 w-5 mr-2 text-primary"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  onClick={() => handleSubscribe(plan.priceId)}
+                  className="w-full"
+                  variant={plan.popular ? "default" : "outline"}
+                  disabled={processingPriceId === plan.priceId}
+                >
+                  {processingPriceId === plan.priceId ? "Processing..." : "Subscribe"}
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 export interface VidSparkStats {
   totalVideosCreated: number;
-  creditsRemaining: number;
+  activeVideos: number;
   videosUploaded: number;
   averagePerformance: {
     views: number;

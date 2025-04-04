@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, CreditCard, Upload, TrendingUp } from "lucide-react";
+import { Video, CreditCard, Upload, TrendingUp, PlayCircle } from "lucide-react";
 import { VidSparkStats } from "@/types/vidspark";
 
 interface PerformanceMetricsProps {
@@ -17,10 +17,10 @@ export function PerformanceMetrics({ stats, formatNumber }: PerformanceMetricsPr
       description: "Total videos created with VidSpark"
     },
     {
-      title: "Credits Remaining",
-      value: stats?.creditsRemaining,
-      icon: CreditCard,
-      description: "Available credits for video creation"
+      title: "Active Videos",
+      value: stats?.activeVideos || 0,
+      icon: PlayCircle,
+      description: "Videos currently active"
     },
     {
       title: "Videos Uploaded",

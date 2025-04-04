@@ -89,7 +89,7 @@ export default function HeroSection() {
 
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
         <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.3 }}>
-          <Link href="#pricing">
+          <Link href="/api/auth/signin">
             <Button
               size="lg"
               className="px-8 py-4 text-lg font-medium bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-500/20"
@@ -121,8 +121,8 @@ export default function HeroSection() {
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/10 to-blue-500/10 z-10 pointer-events-none"></div>
         <Image
-          src="/screenshots/dashboard-screenshot.png"
-          alt="VidSpark Dashboard Preview"
+          src="/create-stories-screenshot.png"
+          alt="VidSpark Content Creation Interface"
           width={1200}
           height={675}
           className="w-full h-auto"
