@@ -88,13 +88,19 @@ export interface Video {
   id: string;
   title: string;
   description: string;
-  styling: VideoStyling;
+  narration?: string;
+  templateId?: string; // Reference to the template this video was created from
   voiceId: string;
   scenes: {
-    [sceneIndex: number]: Scene;
+    [key: number]: Scene;
   };
-  musicVolume: string;
-  musicUrl: string;
+  styling: {
+    font: string;
+    variant: string;
+  } | null;
+  musicVolume: number;
+  musicUrl: string | null;
+  musicId?: string | null;
   status:
     | "draft"
     | "processing:assets"
@@ -131,6 +137,25 @@ export interface Video {
     };
   };
   createdAt: Date;
+}
+
+export interface VideoTemplate {
+  id: string;
+  name: string;
+  userId: string;
+  contentTypeId: string;
+  imageStyleId: string;
+  voiceId: string;
+  textDesign: {
+    fontId: string;
+    styleId: string;
+  };
+  textPosition: "top" | "middle" | "bottom";
+  showTitle: boolean;
+  musicId: string;
+  defaultNarration?: string;
+  createdAt: string;
+  lastUsedAt: string | Date;
 }
 
 export type Account = {

@@ -53,6 +53,14 @@ export function useStory(options: UseStoryOptions = {}) {
     narration: string;
     imageType: string;
     voiceId: string;
+    templateId?: string;
+    textDesign?: {
+      fontId: string;
+      styleId: string;
+    };
+    textPosition?: string;
+    showTitle?: boolean;
+    musicId?: string;
   }) => {
     setIsGenerating(true);
     setError(null);
@@ -66,6 +74,11 @@ export function useStory(options: UseStoryOptions = {}) {
           imageType: params.imageType,
           voiceId: params.voiceId,
           uid: user.uid,
+          templateId: params.templateId,
+          textDesign: params.textDesign,
+          textPosition: params.textPosition,
+          showTitle: params.showTitle,
+          musicId: params.musicId,
         }),
       });
       if (!res.ok) throw new Error("Failed to trigger story generation.");

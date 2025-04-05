@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Plus, Info, Film } from "lucide-react";
+import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Plus, Info, Film, ChevronDown, ChevronUp, ChevronRight, FileCheck } from "lucide-react";
 import ROUTES from "@/lib/routes";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
@@ -15,7 +15,8 @@ import React, { useEffect, useState } from "react";
 import { CollapsibleSection } from "@/components/layout/CollapsibleSection.component";
 import { TextOptions } from "@/components/video/TextOptions.component";
 import { MusicSelector } from "@/components/video/MusicSelector.component";
-import { useMusic } from "@/providers/useMusic";
+import { useMusic, MusicProvider } from "@/providers/useMusic";
+import { TextDesignProvider } from "@/hooks/useTextDesign";
 import { YoutubeUploadModal } from "@/components/modals/YouTubeUploadModal.component";
 import { useAccounts } from "@/hooks/data/useAccounts";
 import { Button } from "@/components/ui/button";
@@ -38,8 +39,10 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTemplates } from "@/hooks/data/useTemplates";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export default function VideoDetailPage() {
+function VideoDetailPageContent() {
   const { id } = useParams();
   const { musicUrl, musicVolume } = useMusic();
   const { accounts } = useAccounts();
@@ -54,6 +57,7 @@ export default function VideoDetailPage() {
     updateScenes,
     addScene
   } = useVideoDetail(id as string);
+  const { templates, loading: templatesLoading } = useTemplates();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState<boolean>(true);
   const [textPosition, setTextPosition] = useState<string>("top");
@@ -72,11 +76,42 @@ export default function VideoDetailPage() {
   // State for Generation Confirmation Dialog
   const [confirmGenDialogOpen, setConfirmGenDialogOpen] = useState(false);
 
+  // Fix for YouTubeUploadModal
+  const handleCloseUploadModal = () => {
+    setUploadModalOpen(false);
+  };
+
+  const handleYoutubeSubmit = async (data: {
+    channelId: string;
+    publishAt: Date;
+    timezone: string;
+    privacy: "public" | "private" | "unlisted";
+  }) => {
+    try {
+      await uploadToYoutube({
+        ...data,
+        publishAt: data.publishAt.toISOString()
+      });
+    } catch (error) {
+      console.error("Error uploading to YouTube:", error);
+    }
+  };
+
   // Initialize edit fields when video data loads
   useEffect(() => {
     if (video) {
       setEditTitle(video.title);
       setEditDescription(video.description);
+      
+      // If video was created from a template, template-specific settings may be in the video object
+      if (video.templateId) {
+        // Apply template settings if we have them
+        const template = templates?.find(t => t.id === video.templateId);
+        if (template) {
+          setTextPosition(template.textPosition);
+          setShowTitle(template.showTitle);
+        }
+      }
       
       // Turn off editing modes if video status is not draft
       if (video.status !== "draft") {
@@ -84,7 +119,7 @@ export default function VideoDetailPage() {
         setIsEditingScenes(false);
       }
     }
-  }, [video]);
+  }, [video, templates]);
 
   // When render is complete, if the current tab is "design", switch to "scenes"
   useEffect(() => {
@@ -191,6 +226,128 @@ export default function VideoDetailPage() {
     setOpenSection(prevSection => prevSection === sectionId ? null : sectionId);
   };
 
+  // Add renderInfoSection function
+  const renderInfoSection = () => {
+    if (!video) return null;
+    
+    // Find the template if the video was created from one
+    const template = video.templateId && templates ? 
+      templates.find(t => t.id === video.templateId) : null;
+    
+    return (
+      <div className="py-6">
+        {/* Basic video info */}
+        <div className="space-y-6">
+          {/* Template info section */}
+          {template && (
+            <div className="bg-muted/30 rounded-lg p-4 border border-border">
+              <div className="flex items-center mb-2">
+                <div className="bg-primary/10 rounded-full p-2 mr-2">
+                  <FileCheck className="h-4 w-4 text-primary" />
+                </div>
+                <h3 className="text-sm font-medium">Created from Template</h3>
+              </div>
+              <div className="pl-10">
+                <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{template.name}</span></p>
+                <Link 
+                  href={`${ROUTES.PAGES.APP.TEMPLATES}`} 
+                  className="text-xs text-primary hover:underline inline-flex items-center mt-1"
+                >
+                  View all templates
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Link>
+              </div>
+            </div>
+          )}
+        
+          {isEditMode ? (
+            <div className="space-y-4 py-2">
+              {/* Edit mode UI */}
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium">
+                  Title
+                </label>
+                <input
+                  id="title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full p-2 rounded-md border border-border bg-background"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                  rows={4}
+                  className="w-full p-2 rounded-md border border-border bg-background resize-none"
+                />
+              </div>
+              
+              <div className="flex justify-end gap-2 mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelEdit}
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={saveVideoDetails}
+                  size="sm"
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-1" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            // Display mode UI
+            <div>
+              <div className="flex justify-between items-start">
+                <div>
+                  <h1 className="text-2xl font-bold mb-2">{video.title}</h1>
+                  <p className="text-muted-foreground whitespace-pre-line">
+                    {video.description}
+                  </p>
+                </div>
+                {video.status === "draft" && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsEditMode(true)}
+                    className="h-8 w-8"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span className="sr-only">Edit</span>
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+  
+  // Get YouTube status from video if available
+  const youtubeUploadStatus = (video as any)?.youtubeUploadStatus || "not_started";
+  
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen">
@@ -225,131 +382,100 @@ export default function VideoDetailPage() {
   // Prepare action buttons
   const actionButtons = [];
   
-  // Download button
-  if (video.renderStatus?.videoUrl) {
+  // If video is ready, show download button
+  if (video.renderStatus?.statusMessage === "completed" && video.renderStatus?.videoUrl) {
     actionButtons.push(
-      <Button 
+      <Button
         key="download"
+        size="sm"
         variant="outline"
-        onClick={() => window.open(video.renderStatus?.videoUrl, "_blank")}
-        className="flex items-center"
+        className="flex gap-1.5 items-center"
+        asChild
       >
-        <Download className="w-4 h-4 mr-2" />
-        Download Video
+        <a href={video.renderStatus.videoUrl} download target="_blank" rel="noopener noreferrer">
+          <Download className="h-3.5 w-3.5" />
+          Download
+        </a>
       </Button>
     );
-  }
-  
-  // Upload to YouTube button
-  if (video.status === "render:complete") {
+    
+    // Only show share button if there's a video URL
     actionButtons.push(
-      <Button 
-        key="upload"
+      <Button
+        key="share"
+        size="sm"
         variant="outline"
-        onClick={onUpload}
-        className="flex items-center"
+        className="flex gap-1.5 items-center"
+        onClick={() => {
+          if (navigator.share && video.renderStatus?.videoUrl) {
+            navigator.share({
+              title: video.title,
+              text: "Check out this video I made with VidSpark!",
+              url: video.renderStatus.videoUrl,
+            }).catch(err => console.error("Error sharing:", err));
+          } else if (video.renderStatus?.videoUrl) {
+            navigator.clipboard.writeText(video.renderStatus.videoUrl);
+            toast.success("Video URL copied to clipboard");
+          }
+        }}
       >
-        <Upload className="w-4 h-4 mr-2" />
-        Upload to YouTube
+        <Share2 className="h-3.5 w-3.5" />
+        Share
       </Button>
     );
+    
+    // YouTube upload button
+    if (accounts.length > 0) {
+      actionButtons.push(
+        <Button
+          key="youtube"
+          size="sm"
+          variant="outline"
+          className="flex gap-1.5 items-center"
+          onClick={onUpload}
+          disabled={youtubeUploadStatus === "pending" || youtubeUploadStatus === "processing"}
+        >
+          <Upload className="h-3.5 w-3.5" />
+          {youtubeUploadStatus === "pending" || youtubeUploadStatus === "processing"
+            ? "Uploading..."
+            : youtubeUploadStatus === "completed"
+            ? "Re-upload"
+            : "YouTube"}
+        </Button>
+      );
+    }
   }
-  
-  // Share button (disabled for now)
-  actionButtons.push(
-    <Button 
-      key="share"
-      variant="outline"
-      disabled
-      className="flex items-center opacity-50"
-    >
-      <Share2 className="w-4 h-4 mr-2" />
-      Share
-    </Button>
-  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
-      {/* Back button and status badge */}
-      <div className="w-full bg-background/60 backdrop-blur-sm border-b border-border/40 sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Button variant="ghost" asChild size="sm">
-            <Link href="/app/dashboard/vidspark" className="flex items-center">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Link>
-          </Button>
-          
-          {!isEditingDisabled && (
-            <div>
-              {isEditMode ? (
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={cancelEdit}
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Cancel
-                  </Button>
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={saveVideoDetails}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-1" />
-                    )}
-                    Save
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => setIsEditMode(true)}
-                >
-                  <Edit2 className="w-4 h-4 mr-1" />
-                  Edit Video
-                </Button>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+    <>
+      <YoutubeUploadModal
+        open={uploadModalOpen}
+        onClose={handleCloseUploadModal}
+        onSubmit={handleYoutubeSubmit}
+        channels={accounts}
+      />
+      
+      <Dialog open={confirmGenDialogOpen} onOpenChange={setConfirmGenDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate Video</DialogTitle>
+            <DialogDescription>
+              This will start the video generation process. Continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmGenDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={onGenerate}>
+              Generate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       
       <div className="container mx-auto px-4 py-8">
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="mb-6"
-        >
-          {isEditMode ? (
-            <div className="space-y-3">
-              <Input
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                placeholder="Video title"
-                className="text-xl font-semibold"
-              />
-              <Textarea
-                value={editDescription}
-                onChange={(e) => setEditDescription(e.target.value)}
-                placeholder="Video description"
-                className="resize-none h-24"
-              />
-            </div>
-          ) : (
-            <>
-              <h1 className="text-3xl font-bold">{video.title}</h1>
-              <p className="text-muted-foreground mt-1">{video.description}</p>
-            </>
-          )}
-        </motion.div>
+        {renderInfoSection()}
 
         {/* Processing steps and Video info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -436,12 +562,15 @@ export default function VideoDetailPage() {
                     ) : (
                       <VideoPreview
                         scenes={stableAssets?.scenes || {}}
-                        styling={stableAssets?.styling || {}}
+                        styling={{
+                          variant: (stableAssets?.styling?.variant || video.styling?.variant || "default") as "default",
+                          font: (stableAssets?.styling?.font || video.styling?.font || "roboto") as "roboto"
+                        }}
                         textPosition={textPosition}
                         showTitle={showTitle}
                         title={video.title}
-                        musicVolume={musicVolume}
-                        musicUrl={musicUrl}
+                        musicVolume={video.musicVolume !== undefined ? video.musicVolume : musicVolume}
+                        musicUrl={video.musicUrl || musicUrl}
                       />
                     )}
                   </div>
@@ -495,41 +624,6 @@ export default function VideoDetailPage() {
                       )}
                     </div>
                   </TabsList>
-                  
-                  {currentTab === "scenes" && !isEditingDisabled && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          if (isEditingScenes) {
-                            // When switching from edit mode to normal mode, save changes
-                            const sceneListElement = document.getElementById('scene-list-component');
-                            if (sceneListElement) {
-                              // Trigger save through a custom event
-                              const saveEvent = new CustomEvent('save-scenes');
-                              sceneListElement.dispatchEvent(saveEvent);
-                            }
-                          }
-                          setIsEditingScenes(!isEditingScenes);
-                        }}
-                        className="text-xs"
-                        disabled={isSaving}
-                      >
-                        {isEditingScenes ? (
-                          <>
-                            <Save className="w-3.5 h-3.5 mr-1" />
-                            {isSaving ? 'Saving...' : 'Done Editing'}
-                          </>
-                        ) : (
-                          <>
-                            <Edit2 className="w-3.5 h-3.5 mr-1" />
-                            Edit Scenes
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  )}
                 </div>
 
                 <TabsContent value="scenes" className="p-5 pt-0 border-t border-border/20">
@@ -602,16 +696,12 @@ export default function VideoDetailPage() {
                     </CollapsibleSection>
                     
                     <CollapsibleSection
-                      id="music"
-                      title="Music Selection"
-                      description="Add background music to enhance your video"
-                      isOpen={openSection === "music"}
+                      id="audio"
+                      title="Background Music"
+                      description="Add music to your video and adjust volume"
+                      isOpen={openSection === "audio"}
                       onToggle={toggleSection}
-                      icon={<svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>}
+                      icon={<Edit2 className="w-4 h-4 text-primary" />}
                     >
                       <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
                         <MusicSelector disabled={isProcessingStory} />
@@ -624,73 +714,22 @@ export default function VideoDetailPage() {
           </motion.div>
         </div>
       </div>
-      
-      {/* YouTube Upload Modal */}
-      <YoutubeUploadModal
-        open={uploadModalOpen}
-        onClose={() => setUploadModalOpen(false)}
-        onSubmit={async (data) => {
-          try {
-            // Convert publishAt (Date) to an ISO string
-            const uploadData = {
-              ...data,
-              publishAt: data.publishAt.toISOString(),
-            };
-            await uploadToYoutube(uploadData);
-          } catch (err) {
-            console.error("Upload to YouTube failed:", err);
-          }
-        }}
-        channels={accounts}
-      />
+    </>
+  );
+}
 
-      {/* Video Generation Confirmation Dialog */}
-      <Dialog open={confirmGenDialogOpen} onOpenChange={setConfirmGenDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Generate Video</DialogTitle>
-            <DialogDescription>
-              You are about to generate your video. This will lock the structure of your content.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid gap-4 py-4">
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
-              <h3 className="text-sm font-medium text-amber-900">Important Information</h3>
-              <ul className="mt-2 text-sm text-amber-700 space-y-2">
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Once you generate the video, you <strong>cannot edit</strong> the script structure or scene texts anymore.</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>You will still be able to customize appearance, text design, and music after generation.</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="mr-2">•</span>
-                  <span>Please carefully review your content before proceeding.</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-          
-          <DialogFooter className="flex justify-between sm:justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setConfirmGenDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              variant="default" 
-              onClick={onGenerate}
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-            >
-              Generate Video
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+export default function VideoDetailPage() {
+  const { id } = useParams();
+  
+  if (!id) {
+    return <div>Invalid video ID</div>;
+  }
+  
+  return (
+    <TextDesignProvider videoId={id as string}>
+      <MusicProvider videoId={id as string}>
+        <VideoDetailPageContent />
+      </MusicProvider>
+    </TextDesignProvider>
   );
 }

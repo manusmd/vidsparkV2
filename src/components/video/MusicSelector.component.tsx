@@ -8,6 +8,8 @@ import type { MusicTrack } from "@/app/types";
 import { Slider } from "@/components/ui/slider";
 import { useMusicTracks } from "@/hooks/data/useMusicTracks";
 import { useMusic } from "@/providers/useMusic";
+import { useVideoDetail } from "@/hooks/data/useVideoDetail";
+import { useParams } from "next/navigation";
 
 export function MusicSelector({
   disabled = false,
@@ -15,18 +17,38 @@ export function MusicSelector({
   disabled?: boolean;
 }): JSX.Element {
   const { musicTracks, loading, error } = useMusicTracks();
-  const { musicVolume, updateMusic } = useMusic();
+  const { musicUrl, musicVolume, updateMusic } = useMusic();
   const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
+  const { video } = useVideoDetail(useParams().id as string);
+
+  // Initialize selected track from musicId or musicUrl
+  useEffect(() => {
+    if (musicTracks.length > 0) {
+      if (video?.musicId) {
+        // If video has musicId, find track by id
+        const track = musicTracks.find((track) => track.id === video.musicId);
+        if (track) {
+          setSelectedTrack(track);
+        }
+      } else if (musicUrl) {
+        // Fall back to finding by URL
+        const track = musicTracks.find((track) => track.src === musicUrl);
+        if (track) {
+          setSelectedTrack(track);
+        }
+      }
+    }
+  }, [musicTracks, musicUrl, video]);
 
   const handleSelectMusic = async (track: MusicTrack | null) => {
     setSelectedTrack(track);
-    await updateMusic(track ? track.src : "", musicVolume);
+    await updateMusic(track ? track.src : "", musicVolume, track ? track.id : null);
   };
 
   const handleVolumeChange = async (value: number) => {
-    await updateMusic(selectedTrack ? selectedTrack.src : "", value);
+    await updateMusic(selectedTrack ? selectedTrack.src : "", value, selectedTrack ? selectedTrack.id : null);
   };
 
   const handlePlayPause = (track: MusicTrack & { id: string }) => {

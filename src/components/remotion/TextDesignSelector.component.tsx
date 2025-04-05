@@ -107,16 +107,27 @@ function getCombinedPreviewStyle(
 
 interface TextDesignSelectorProps {
   disabled?: boolean;
+  initialDesign?: {
+    font: string;
+    variant: string;
+  };
+  onChange?: (design: { font: string; variant: string }) => void;
 }
 
 export function TextDesignSelector({
   disabled = false,
+  initialDesign,
+  onChange,
 }: TextDesignSelectorProps): JSX.Element {
-  const { styling, updateStyling } = useTextDesign();
+  const { styling: contextStyling, updateStyling } = useTextDesign();
   type FontType = z.infer<typeof TextDesignSchema>["font"];
+  
   // Fallback to defaults if styling is not yet loaded
-  const currentVariant: TextDesignVariant = styling?.variant || "default";
-  const currentFont: FontType = styling?.font || TextDesignFonts.ROBOTO;
+  // Use initialDesign if provided, otherwise use context styling
+  const styling = initialDesign || contextStyling || { variant: "default", font: TextDesignFonts.ROBOTO };
+  
+  const currentVariant = (styling?.variant || "default") as TextDesignVariant;
+  const currentFont = (styling?.font || TextDesignFonts.ROBOTO) as FontType;
 
   const variantKeys = Object.keys(textDesignVariants) as TextDesignVariant[];
   const currentVariantIndex = variantKeys.indexOf(currentVariant);
@@ -125,23 +136,35 @@ export function TextDesignSelector({
 
   const [activeTab, setActiveTab] = useState<string>("variant");
 
+  // Handle style updates based on whether we're using internal or external state
+  const handleStyleUpdate = (variant: TextDesignVariant, font: FontType) => {
+    if (onChange) {
+      // If onChange is provided, use it for external state management
+      onChange({ 
+        variant: variant || "default", 
+        font: font || TextDesignFonts.ROBOTO 
+      });
+    } else {
+      // Otherwise use the context's updateStyling
+      updateStyling(variant, font).catch((err) => {
+        console.error(err);
+      });
+    }
+  };
+
   const handleVariantLeft = () => {
     if (disabled) return;
     const newIndex =
       (currentVariantIndex - 1 + variantKeys.length) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
-    updateStyling(newVariant, currentFont).catch((err) => {
-      console.error(err);
-    });
+    handleStyleUpdate(newVariant, currentFont);
   };
 
   const handleVariantRight = () => {
     if (disabled) return;
     const newIndex = (currentVariantIndex + 1) % variantKeys.length;
     const newVariant = variantKeys[newIndex];
-    updateStyling(newVariant, currentFont).catch((err) => {
-      console.error(err);
-    });
+    handleStyleUpdate(newVariant, currentFont);
   };
 
   const handleFontLeft = () => {
@@ -149,18 +172,14 @@ export function TextDesignSelector({
     const newIndex =
       (currentFontIndex - 1 + fontOptions.length) % fontOptions.length;
     const newFont: FontType = fontOptions[newIndex].value as FontType;
-    updateStyling(currentVariant, newFont).catch((err) => {
-      console.error(err);
-    });
+    handleStyleUpdate(currentVariant, newFont);
   };
 
   const handleFontRight = () => {
     if (disabled) return;
     const newIndex = (currentFontIndex + 1) % fontOptions.length;
     const newFont: FontType = fontOptions[newIndex].value as FontType;
-    updateStyling(currentVariant, newFont).catch((err) => {
-      console.error(err);
-    });
+    handleStyleUpdate(currentVariant, newFont);
   };
 
   const selectedVariantKey = currentVariant;
@@ -170,6 +189,19 @@ export function TextDesignSelector({
     selectedVariantKey,
     selectedFont.value,
   );
+
+  // Update click handlers in the component
+  const handleVariantClick = (key: TextDesignVariant) => {
+    if (!disabled) {
+      handleStyleUpdate(key, currentFont);
+    }
+  };
+
+  const handleFontClick = (fontValue: string) => {
+    if (!disabled) {
+      handleStyleUpdate(currentVariant, fontValue as FontType);
+    }
+  };
 
   return (
     <Card className="w-full">
@@ -255,9 +287,7 @@ export function TextDesignSelector({
                     )}
                     onClick={() => {
                       if (!disabled) {
-                        updateStyling(key, currentFont).catch((err) => {
-                          console.error(err);
-                        });
+                        handleStyleUpdate(key, currentFont);
                       }
                     }}
                   >
@@ -319,12 +349,10 @@ export function TextDesignSelector({
                     )}
                     onClick={() => {
                       if (!disabled) {
-                        updateStyling(
+                        handleStyleUpdate(
                           currentVariant,
                           fontOpt.value as FontType,
-                        ).catch((err) => {
-                          console.error(err);
-                        });
+                        );
                       }
                     }}
                   >

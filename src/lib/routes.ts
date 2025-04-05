@@ -32,6 +32,8 @@ export const PAGES = {
     },
     // Content Creation
     STUDIO: "/app/studio",
+    TEMPLATES: "/app/templates",
+    BULK_JOBS: "/app/bulk-jobs",
     MY_VIDEOS: {
       INDEX: "/app/my-videos",
       ALL: "/app/my-videos/all",
@@ -109,6 +111,19 @@ export const API = {
     BASE: "/api/music",
     UPLOAD: "/api/music/upload",
     DETAIL: (id: string) => `/api/music/${id}`,
+  },
+
+  // Templates
+  TEMPLATES: {
+    BASE: "/api/templates",
+    DETAIL: (id: string) => `/api/templates/${id}`,
+  },
+
+  // Bulk video creation
+  BULK_CREATION: {
+    CREATE: "/api/bulk/create",
+    STATUS: "/api/bulk/status",
+    CANCEL: "/api/bulk/cancel",
   },
 
   // External services

@@ -7,6 +7,7 @@ import { processStoryRequest } from "./story/storyRequestProcessing";
 import { processStoryIdea } from "./story/storyIdeaProcessing";
 import { syncVideoStatus } from "./video/syncVideoStatus";
 import { processYoutubeUploadQueue } from "./video/uploadToYoutubeProcessing";
+import { processBulkJob } from "./video/bulkJobProcessing";
 
 exports.videoQueue = processVideoQueue;
 exports.voiceQueue = processVoiceQueue;
@@ -17,3 +18,4 @@ exports.storyIdeaProcessing = processStoryIdea;
 exports.videoRenderProcessing = processVideoRender;
 exports.syncVideoStatus = syncVideoStatus;
 exports.syncNewUserToFirestore = syncNewUserToFirestore;
+exports.processBulkJob = processBulkJob;

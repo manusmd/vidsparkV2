@@ -19,6 +19,8 @@ import {
   ShoppingBag,
   Sparkles,
   Video,
+  BookmarkPlus,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ROUTES from "@/lib/routes";
@@ -70,6 +72,16 @@ export default function Sidebar() {
           href: ROUTES.PAGES.APP.MY_VIDEOS.INDEX,
           label: "My Videos",
           icon: <Film className="w-4 h-4" />,
+        },
+        {
+          href: ROUTES.PAGES.APP.TEMPLATES,
+          label: "Templates",
+          icon: <BookmarkPlus className="w-4 h-4" />,
+        },
+        {
+          href: ROUTES.PAGES.APP.BULK_JOBS,
+          label: "Bulk Jobs",
+          icon: <Layers className="w-4 h-4" />,
         },
       ],
     },

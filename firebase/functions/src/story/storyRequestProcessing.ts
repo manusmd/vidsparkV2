@@ -36,6 +36,13 @@ export const processStoryRequest = onDocumentCreated(
     }
 
     try {
+      // Get current video data to preserve template-related properties
+      const videoDoc = await db.collection("videos").doc(videoId).get();
+      if (!videoDoc.exists) {
+        throw new Error(`Video document ${videoId} not found`);
+      }
+      const videoData = videoDoc.data() || {};
+      
       // Build generation prompt.
       const prompt = buildGenerationPrompt(narration, imageType);
       console.log("Generation prompt:", prompt);
@@ -78,6 +85,12 @@ export const processStoryRequest = onDocumentCreated(
           voiceStatus,
           status: "draft",
           imageType: data.imageType || "",
+          // Preserve template-related properties if they exist
+          ...(videoData.templateId && { templateId: videoData.templateId }),
+          ...(videoData.textDesign && { textDesign: videoData.textDesign }),
+          ...(videoData.textPosition && { textPosition: videoData.textPosition }),
+          ...(videoData.showTitle !== undefined && { showTitle: videoData.showTitle }),
+          ...(videoData.musicId && { musicId: videoData.musicId })
         });
       console.log("Video document updated successfully for video:", videoId);
 

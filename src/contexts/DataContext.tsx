@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import ROUTES from "@/lib/routes";
-import type { ContentType, ImageType, Video as VideoType, Account } from "@/app/types";
+import type { ContentType, ImageType, Video as VideoType, Account, VideoTemplate } from "@/app/types";
 import { useAuth } from "@/hooks/useAuth";
 
 interface Voice {
@@ -88,6 +88,15 @@ interface DataContextType {
   deleteContentType: (id: string) => Promise<void>;
   generateContentTypeImage: (prompt: string) => Promise<string>;
   
+  // Templates
+  templates: VideoTemplate[];
+  templatesLoading: boolean;
+  templatesError: string | null;
+  refreshTemplates: () => Promise<VideoTemplate[]>;
+  createTemplate: (templateData: Partial<VideoTemplate>) => Promise<VideoTemplate>;
+  updateTemplate: (id: string, templateData: Partial<VideoTemplate>) => Promise<VideoTemplate>;
+  deleteTemplate: (id: string) => Promise<void>;
+  
   // Image Types
   imageTypes: ImageType[];
   imageTypesLoading: boolean;
@@ -153,6 +162,11 @@ export function DataProvider({ children }: DataProviderProps) {
   const [imageTypes, setImageTypes] = useState<ImageType[]>([]);
   const [imageTypesLoading, setImageTypesLoading] = useState(true);
   const [imageTypesError, setImageTypesError] = useState<string | null>(null);
+  
+  // Templates state
+  const [templates, setTemplates] = useState<VideoTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(true);
+  const [templatesError, setTemplatesError] = useState<string | null>(null);
   
   // Voices state
   const [voices, setVoices] = useState<Voice[]>([]);
@@ -336,6 +350,7 @@ export function DataProvider({ children }: DataProviderProps) {
     }
   };
 
+  // Generate content type image
   const generateContentTypeImage = async (prompt: string): Promise<string> => {
     try {
       const res = await fetch(ROUTES.API.CONTENT_TYPES.GENERATE_IMAGE, {
@@ -344,10 +359,10 @@ export function DataProvider({ children }: DataProviderProps) {
         body: JSON.stringify({ prompt }),
       });
       if (!res.ok) {
-        throw new Error("Failed to generate image");
+        throw new Error("Failed to generate image for content type");
       }
-      const { imageUrl } = await res.json();
-      return imageUrl;
+      const data = await res.json();
+      return data.imageUrl;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
       throw new Error(errorMessage);
@@ -575,6 +590,104 @@ export function DataProvider({ children }: DataProviderProps) {
     }
   };
 
+  // Templates CRUD operations
+  const fetchTemplates = async () => {
+    if (!user) {
+      setTemplatesLoading(false);
+      return [];
+    }
+    
+    setTemplatesLoading(true);
+    setTemplatesError(null);
+    
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(ROUTES.API.TEMPLATES.BASE, { headers });
+      if (!res.ok) {
+        throw new Error("Failed to fetch templates");
+      }
+      const data: VideoTemplate[] = await res.json();
+      setTemplates(data);
+      setTemplatesLoading(false);
+      return data;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      console.error("Error fetching templates:", err);
+      setTemplatesError(errorMessage);
+      setTemplatesLoading(false);
+      return [];
+    }
+  };
+  
+  const createTemplate = async (templateData: Partial<VideoTemplate>): Promise<VideoTemplate> => {
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(ROUTES.API.TEMPLATES.BASE, {
+        method: "POST",
+        headers: { 
+          ...headers,
+          "Content-Type": "application/json" 
+        },
+        body: JSON.stringify(templateData),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to create template");
+      }
+      
+      const newTemplate = await res.json();
+      setTemplates((prev) => [...prev, newTemplate]);
+      return newTemplate;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      throw new Error(errorMessage);
+    }
+  };
+  
+  const updateTemplate = async (id: string, templateData: Partial<VideoTemplate>): Promise<VideoTemplate> => {
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(ROUTES.API.TEMPLATES.DETAIL(id), {
+        method: "PUT",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(templateData),
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to update template");
+      }
+      
+      const updatedTemplate = await res.json();
+      setTemplates((prev) => prev.map((t) => t.id === id ? updatedTemplate : t));
+      return updatedTemplate;
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      throw new Error(errorMessage);
+    }
+  };
+  
+  const deleteTemplate = async (id: string): Promise<void> => {
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(ROUTES.API.TEMPLATES.DETAIL(id), {
+        method: "DELETE",
+        headers
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to delete template");
+      }
+      
+      setTemplates((prev) => prev.filter((t) => t.id !== id));
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
+      throw new Error(errorMessage);
+    }
+  };
+
   // Initial data fetching
   useEffect(() => {
     const loadInitialData = async () => {
@@ -583,7 +696,8 @@ export function DataProvider({ children }: DataProviderProps) {
           fetchContentTypes(),
           fetchImageTypes(),
           fetchVoices(),
-          user ? fetchUserVideos() : Promise.resolve([])
+          user ? fetchUserVideos() : Promise.resolve([]),
+          user ? fetchTemplates() : Promise.resolve([])
         ]);
         
         // Fetch accounts first, then fetch analytics
@@ -618,6 +732,15 @@ export function DataProvider({ children }: DataProviderProps) {
     updateContentType,
     deleteContentType,
     generateContentTypeImage,
+    
+    // Templates
+    templates,
+    templatesLoading,
+    templatesError,
+    refreshTemplates: fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
     
     // Image Types
     imageTypes,

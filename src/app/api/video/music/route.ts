@@ -6,22 +6,24 @@ const MusicSchema = z.object({
   videoId: z.string(),
   musicVolume: z.number(),
   musicUrl: z.string().nullable(),
+  musicId: z.string().nullable().optional(),
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const { videoId, musicVolume, musicUrl } = MusicSchema.parse(
+    const { videoId, musicVolume, musicUrl, musicId } = MusicSchema.parse(
       await req.json(),
     );
     await db
       .collection("videos")
       .doc(videoId)
-      .set({ musicVolume, musicUrl }, { merge: true });
+      .set({ musicVolume, musicUrl, musicId }, { merge: true });
     return NextResponse.json({
       success: true,
       videoId,
       musicVolume,
       musicUrl,
+      musicId,
     });
   } catch (error: unknown) {
     console.error("Error updating music:", error);

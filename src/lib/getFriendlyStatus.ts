@@ -6,6 +6,8 @@
  */
 export function getFriendlyStatus(status: string): string {
   switch (status) {
+    case "pending":
+      return "Pending";
     case "draft":
       return "Draft";
     case "processing:assets":

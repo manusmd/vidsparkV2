@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { TextDesignProvider } from "@/hooks/useTextDesign";
 import { MusicProvider } from "@/providers/useMusic";
 import ROUTES from "@/lib/routes";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function ProtectedLayout({
   children,
@@ -32,8 +33,11 @@ export default function ProtectedLayout({
   }
 
   return (
-    <TextDesignProvider videoId={id}>
-      <MusicProvider videoId={id}>{children}</MusicProvider>
-    </TextDesignProvider>
+    <>
+      <TextDesignProvider videoId={id}>
+        <MusicProvider videoId={id}>{children}</MusicProvider>
+      </TextDesignProvider>
+      <Toaster />
+    </>
   );
 }

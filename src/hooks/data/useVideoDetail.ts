@@ -43,6 +43,7 @@ export function useVideoDetail(videoId: string) {
             title: videoData.title ?? "Untitled Video",
             description: videoData.description ?? "No description available.",
             voiceId: videoData.voiceId ?? "",
+            templateId: videoData.templateId ?? undefined,
             scenes: formattedScenes,
             status: videoData.status ?? "processing:voices",
             sceneStatus: videoData.sceneStatus ?? {},
@@ -52,6 +53,7 @@ export function useVideoDetail(videoId: string) {
             styling: videoData.styling ?? null,
             musicVolume: videoData.musicVolume ?? 0,
             musicUrl: videoData.musicUrl ?? null,
+            musicId: videoData.musicId ?? null,
             createdAt: videoData.createdAt?.toDate
               ? videoData.createdAt.toDate()
               : new Date(),

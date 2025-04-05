@@ -11,11 +11,12 @@ import {
   Info,
   Aperture,
   AlertCircle,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import ROUTES from "@/lib/routes";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,6 +25,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 
 interface VideoInfoProps {
   video: Video;

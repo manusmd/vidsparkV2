@@ -14,7 +14,7 @@ interface MusicContextType {
   musicVolume: number;
   setMusicUrl: (url: string) => void;
   setMusicVolume: (vol: number) => void;
-  updateMusic: (musicUrl: string, musicVolume: number) => Promise<void>;
+  updateMusic: (musicUrl: string, musicVolume: number, musicId?: string | null) => Promise<void>;
 }
 
 const MusicContext = createContext<MusicContextType | undefined>(undefined);
@@ -34,12 +34,12 @@ export function MusicProvider({
   useEffect(() => {
     if (video) {
       setMusicUrl(video.musicUrl || "");
-      setMusicVolume(video.musicVolume ? parseFloat(video.musicVolume) : 0.5);
+      setMusicVolume(video.musicVolume !== undefined ? video.musicVolume : 0.5);
     }
   }, [video]);
 
   // updateMusic sends a PUT request to update the video document.
-  const updateMusic = async (newMusicUrl: string, newMusicVolume: number) => {
+  const updateMusic = async (newMusicUrl: string, newMusicVolume: number, musicId?: string | null) => {
     // Optimistically update local state.
     setMusicUrl(newMusicUrl);
     setMusicVolume(newMusicVolume);
@@ -51,6 +51,7 @@ export function MusicProvider({
           videoId,
           musicUrl: newMusicUrl,
           musicVolume: newMusicVolume, // send as number
+          musicId
         }),
       });
       if (!res.ok) {

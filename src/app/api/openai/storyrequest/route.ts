@@ -4,7 +4,18 @@ import admin from "firebase-admin";
 
 export async function POST(req: NextRequest) {
   try {
-    const { narration, imageType, voiceId, uid } = await req.json();
+    const { 
+      narration, 
+      imageType, 
+      voiceId, 
+      uid, 
+      templateId, 
+      textDesign, 
+      textPosition, 
+      showTitle, 
+      musicId 
+    } = await req.json();
+    
     if (!narration) {
       return NextResponse.json({ error: "Missing narration" }, { status: 400 });
     }
@@ -18,7 +29,14 @@ export async function POST(req: NextRequest) {
       status: "processing:story",
       imageType: imageType || "",
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      // Include template-related properties if available
+      ...(templateId && { templateId }),
+      ...(textDesign && { textDesign }),
+      ...(textPosition && { textPosition }),
+      ...(showTitle !== undefined && { showTitle }),
+      ...(musicId && { musicId })
     };
+    
     const videoRef = await db.collection("videos").add(videoData);
     const videoId = videoRef.id;
     console.log("Created new video document with id:", videoId);
