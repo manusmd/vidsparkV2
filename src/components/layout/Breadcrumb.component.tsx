@@ -39,10 +39,10 @@ export default function Breadcrumb() {
           const section = pathSegments[1];
 
           // Content Creation
-          if (section === "create") {
+          if (section === "studio") {
             breadcrumbItems.push({
-              label: "Create",
-              href: ROUTES.PAGES.APP.CREATE,
+              label: "Studio",
+              href: ROUTES.PAGES.APP.STUDIO,
             });
           } else if (section === "my-videos") {
             breadcrumbItems.push({

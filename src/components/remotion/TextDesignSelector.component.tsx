@@ -1,18 +1,27 @@
 "use client";
 
 import React, { JSX, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Type, Palette } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle,
+  CardDescription 
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TextDesignVariant } from "./textDesigns";
 import { TextDesignFonts, textDesignVariants } from "./textDesigns";
 import { useTextDesign } from "@/hooks/useTextDesign";
 import { z } from "zod";
 import { TextDesignSchema } from "@/components/remotion/types/constants";
+import { cn } from "@/lib/utils";
 
 const fontOptions: Array<{
   value: string;
@@ -46,7 +55,7 @@ const fontOptions: Array<{
   },
 ];
 
-const sampleText = "Sample Text";
+const sampleText = "Your Video Text";
 
 function getVariantStyle(variantKey: TextDesignVariant): React.CSSProperties {
   const variantStyle = textDesignVariants[variantKey];
@@ -64,7 +73,7 @@ function getVariantStyle(variantKey: TextDesignVariant): React.CSSProperties {
     border: variantStyle.border,
     WebkitTextStroke: `1px ${variantStyle.stroke || "transparent"}`,
     fontSize: "1.5rem",
-    transition: "filter 0.2s",
+    transition: "filter 0.2s, transform 0.2s",
   };
 }
 
@@ -80,7 +89,7 @@ function getFontStyle(fontValue: string): React.CSSProperties {
     cursor: "pointer",
     fontFamily: fontObj.style.fontFamily,
     fontSize: "1.5rem",
-    transition: "filter 0.2s",
+    transition: "filter 0.2s, transform 0.2s",
   };
 }
 
@@ -114,8 +123,7 @@ export function TextDesignSelector({
   const currentFontIndex =
     fontOptions.findIndex((f) => f.value === currentFont) || 0;
 
-  const [variantPopoverOpen, setVariantPopoverOpen] = useState(false);
-  const [fontPopoverOpen, setFontPopoverOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("variant");
 
   const handleVariantLeft = () => {
     if (disabled) return;
@@ -165,165 +173,180 @@ export function TextDesignSelector({
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Design</CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-lg">Text Design</CardTitle>
+            <CardDescription>Customize the look of your video text</CardDescription>
+          </div>
+          <Badge className="bg-primary/20 text-primary hover:bg-primary/30 font-normal">
+            <span className="capitalize">{selectedVariantKey}</span> Style
+          </Badge>
+        </div>
       </CardHeader>
-      <CardContent>
-        {/* Variant Selector */}
-        <div className="flex flex-col w-full gap-2 mb-2">
-          <div className="flex items-center justify-between w-full">
-            <button
-              className="p-2 hover:bg-muted rounded-md"
-              onClick={handleVariantLeft}
-              aria-label="Previous Variant"
-              disabled={disabled}
+      
+      <CardContent className="p-0">
+        {/* Preview Area - Always visible at the top */}
+        <div className="p-6 pt-3 pb-5 bg-gradient-to-b from-muted/50 to-background/50 border-y border-border/30 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.01)_89.5%)] opacity-70"></div>
+          
+          {/* Simple text preview */}
+          <div className="rounded-lg bg-muted/20 py-8 px-4 flex items-center justify-center shadow-sm backdrop-blur-[1px]">
+            <div 
+              style={{
+                ...combinedPreviewStyle,
+                fontSize: "2rem",
+                padding: 0,
+                width: "100%",
+                textAlign: "center",
+              }}
             >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-            <Popover
-              open={variantPopoverOpen}
-              onOpenChange={setVariantPopoverOpen}
-            >
-              <PopoverTrigger asChild>
-                <div className="flex flex-col items-center">
-                  <p className="text-md">Variant</p>
-                  <button
-                    className="flex-1 rounded bg-muted hover:bg-muted/80 text-xl font-semibold mx-2 w-full"
-                    onClick={() => {
-                      if (!disabled) setVariantPopoverOpen(!variantPopoverOpen);
-                    }}
-                    style={getVariantStyle(selectedVariantKey)}
-                    disabled={disabled}
-                  >
-                    {selectedVariantKey.charAt(0).toUpperCase() +
-                      selectedVariantKey.slice(1)}
-                  </button>
-                </div>
-              </PopoverTrigger>
-              <PopoverContent
-                className="p-6 w-full"
-                align="center"
-                sideOffset={8}
-              >
-                <div className="grid grid-cols-3 gap-4 w-full">
-                  {variantKeys.map((key) => (
-                    <button
-                      key={key}
-                      style={getVariantStyle(key)}
-                      className={`rounded text-lg px-4 py-2 ${
-                        key === selectedVariantKey
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted hover:text-muted-foreground"
-                      }`}
-                      onClick={() => {
-                        if (!disabled) {
-                          updateStyling(key, currentFont).catch((err) => {
-                            console.error(err);
-                          });
-                        }
-                      }}
-                      disabled={disabled}
-                    >
-                      {key.charAt(0).toUpperCase() + key.slice(1)}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <button
-              className="p-2 hover:bg-muted rounded-md"
-              onClick={handleVariantRight}
-              aria-label="Next Variant"
-              disabled={disabled}
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
+              {sampleText}
+            </div>
           </div>
         </div>
-
-        {/* Font Selector */}
-        <div className="flex flex-col w-full gap-2">
-          <div className="flex items-center justify-between w-full">
-            <button
-              className="p-2 hover:bg-muted rounded-md"
-              onClick={handleFontLeft}
-              aria-label="Previous Font"
-              disabled={disabled}
-            >
-              <ChevronLeft className="w-8 h-8" />
-            </button>
-            <Popover open={fontPopoverOpen} onOpenChange={setFontPopoverOpen}>
-              <PopoverTrigger asChild>
-                <div className="flex flex-col items-center">
-                  <p className="text-md">Font</p>
-                  <button
-                    onClick={() => {
-                      if (!disabled) setFontPopoverOpen(!fontPopoverOpen);
-                    }}
-                    style={getFontStyle(selectedFont.value)}
-                    className="flex-1 rounded hover:bg-muted/40 text-xl font-semibold mx-2 w-full"
-                    disabled={disabled}
-                  >
-                    {selectedFont.label}
-                  </button>
+        
+        {/* Tabs for Variant and Font selection */}
+        <div className="px-4 pb-4 pt-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="variant" className="flex items-center justify-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" />
+                Style
+              </TabsTrigger>
+              <TabsTrigger value="font" className="flex items-center justify-center gap-1.5">
+                <Type className="h-3.5 w-3.5" />
+                Font
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="variant" className="mt-0 pt-0 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={handleVariantLeft}
+                  aria-label="Previous Variant"
+                  disabled={disabled}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="font-medium text-sm">
+                  {currentVariantIndex + 1} of {variantKeys.length}
                 </div>
-              </PopoverTrigger>
-              <PopoverContent
-                className="p-6 w-full"
-                align="center"
-                sideOffset={8}
-              >
-                <div className="grid grid-cols-2 gap-4 w-full">
-                  {fontOptions.map((fontOpt) => (
-                    <button
-                      key={fontOpt.value}
-                      style={getFontStyle(fontOpt.value)}
-                      className={`rounded text-lg px-4 py-2 ${
-                        fontOpt.value === selectedFont.value
-                          ? "bg-primary text-primary-foreground"
-                          : "hover:bg-muted hover:text-muted-foreground"
-                      }`}
-                      onClick={() => {
-                        if (!disabled) {
-                          updateStyling(
-                            currentVariant,
-                            fontOpt.value as FontType,
-                          ).catch((err) => {
-                            console.error(err);
-                          });
-                        }
-                      }}
-                      disabled={disabled}
+                <button
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={handleVariantRight}
+                  aria-label="Next Variant"
+                  disabled={disabled}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {variantKeys.map((key) => (
+                  <div
+                    key={key}
+                    className={cn(
+                      "group rounded-lg border cursor-pointer transition-all duration-200 relative overflow-hidden",
+                      key === selectedVariantKey 
+                        ? "border-primary shadow-sm" 
+                        : "border-border/50 hover:border-border"
+                    )}
+                    onClick={() => {
+                      if (!disabled) {
+                        updateStyling(key, currentFont).catch((err) => {
+                          console.error(err);
+                        });
+                      }
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_20%,rgba(0,0,0,0.05)_0%,rgba(0,0,0,0.02)_89.5%)] opacity-70"></div>
+                    
+                    <div className="p-2.5 text-center">
+                      <span
+                        style={getVariantStyle(key)}
+                        className="text-sm px-2 py-1 inline-block"
+                      >
+                        {key}
+                      </span>
+                    </div>
+                    
+                    {key === selectedVariantKey && (
+                      <div className="absolute top-1 right-1">
+                        <div className="bg-primary text-primary-foreground h-4 w-4 rounded-full flex items-center justify-center">
+                          <Check className="h-3 w-3" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="font" className="mt-0 pt-0 space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <button
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={handleFontLeft}
+                  aria-label="Previous Font"
+                  disabled={disabled}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <div className="font-medium text-sm">
+                  {currentFontIndex + 1} of {fontOptions.length}
+                </div>
+                <button
+                  className="p-2 hover:bg-muted rounded-md transition-colors"
+                  onClick={handleFontRight}
+                  aria-label="Next Font"
+                  disabled={disabled}
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                {fontOptions.map((fontOpt) => (
+                  <div
+                    key={fontOpt.value}
+                    className={cn(
+                      "group rounded-lg border py-2.5 px-3 cursor-pointer transition-all duration-200 flex items-center justify-between",
+                      fontOpt.value === selectedFont.value
+                        ? "border-primary shadow-sm bg-primary/5"
+                        : "border-border/50 hover:border-border hover:bg-muted/50"
+                    )}
+                    onClick={() => {
+                      if (!disabled) {
+                        updateStyling(
+                          currentVariant,
+                          fontOpt.value as FontType,
+                        ).catch((err) => {
+                          console.error(err);
+                        });
+                      }
+                    }}
+                  >
+                    <span
+                      style={{ fontFamily: fontOpt.style.fontFamily }}
+                      className="text-base font-medium"
                     >
                       {fontOpt.label}
-                    </button>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
-            <button
-              className="p-2 hover:bg-muted rounded-md"
-              onClick={handleFontRight}
-              aria-label="Next Font"
-              disabled={disabled}
-            >
-              <ChevronRight className="w-8 h-8" />
-            </button>
-          </div>
-        </div>
-
-        {/* Combined Preview */}
-        <div className="mt-6 flex justify-center w-full">
-          <div
-            className="w-full flex items-center justify-center"
-            style={{
-              ...combinedPreviewStyle,
-              fontSize: "2rem",
-              padding: "1rem 2rem",
-            }}
-          >
-            {sampleText}
-          </div>
+                    </span>
+                    
+                    {fontOpt.value === selectedFont.value ? (
+                      <div className="bg-primary text-primary-foreground h-5 w-5 rounded-full flex items-center justify-center">
+                        <Check className="h-3 w-3" />
+                      </div>
+                    ) : (
+                      <div className="h-5 w-5"></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </CardContent>
     </Card>

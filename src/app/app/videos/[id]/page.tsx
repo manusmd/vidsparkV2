@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Plus, Info, Film } from "lucide-react";
 import ROUTES from "@/lib/routes";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
@@ -25,6 +25,19 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function VideoDetailPage() {
   const { id } = useParams();
@@ -55,6 +68,9 @@ export default function VideoDetailPage() {
 
   // State for YouTube Upload Modal
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+
+  // State for Generation Confirmation Dialog
+  const [confirmGenDialogOpen, setConfirmGenDialogOpen] = useState(false);
 
   // Initialize edit fields when video data loads
   useEffect(() => {
@@ -132,7 +148,14 @@ export default function VideoDetailPage() {
     }
   };
 
+  // Show confirmation dialog instead of immediately generating
+  const showGenerationConfirmation = () => {
+    setConfirmGenDialogOpen(true);
+  };
+
+  // Handle actual video generation after confirmation
   const onGenerate = async () => {
+    setConfirmGenDialogOpen(false);
     try {
       const response = await fetch(ROUTES.API.VIDEO.GENERATE, {
         method: "POST",
@@ -151,13 +174,21 @@ export default function VideoDetailPage() {
           errorData.error || "Failed to trigger video generation",
         );
       }
+      toast.success("Video generation has started");
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error triggering video generation:", error);
+        toast.error("Failed to start video generation");
       } else {
         console.error("Error triggering video generation:", error);
+        toast.error("An unexpected error occurred");
       }
     }
+  };
+
+  // Update the toggle function to properly collapse sections
+  const toggleSection = (sectionId: string) => {
+    setOpenSection(prevSection => prevSection === sectionId ? null : sectionId);
   };
 
   if (loading) {
@@ -179,7 +210,7 @@ export default function VideoDetailPage() {
           {error || "Video not found."}
         </h1>
         <Button asChild variant="outline">
-          <Link href={ROUTES.PAGES.APP.DASHBOARD.INDEX}>
+          <Link href="/app/dashboard/vidspark">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Link>
@@ -210,7 +241,7 @@ export default function VideoDetailPage() {
   }
   
   // Upload to YouTube button
-  if (video.status === "assets:ready" || video.status === "render:complete" || video.status === "render:error") {
+  if (video.status === "render:complete") {
     actionButtons.push(
       <Button 
         key="upload"
@@ -243,7 +274,7 @@ export default function VideoDetailPage() {
       <div className="w-full bg-background/60 backdrop-blur-sm border-b border-border/40 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <Button variant="ghost" asChild size="sm">
-            <Link href={ROUTES.PAGES.APP.DASHBOARD.INDEX} className="flex items-center">
+            <Link href="/app/dashboard/vidspark" className="flex items-center">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Link>
@@ -332,7 +363,7 @@ export default function VideoDetailPage() {
               <ProgressSteps
                 steps={steps}
                 video={video}
-                onGenerate={video.status === "draft" ? onGenerate : undefined}
+                onGenerate={video.status === "draft" ? showGenerationConfirmation : undefined}
                 onRender={onRender}
                 onUpload={onUpload}
                 className="h-full flex flex-col"
@@ -359,29 +390,67 @@ export default function VideoDetailPage() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="lg:col-span-1"
           >
-            <div className="bg-card rounded-lg border border-border/50 shadow-sm overflow-hidden">
-              <div className="w-full aspect-[9/16] bg-black/90">
-                {video.status === "draft" ||
-                video.status === "processing:assets" ||
-                video.status === "processing:video" ||
-                isProcessingStory ? (
-                  <VideoProcessingStatus status={video.status} />
-                ) : (
-                  <VideoPreview
-                    scenes={stableAssets?.scenes || {}}
-                    styling={stableAssets?.styling || {}}
-                    textPosition={textPosition}
-                    showTitle={showTitle}
-                    title={video.title}
-                    musicVolume={musicVolume}
-                    musicUrl={musicUrl}
-                  />
-                )}
+            <div className="bg-card/50 backdrop-blur-sm rounded-xl border border-border/30 shadow-md overflow-hidden">
+              <div className="relative">
+                {/* Title bar with video information */}
+                <div className="p-4 pb-3 bg-gradient-to-b from-card/80 to-card/30 border-b border-border/30 flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                      <Film className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium">Video Preview</h3>
+                      <p className="text-xs text-muted-foreground">Mobile aspect ratio (9:16)</p>
+                    </div>
+                  </div>
+                  
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-[240px]">
+                      <p className="text-xs">
+                        This is a preview of how your video will appear on mobile devices.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                
+                {/* Video player */}
+                <div className="w-full aspect-[9/16] bg-black/95 relative overflow-hidden">
+                  {/* Phone frame overlay */}
+                  <div className="absolute pointer-events-none inset-0 z-10">
+                    <div className="absolute top-0 left-0 right-0 h-3 bg-black rounded-t-xl"></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-3 bg-black rounded-b-xl"></div>
+                    <div className="absolute top-1 right-1/2 transform translate-x-1/2 w-16 h-1 rounded-full bg-zinc-800"></div>
+                    <div className="absolute inset-0 border-4 border-black rounded-xl pointer-events-none"></div>
+                  </div>
+                  
+                  {/* Video content */}
+                  <div className="absolute inset-0 z-0">
+                    {video.status === "draft" ||
+                    video.status === "processing:assets" ||
+                    video.status === "processing:video" ||
+                    isProcessingStory ? (
+                      <VideoProcessingStatus status={video.status} />
+                    ) : (
+                      <VideoPreview
+                        scenes={stableAssets?.scenes || {}}
+                        styling={stableAssets?.styling || {}}
+                        textPosition={textPosition}
+                        showTitle={showTitle}
+                        title={video.title}
+                        musicVolume={musicVolume}
+                        musicUrl={musicUrl}
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
               
-              {/* Action buttons */}
+              {/* Action buttons with improved styling */}
               {actionButtons.length > 0 && (
-                <div className="p-4 flex flex-wrap gap-2 justify-center">
+                <div className="p-4 border-t border-border/30 bg-gradient-to-b from-card/40 to-card/60 flex flex-wrap gap-2 justify-center">
                   {actionButtons}
                 </div>
               )}
@@ -403,14 +472,28 @@ export default function VideoDetailPage() {
                       <Video className="w-4 h-4 mr-2" />
                       Scenes
                     </TabsTrigger>
-                    <TabsTrigger
-                      value="design"
-                      className="flex items-center justify-center rounded-md"
-                      disabled={video.renderStatus?.statusMessage === "completed"}
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Customize
-                    </TabsTrigger>
+                    <div className="flex items-center">
+                      <TabsTrigger
+                        value="design"
+                        className="flex items-center justify-center rounded-md"
+                        disabled={video.status === "draft" || video.renderStatus?.statusMessage === "completed"}
+                      >
+                        <Settings className="w-4 h-4 mr-2" />
+                        Customize
+                      </TabsTrigger>
+                      {video.status === "draft" && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="ml-1.5 cursor-help">
+                              <Info className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            Customization available after video generated
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                   </TabsList>
                   
                   {currentTab === "scenes" && !isEditingDisabled && (
@@ -460,39 +543,79 @@ export default function VideoDetailPage() {
                   />
                 </TabsContent>
 
-                <TabsContent value="design" className="p-5 pt-0 border-t border-border/20">
-                  <div className="space-y-5">
+                <TabsContent value="design" className="p-0 border-t border-border/20">
+                  <div className="relative p-5 pb-4 bg-gradient-to-b from-muted/50 to-transparent overflow-hidden">
+                    <div className="absolute top-0 right-0 w-full h-full opacity-10">
+                      <svg width="100%" height="100%" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMaxYMax slice">
+                        <g opacity="0.5">
+                          <circle cx="110" cy="110" r="100" stroke="currentColor" strokeWidth="2" strokeDasharray="8 8"/>
+                          <circle cx="300" cy="200" r="60" stroke="currentColor" strokeWidth="2" strokeDasharray="6 6"/>
+                          <circle cx="180" cy="270" r="40" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4"/>
+                          <path d="M50,50 Q150,20 250,90 T400,120" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 2"/>
+                          <path d="M20,200 Q120,120 190,190 T380,150" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="4 2"/>
+                        </g>
+                      </svg>
+                    </div>
+                    <div className="relative z-10">
+                      <h2 className="text-lg font-medium mb-1">Video Customization</h2>
+                      <p className="text-sm text-muted-foreground">Tailor your video's appearance and style to match your brand</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-border to-transparent opacity-40" />
+                  </div>
+                  
+                  <div className="p-5 pt-3 space-y-4">
+                    <div className="mb-3 flex items-center gap-2 text-xs px-2">
+                      <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse"></div>
+                      <span className="text-muted-foreground">Changes appear in the preview in real-time</span>
+                    </div>
+                    
                     <CollapsibleSection
                       id="design"
                       title="Design Style"
+                      description="Choose the visual style for your video's text and captions"
                       isOpen={openSection === "design"}
-                      onToggle={(id) => setOpenSection(id)}
+                      onToggle={toggleSection}
+                      icon={<Settings className="w-4 h-4 text-primary" />}
                     >
-                      <TextDesignSelector disabled={isProcessingStory} />
+                      <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
+                        <TextDesignSelector disabled={isProcessingStory} />
+                      </div>
                     </CollapsibleSection>
                     
                     <CollapsibleSection
                       id="textOptions"
                       title="Text Options"
+                      description="Configure text positioning and title visibility"
                       isOpen={openSection === "textOptions"}
-                      onToggle={(id) => setOpenSection(id)}
+                      onToggle={toggleSection}
+                      icon={<Edit2 className="w-4 h-4 text-primary" />}
                     >
-                      <TextOptions
-                        textPosition={textPosition}
-                        onTextPositionChange={setTextPosition}
-                        showTitle={showTitle}
-                        onShowTitleChange={setShowTitle}
-                        disabled={isProcessingStory}
-                      />
+                      <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
+                        <TextOptions
+                          textPosition={textPosition}
+                          onTextPositionChange={setTextPosition}
+                          showTitle={showTitle}
+                          onShowTitleChange={setShowTitle}
+                          disabled={isProcessingStory}
+                        />
+                      </div>
                     </CollapsibleSection>
                     
                     <CollapsibleSection
                       id="music"
                       title="Music Selection"
+                      description="Add background music to enhance your video"
                       isOpen={openSection === "music"}
-                      onToggle={(id) => setOpenSection(id)}
+                      onToggle={toggleSection}
+                      icon={<svg className="w-4 h-4 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18V5l12-2v13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="6" cy="18" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <circle cx="18" cy="16" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>}
                     >
-                      <MusicSelector disabled={isProcessingStory} />
+                      <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
+                        <MusicSelector disabled={isProcessingStory} />
+                      </div>
                     </CollapsibleSection>
                   </div>
                 </TabsContent>
@@ -520,6 +643,54 @@ export default function VideoDetailPage() {
         }}
         channels={accounts}
       />
+
+      {/* Video Generation Confirmation Dialog */}
+      <Dialog open={confirmGenDialogOpen} onOpenChange={setConfirmGenDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generate Video</DialogTitle>
+            <DialogDescription>
+              You are about to generate your video. This will lock the structure of your content.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+              <h3 className="text-sm font-medium text-amber-900">Important Information</h3>
+              <ul className="mt-2 text-sm text-amber-700 space-y-2">
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>Once you generate the video, you <strong>cannot edit</strong> the script structure or scene texts anymore.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>You will still be able to customize appearance, text design, and music after generation.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>Please carefully review your content before proceeding.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+          
+          <DialogFooter className="flex justify-between sm:justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmGenDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={onGenerate}
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            >
+              Generate Video
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

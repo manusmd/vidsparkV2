@@ -5,6 +5,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import LayoutWrapper from "@/components/layout/LayoutWrapper.component";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import WaitForAuth from "@/components/layout/WaitForAuth.component";
+import { DataProvider } from "@/contexts/DataContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,9 +36,11 @@ export default function RootLayout({
       >
         <ThemeProvider>
           <AuthProvider>
-            <WaitForAuth>
-              <LayoutWrapper>{children}</LayoutWrapper>
-            </WaitForAuth>
+            <DataProvider>
+              <WaitForAuth>
+                <LayoutWrapper>{children}</LayoutWrapper>
+              </WaitForAuth>
+            </DataProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

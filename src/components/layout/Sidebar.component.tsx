@@ -17,6 +17,8 @@ import {
   Users,
   Music,
   ShoppingBag,
+  Sparkles,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ROUTES from "@/lib/routes";
@@ -60,9 +62,9 @@ export default function Sidebar() {
       icon: <Film className="w-5 h-5" />,
       items: [
         {
-          href: ROUTES.PAGES.APP.CREATE,
-          label: "Create",
-          icon: <Plus className="w-4 h-4" />,
+          href: ROUTES.PAGES.APP.STUDIO,
+          label: "Studio",
+          icon: <Video className="w-4 h-4" />,
         },
         {
           href: ROUTES.PAGES.APP.MY_VIDEOS.INDEX,
@@ -103,7 +105,7 @@ export default function Sidebar() {
     items: [
       {
         href: ROUTES.PAGES.APP.ADMIN.CONTENT_TYPES,
-        label: "Content Categories",
+        label: "Content Types",
         icon: <FolderOpen className="w-4 h-4" />,
       },
       {
@@ -185,11 +187,14 @@ export default function Sidebar() {
                 {/* Section Items */}
                 <div className="space-y-1 pl-2">
                   {section.items.map((item) => (
-                    <Link key={item.label} href={item.href}>
-                      <div className={getLinkClasses(item.href)}>
-                        {item.icon}
-                        <span>{item.label}</span>
-                      </div>
+                    <Link 
+                      key={item.label} 
+                      href={item.href} 
+                      className={getLinkClasses(item.href)}
+                      prefetch={true}
+                    >
+                      {item.icon}
+                      <span>{item.label}</span>
                     </Link>
                   ))}
                 </div>

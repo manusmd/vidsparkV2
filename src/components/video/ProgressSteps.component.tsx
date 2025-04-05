@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Check, ChevronDown, X, RefreshCw, YoutubeIcon, Play } from "lucide-react";
+import { Check, ChevronDown, X, RefreshCw, YoutubeIcon, Play, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Step, Video } from "@/app/types";
 import { Progress } from "@/components/ui/progress";
@@ -64,20 +64,21 @@ export function ProgressSteps({
   };
 
   return (
-    <Card className={cn("border border-border/50 shadow-sm overflow-hidden", className)}>
+    <Card className={cn("border border-border/50 shadow-sm overflow-hidden bg-card/60 backdrop-blur-sm", className)}>
       <CardHeader className="pb-3 border-b border-border/30 bg-card/40">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">
+          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+            <RefreshCw className="w-4 h-4 text-primary/60" />
             Processing Steps
           </CardTitle>
           {video.status === "draft" && onGenerate && (
             <Button 
               onClick={onGenerate}
               size="sm"
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm"
             >
-              <Play className="w-4 h-4 mr-1" />
-              Generate Video
+              <Play className="w-4 h-4 mr-1.5" />
+              Generate
             </Button>
           )}
         </div>
@@ -115,13 +116,22 @@ export function ProgressSteps({
             // Determine the status badge
             let statusBadge = null;
             if (isStepComplete) {
-              statusBadge = <Badge className="bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/30">Completed</Badge>;
+              statusBadge = <Badge className="bg-green-500/10 hover:bg-green-500/20 text-green-500 border-green-500/30 font-medium">Completed</Badge>;
             } else if (isStepCurrent) {
-              statusBadge = <Badge className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border-blue-500/30 animate-pulse">Processing</Badge>;
+              statusBadge = (
+                <Badge className="bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border-blue-500/30 font-medium">
+                  <motion.span
+                    animate={{ opacity: [0.7, 1, 0.7] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    Processing
+                  </motion.span>
+                </Badge>
+              );
             } else if (isStepFailed) {
-              statusBadge = <Badge className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/30">Failed</Badge>;
+              statusBadge = <Badge className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/30 font-medium">Failed</Badge>;
             } else {
-              statusBadge = <Badge className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border-gray-400/30">Pending</Badge>;
+              statusBadge = <Badge className="bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border-gray-400/30 font-medium">Pending</Badge>;
             }
             
             // Content for progress bar steps
@@ -140,15 +150,31 @@ export function ProgressSteps({
                       className={cn(
                         "flex items-center justify-center h-8 w-8 rounded-full text-sm font-semibold transition-all",
                         isStepComplete
-                          ? "bg-green-500 text-white"
+                          ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-sm"
                           : isStepCurrent
-                            ? "border-2 border-blue-400 text-blue-500 animate-pulse bg-blue-500/5"
+                            ? "border-2 border-blue-400 text-blue-500 bg-blue-500/5 shadow-sm"
                             : isStepFailed
-                              ? "bg-red-500 text-white"
+                              ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm"
                               : "border border-gray-300 text-gray-400 bg-background/60",
                       )}
                     >
-                      {stepIcon}
+                      {isStepCurrent ? (
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            opacity: [0.7, 1, 0.7] 
+                          }}
+                          transition={{ 
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          {stepIcon}
+                        </motion.div>
+                      ) : (
+                        stepIcon
+                      )}
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-left">
@@ -187,15 +213,31 @@ export function ProgressSteps({
                       className={cn(
                         "flex items-center justify-center h-8 w-8 rounded-full text-sm font-semibold transition-all",
                         isStepComplete
-                          ? "bg-green-500 text-white"
+                          ? "bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-sm"
                           : isStepCurrent
-                            ? "border-2 border-blue-400 text-blue-500 animate-pulse bg-blue-500/5"
+                            ? "border-2 border-blue-400 text-blue-500 bg-blue-500/5 shadow-sm"
                             : isStepFailed
-                              ? "bg-red-500 text-white"
+                              ? "bg-gradient-to-r from-red-500 to-red-600 text-white shadow-sm"
                               : "border border-gray-300 text-gray-400 bg-background/60",
                       )}
                     >
-                      {stepIcon}
+                      {isStepCurrent ? (
+                        <motion.div
+                          animate={{ 
+                            scale: [1, 1.1, 1],
+                            opacity: [0.7, 1, 0.7] 
+                          }}
+                          transition={{ 
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut"
+                          }}
+                        >
+                          {stepIcon}
+                        </motion.div>
+                      ) : (
+                        stepIcon
+                      )}
                     </div>
                     <div>
                       <h3 className="text-sm font-medium text-left">
@@ -226,7 +268,7 @@ export function ProgressSteps({
                 key={step.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.3, delay: stepIdx * 0.05 }}
                 className="relative border-b border-border/20 last:border-0"
               >
                 {isProgressBarStep ? (
@@ -249,108 +291,123 @@ export function ProgressSteps({
                           (video.status === "assets:ready" ||
                             video.status === "render:error") && (
                             <Button
-                              variant="secondary"
                               size="sm"
                               onClick={handleRender}
                               disabled={isRendering}
-                              className="ml-auto"
+                              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-sm ml-2"
                             >
                               {isRendering ? (
                                 <>
-                                  <RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                                   Rendering...
                                 </>
                               ) : (
                                 <>
-                                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                                  <Play className="h-3.5 w-3.5 mr-1.5" />
                                   Render Video
                                 </>
                               )}
                             </Button>
                           )}
-                          
+
                         {/* Upload button */}
                         {step.id === "processing:upload" &&
-                          (video.status === "assets:ready" ||
-                            video.status === "render:complete" ||
-                            video.status === "render:error") && (
+                          video.status === "render:complete" &&
+                          onUpload && (
                             <Button
-                              variant="outline"
                               size="sm"
                               onClick={onUpload}
-                              className="bg-red-500/10 hover:bg-red-500/20 text-red-500 border-red-500/30 ml-auto"
+                              className="bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white shadow-sm ml-2"
                             >
-                              <YoutubeIcon className="w-3.5 h-3.5 mr-1.5" />
-                              Upload to YouTube
+                              <YoutubeIcon className="h-3.5 w-3.5 mr-1.5" />
+                              Upload
+                            </Button>
+                          )}
+
+                        {/* Download button */}
+                        {step.id === "processing:download" &&
+                          video.status === "render:complete" &&
+                          video.renderStatus?.videoUrl && (
+                            <Button
+                              size="sm"
+                              asChild
+                              className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-sm ml-2"
+                            >
+                              <a href={video.renderStatus.videoUrl} download>
+                                <Download className="h-3.5 w-3.5 mr-1.5" />
+                                Download
+                              </a>
                             </Button>
                           )}
                       </div>
                     )}
-                    
-                    {/* Expanded substeps */}
+
+                    {/* Sub-steps */}
                     <AnimatePresence>
-                      {step.subSteps &&
-                        step.subSteps.length > 0 &&
-                        expandedSteps[step.id] && (
-                          <motion.div
-                            className="pl-16 pr-5 pb-4 pt-1 space-y-3 bg-accent/20"
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            {step.subSteps.map((subStep) => {
-                              const isProcessing = subStep.status === "processing";
-                              const isCompleted = subStep.status === "completed";
-                              const isFailed = subStep.status === "failed";
-                              
-                              return (
-                                <div
-                                  key={subStep.index}
-                                  className="flex flex-col space-y-2"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-xs font-medium">
-                                      Scene {subStep.index + 1}
-                                    </p>
-                                    {subStep.message && (
-                                      <p className="text-xs text-muted-foreground">{subStep.message}</p>
+                      {expandedSteps[step.id] && step.subSteps && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden border-t border-border/10 bg-accent/20"
+                        >
+                          <div className="py-1 px-2">
+                            {step.subSteps.map((subStep, subIdx) => (
+                              <div
+                                key={`${step.id}-${subIdx}`}
+                                className="flex items-center justify-between px-5 py-2.5 text-sm border-b border-border/10 last:border-0"
+                              >
+                                <div className="flex items-center gap-3.5 flex-1">
+                                  <div
+                                    className={cn(
+                                      "flex items-center justify-center h-6 w-6 rounded-full text-xs font-medium transition-all",
+                                      subStep.status === "completed"
+                                        ? "bg-gradient-to-r from-green-400 to-emerald-500 text-white shadow-sm"
+                                        : subStep.status === "processing"
+                                        ? "border-2 border-blue-400 text-blue-500 bg-blue-500/5 shadow-sm"
+                                        : subStep.status === "failed"
+                                        ? "bg-gradient-to-r from-red-400 to-red-500 text-white shadow-sm"
+                                        : "border border-gray-300 text-gray-400 bg-background/60",
+                                    )}
+                                  >
+                                    {subStep.status === "completed" ? (
+                                      <Check className="h-3 w-3" />
+                                    ) : subStep.status === "processing" ? (
+                                      <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                      >
+                                        <RefreshCw className="h-3 w-3" />
+                                      </motion.div>
+                                    ) : subStep.status === "failed" ? (
+                                      <X className="h-3 w-3" />
+                                    ) : (
+                                      <span>{subIdx + 1}</span>
                                     )}
                                   </div>
-                                  
-                                  <div className="flex items-center space-x-3">
-                                    <div className="w-5 flex-shrink-0">
-                                      {isProcessing && (
-                                        <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                      )}
-                                      {isCompleted && (
-                                        <Check className="h-3.5 w-3.5 text-green-500" />
-                                      )}
-                                      {isFailed && (
-                                        <X className="h-3.5 w-3.5 text-red-500" />
-                                      )}
-                                    </div>
-                                    
-                                    <div className="flex items-center w-full">
+                                  <span className="text-sm font-medium">
+                                    {subStep.message || `Scene ${subStep.scene || subStep.index + 1}`}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs">
+                                  {subStep.progress !== undefined && subStep.progress < 1 && (
+                                    <>
                                       <Progress
                                         value={subStep.progress * 100}
-                                        className={cn(
-                                          "h-1.5 flex-1",
-                                          isCompleted ? "bg-green-100" : 
-                                          isProcessing ? "bg-blue-100" : 
-                                          isFailed ? "bg-red-100" : "bg-gray-100"
-                                        )}
+                                        className="h-1.5 w-16"
                                       />
-                                      <span className="ml-2 text-xs text-muted-foreground w-8 text-right">
+                                      <span className="font-medium">
                                         {Math.round(subStep.progress * 100)}%
                                       </span>
-                                    </div>
-                                  </div>
+                                    </>
+                                  )}
                                 </div>
-                              );
-                            })}
-                          </motion.div>
-                        )}
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
                     </AnimatePresence>
                   </>
                 )}

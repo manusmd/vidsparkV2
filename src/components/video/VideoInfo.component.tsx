@@ -10,6 +10,7 @@ import {
   Download,
   Info,
   Aperture,
+  AlertCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import ROUTES from "@/lib/routes";
@@ -35,6 +36,8 @@ export function VideoInfo({ video, className }: VideoInfoProps) {
     video.status === "processing:video" ||
     video.status === "processing:story" ||
     video.status === "processing:assets";
+
+  const isDraft = video.status === "draft";
 
   const deleteVideo = async () => {
     try {
@@ -126,6 +129,23 @@ export function VideoInfo({ video, className }: VideoInfoProps) {
       
       <CardContent className="p-5">
         <div className="space-y-5">
+          {/* Draft mode hint */}
+          {isDraft && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 animate-in fade-in duration-300">
+              <div className="flex items-start">
+                <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                <div>
+                  <h4 className="text-sm font-medium text-blue-900">Review Before Generating</h4>
+                  <p className="mt-1 text-xs text-blue-700 leading-relaxed">
+                    Please review your content structure carefully. Once you click "Generate Video", 
+                    you won't be able to edit the script structure or scene texts anymore. 
+                    However, you can still customize appearance, text design, and music after generation.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Progress indicator for processing states */}
           {isVideoProcessing && (
             <div className="bg-card/70 border border-border/30 rounded-lg p-3">

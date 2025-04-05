@@ -2,7 +2,7 @@
 
 import { 
   LineChart,
-  BarChart 
+  BarChart
 } from "@/components/ui/charts/chart";
 import { 
   Card, 
@@ -14,6 +14,9 @@ import {
 import { Video } from "@/app/types";
 import { getFriendlyStatus } from "@/lib/getFriendlyStatus";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
+import { TrendingUp, PieChart as PieChartIcon } from "lucide-react";
+import { StatusPieChart } from "./StatusPieChart.component";
 
 interface ChartsSectionProps {
   videos: Video[];
@@ -112,6 +115,9 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
       statusGroups[status]++;
     });
     
+    // Calculate total for percentages
+    const total = Object.values(statusGroups).reduce((sum, count) => sum + count, 0);
+    
     // Convert to the data format needed for the chart
     // Apply getFriendlyStatus to make labels user-friendly
     const statusColors = {
@@ -129,12 +135,17 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
     };
     
     const statusData = Object.entries(statusGroups)
-      .map(([status, count]) => ({
-        name: getFriendlyStatus(status), // Convert to user-friendly name
-        value: count,
-        color: statusColors[status as keyof typeof statusColors] || "#9ca3af", // Default gray if status not found
-        originalStatus: status // Keep original for reference
-      }))
+      .map(([status, count]) => {
+        const percentage = Math.round((count / total) * 100);
+        return {
+          name: getFriendlyStatus(status), // Convert to user-friendly name
+          displayName: `${getFriendlyStatus(status)} ${percentage}%`,
+          value: count,
+          percentage,
+          color: statusColors[status as keyof typeof statusColors] || "#9ca3af", // Default gray if status not found
+          originalStatus: status // Keep original for reference
+        };
+      })
       // Sort by count in descending order
       .sort((a, b) => b.value - a.value);
     
@@ -150,42 +161,80 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">Performance Insights</h2>
+    <div className="mb-12">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-6">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-1 rounded-full bg-gradient-to-b from-blue-400 to-primary"></div>
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
+            Performance Insights
+          </h2>
+        </div>
+        
+        <div className="mt-3 md:mt-0">
+          <Badge variant="outline" className="text-xs font-normal px-2.5 py-1 bg-white/5 border-white/10 text-foreground/70">
+            Last 30 days
+          </Badge>
+        </div>
+      </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-md overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle>Video Creation Trend</CardTitle>
-            <CardDescription>Videos created by week this month</CardDescription>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="bg-card/50 border-white/10 backdrop-blur-sm shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:bg-card/60">
+          {/* Subtle top highlight */}
+          <div className="h-0.5 w-full bg-gradient-to-r from-blue-500/50 via-blue-400/50 to-transparent"></div>
+          
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-md bg-blue-500/10 border border-blue-500/20">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">Video Creation Trend</CardTitle>
+                <CardDescription className="text-muted-foreground/70">Videos created by week this month</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
-            <LineChart 
-              data={monthlyData} 
-              category="Videos"
-              showGrid
-              color="#60a5fa"
-              valueFormatter={formatNumber}
-              tooltipFormatter={(item) => item.fullDate}
-            />
+          
+          <CardContent className="pt-2">
+            <div className="relative h-[270px] w-full">
+              {/* Subtle grid background */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
+              <div className="relative h-full">
+                <LineChart 
+                  data={monthlyData} 
+                  category="Videos"
+                  showGrid
+                  color="#60a5fa"
+                  valueFormatter={formatNumber}
+                  tooltipFormatter={(item) => item.fullDate}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-white/5 border-white/10 backdrop-blur-sm shadow-md overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle>Videos by Status</CardTitle>
-            <CardDescription>Distribution of your videos by current status</CardDescription>
+        <Card className="bg-card/50 border-white/10 backdrop-blur-sm shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-300 hover:bg-card/60">
+          {/* Subtle top highlight */}
+          <div className="h-0.5 w-full bg-gradient-to-r from-green-500/50 via-green-400/50 to-transparent"></div>
+          
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-md bg-green-500/10 border border-green-500/20">
+                <PieChartIcon className="w-4 h-4 text-green-400" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-semibold">Videos by Status</CardTitle>
+                <CardDescription className="text-muted-foreground/70">Distribution of your videos by current status</CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="pl-0">
-            <div className="h-80 w-full overflow-visible pl-0">
-              <BarChart 
-                data={videosByStatus} 
-                category="Videos"
-                showGrid
-                colors={videosByStatus.map(status => status.color)}
-                valueFormatter={(value) => `${value} video${value !== 1 ? 's' : ''}`}
-                layout="horizontal"
-              />
+          
+          <CardContent className="pt-2">
+            <div className="relative h-[270px] w-full">
+              {/* Subtle grid background */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
+              <div className="relative h-full flex flex-col">
+                <StatusPieChart data={videosByStatus} className="flex-1" />
+              </div>
             </div>
           </CardContent>
         </Card>

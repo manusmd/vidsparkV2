@@ -26,19 +26,21 @@ export function ContentTypeDetails({
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="md:flex items-start gap-4 mb-6">
-        <div className="flex-shrink-0 mb-4 md:mb-0">
-          <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Video className="h-6 w-6 text-primary" />
+      <header className="max-w-2xl mx-auto text-center mb-8 space-y-4">
+        {contentType.imageUrl ? (
+          <div className="mx-auto w-24 h-24 rounded-lg overflow-hidden mb-4">
+            <img
+              src={contentType.imageUrl}
+              alt={contentType.title}
+              className="w-full h-full object-cover"
+            />
           </div>
-        </div>
-        <div>
-          <div className="flex flex-wrap gap-2 items-center mb-2">
-            <h1 className="text-2xl font-bold">{contentType.title}</h1>
-          </div>
-          <p className="text-muted-foreground max-w-xl">{contentType.description}</p>
-        </div>
-      </div>
+        ) : (
+          <Video className="mx-auto w-12 h-12 text-primary" />
+        )}
+        <h1 className="text-3xl font-bold tracking-tight">{contentType.title}</h1>
+        <p className="text-muted-foreground">{contentType.description}</p>
+      </header>
 
       <Card className="p-6 bg-card/50 border border-border/50 backdrop-blur-sm">
         <div className="flex items-center mb-3 text-primary">

@@ -4,12 +4,6 @@ import React, { useMemo, useRef } from "react";
 import { Player, PlayerRef } from "@remotion/player";
 import { VideoComposition } from "@/components/remotion/VideoComposition.component";
 import type { Scene, VideoStyling } from "@/app/types";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 interface VideoPreviewProps {
   scenes: { [sceneIndex: number]: Scene };
@@ -68,38 +62,28 @@ export function VideoPreview({
   );
 
   return (
-    <div className="w-full">
-      <h2 className="text-lg font-semibold text-foreground mb-4 text-left">
-        Video Preview
-      </h2>
-      <div className="relative aspect-[9/16] w-full max-w-md mx-auto">
-        <div className="absolute top-2 right-2 z-10">
-          <Tooltip>
-            <TooltipTrigger>
-              <Info className="w-5 h-5 text-gray-500 cursor-pointer" />
-            </TooltipTrigger>
-            <TooltipContent className="bg-gray-900 text-white p-2 rounded shadow-lg max-w-xs">
-              <p className="text-xs whitespace-normal">
-                Note: <br /> You may experience faltering audio during preview.
-                <br /> This issue will not occur in the rendered video.
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <Player
-          ref={playerRef}
-          acknowledgeRemotionLicense
-          component={VideoComposition}
-          inputProps={inputProps}
-          durationInFrames={durationInFrames}
-          fps={30}
-          compositionHeight={1280}
-          compositionWidth={720}
-          style={{ width: "100%", height: "100%" }}
-          controls
-          autoPlay={false}
-        />
-      </div>
+    <div className="w-full h-full flex items-center justify-center">
+      <Player
+        ref={playerRef}
+        acknowledgeRemotionLicense
+        component={VideoComposition}
+        inputProps={inputProps}
+        durationInFrames={durationInFrames}
+        fps={30}
+        compositionHeight={1280}
+        compositionWidth={720}
+        style={{
+          width: "100%",
+          height: "100%",
+          borderRadius: "0",
+        }}
+        controls
+        autoPlay={false}
+        clickToPlay={true}
+        spaceKeyToPlayOrPause
+        doubleClickToFullscreen={false}
+        allowFullscreen={false}
+      />
     </div>
   );
 }

@@ -31,7 +31,7 @@ export const PAGES = {
       BILLING: "/app/settings/billing",
     },
     // Content Creation
-    CREATE: "/app/create",
+    STUDIO: "/app/studio",
     MY_VIDEOS: {
       INDEX: "/app/my-videos",
       ALL: "/app/my-videos/all",
@@ -94,6 +94,7 @@ export const API = {
   CONTENT_TYPES: {
     BASE: "/api/contenttypes",
     DETAIL: (id: string) => `/api/contenttypes/${id}`,
+    GENERATE_IMAGE: "/api/contenttypes/generateImage",
   },
 
   // Image types

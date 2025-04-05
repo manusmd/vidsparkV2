@@ -6,10 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useStoryIdea } from "@/hooks/data/useStoryIdea";
 import { Loader2, ArrowLeft, ArrowRight, Save, Sparkles } from "lucide-react";
-import { ContentTypeDetails } from "@/app/app/create/[type]/ContentTypeDetails.component";
-import { NarrationForm } from "@/app/app/create/[type]/forms/NarrationForm.component";
-import LoadingOverlay from "@/app/app/create/[type]/StoryLoadingOverlay.component";
-import VideoGenerationOverlay from "@/app/app/create/[type]/VideoGenerationOverlay.component";
+import { ContentTypeDetails } from "@/app/app/studio/[type]/ContentTypeDetails.component";
+import { NarrationForm } from "@/app/app/studio/[type]/forms/NarrationForm.component";
+import LoadingOverlay from "@/app/app/studio/[type]/StoryLoadingOverlay.component";
+import VideoGenerationOverlay from "@/app/app/studio/[type]/VideoGenerationOverlay.component";
 import { ContentType, ImageType } from "@/app/types";
 import { useStory } from "@/hooks/data/useStory";
 import { useImageTypes } from "@/hooks/data/useImageTypes";
@@ -142,7 +142,7 @@ export default function VideoGenerationPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <h1 className="text-3xl font-bold text-destructive">Content Type Not Found</h1>
-        <Button onClick={() => router.push(ROUTES.PAGES.APP.CREATE)}>
+        <Button onClick={() => router.push(ROUTES.PAGES.APP.STUDIO)}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Content Types
         </Button>
       </div>
@@ -164,7 +164,7 @@ export default function VideoGenerationPage() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={() => router.push(ROUTES.PAGES.APP.CREATE)}
+          onClick={() => router.push(ROUTES.PAGES.APP.STUDIO)}
           className="mr-4"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />

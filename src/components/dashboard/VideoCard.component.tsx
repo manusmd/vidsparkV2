@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Video as VideoType } from "@/app/types";
-import { Video, Edit, Eye, Clock } from "lucide-react";
+import { Video, Eye, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { parseDate } from "@/lib/utils";
 import { getFriendlyStatus } from "@/lib/getFriendlyStatus";
@@ -94,20 +94,6 @@ export const VideoCard = ({ video }: VideoCardProps) => {
             <Eye className="w-3.5 h-3.5 mr-1.5" />
             View
           </Button>
-          
-          {isDraft && (
-            <Button 
-              variant="secondary" 
-              size="sm" 
-              className="flex-1 bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors"
-              onClick={() => {
-                router.push(`/app/create/edit/${video.id}`);
-              }}
-            >
-              <Edit className="w-3.5 h-3.5 mr-1.5" />
-              Edit
-            </Button>
-          )}
         </div>
       </div>
     </Card>

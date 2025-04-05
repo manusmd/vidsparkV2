@@ -85,11 +85,12 @@ export function VoiceSelector({
           onClick={(e) =>
             handlePlay(availableVoices.find((v) => v.id === selectedVoice)!, e)
           }
+          className="text-zinc-400 hover:text-white hover:bg-zinc-800"
         >
           {playingVoiceId === selectedVoice ? (
-            <PauseCircle className="h-5 w-5 text-primary" />
+            <PauseCircle className="h-5 w-5 text-white" />
           ) : (
-            <PlayCircle className="h-5 w-5 text-muted-foreground" />
+            <PlayCircle className="h-5 w-5" />
           )}
         </Button>
       )}
@@ -100,7 +101,7 @@ export function VoiceSelector({
           <Button
             ref={popoverTriggerRef}
             variant="outline"
-            className="min-w-0 flex-1 justify-between truncate"
+            className="min-w-0 flex-1 justify-between truncate bg-zinc-900/90 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white"
           >
             {selectedVoice
               ? availableVoices.find((v) => v.id === selectedVoice)?.name
@@ -109,7 +110,7 @@ export function VoiceSelector({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="p-2 max-h-96 overflow-auto"
+          className="p-2 max-h-96 overflow-auto bg-zinc-900 border-zinc-700"
           style={{
             width: popoverTriggerRef.current
               ? `${popoverTriggerRef.current.offsetWidth}px`
@@ -125,16 +126,21 @@ export function VoiceSelector({
                   setOpen(false);
                 }}
                 className={cn(
-                  "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-accent transition",
-                  selectedVoice === voice.id && "bg-accent text-primary",
+                  "flex items-center justify-between px-3 py-2 rounded-md cursor-pointer hover:bg-zinc-800 transition-colors",
+                  selectedVoice === voice.id && "bg-zinc-800 text-white"
                 )}
               >
                 <div className="w-full">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium">{voice.name}</span>
+                      <span className={cn(
+                        "font-medium",
+                        selectedVoice === voice.id ? "text-white" : "text-zinc-300"
+                      )}>
+                        {voice.name}
+                      </span>
                       {selectedVoice === voice.id && (
-                        <Check className="h-4 w-4 text-primary" />
+                        <Check className="h-4 w-4 text-white" />
                       )}
                     </div>
                     {voice.preview_url && (
@@ -143,11 +149,12 @@ export function VoiceSelector({
                         variant="ghost"
                         size="icon"
                         onClick={(e) => handlePlay(voice, e)}
+                        className="text-zinc-400 hover:text-white hover:bg-zinc-700"
                       >
                         {playingVoiceId === voice.id ? (
-                          <PauseCircle className="h-5 w-5 text-primary" />
+                          <PauseCircle className="h-5 w-5 text-white" />
                         ) : (
-                          <PlayCircle className="h-5 w-5 text-muted-foreground" />
+                          <PlayCircle className="h-5 w-5" />
                         )}
                       </Button>
                     )}
@@ -161,7 +168,7 @@ export function VoiceSelector({
                         <Badge
                           key={key}
                           variant="outline"
-                          className={cn("text-xs", getColorForLabel(value))}
+                          className={cn("text-xs border-zinc-700", getColorForLabel(value))}
                         >
                           {value}
                         </Badge>

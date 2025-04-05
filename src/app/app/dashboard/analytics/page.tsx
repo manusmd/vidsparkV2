@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useAccounts } from "@/hooks/data/useAccounts";
+import { Loader2, RefreshCw } from "lucide-react";
 import { AnalyticsResponse } from "@/services/accounts/analyticsService";
+import { useAllAnalytics } from "@/hooks/data/useAllAnalytics";
+import { Button } from "@/components/ui/button";
 
 // Import components
 import { StatsCards } from "../components/StatsCards.component";
@@ -18,74 +18,39 @@ import { DashboardHeader } from "../components/DashboardHeader.component";
 import { formatNumber } from "../utils/formatters";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { accounts, loading: accountsLoading } = useAccounts();
+  const { accountsWithAnalytics, isLoading, error, refreshData, hasAccounts } = useAllAnalytics();
   const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Get the selected account with its analytics
+  const selectedAccount = selectedAccountId 
+    ? accountsWithAnalytics.find(account => account.id === selectedAccountId)
+    : undefined;
+    
+  // Get analytics data from the selected account
+  const analyticsData = selectedAccount?.analytics || null;
 
-
-  const fetchAnalytics = async () => {
-    if (!user) return;
-
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
     try {
-      setLoading(true);
-
-      if (!accountsLoading && accounts.length === 0) {
-        setError('No connected accounts found. Please connect a YouTube account to view analytics.');
-        setLoading(false);
-        return;
-      }
-
-      if (!selectedAccountId) {
-        setAnalyticsData(null);
-        setLoading(false);
-        return;
-      }
-
-      const selectedAccount = accounts.find(account => account.id === selectedAccountId);
-      if (!selectedAccount) {
-        setSelectedAccountId(undefined);
-        throw new Error('Selected account not found');
-      }
-
-      const response = await fetch(`/api/accounts/${selectedAccountId}/analytics`, {
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch analytics data');
-      }
-
-      const responseData = await response.json();
-      setAnalyticsData(responseData.data);
+      setIsRefreshing(true);
+      await refreshData();
     } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error('Error refreshing analytics:', err);
     } finally {
-      setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  useEffect(() => {
-    if (!accountsLoading) {
-      fetchAnalytics();
-    }
-  }, [user, accounts, selectedAccountId, accountsLoading]);
-
   // Set the first account as default when accounts are loaded
   useEffect(() => {
-    if (!accountsLoading && accounts.length > 0 && selectedAccountId === undefined) {
-      setSelectedAccountId(accounts[0].id);
+    if (!isLoading && accountsWithAnalytics.length > 0 && selectedAccountId === undefined) {
+      setSelectedAccountId(accountsWithAnalytics[0].id);
     }
-  }, [accounts, accountsLoading, selectedAccountId]);
+  }, [accountsWithAnalytics, isLoading, selectedAccountId]);
 
-  // formatNumber is now imported from utils/formatters
-
-  if (loading || accountsLoading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -103,6 +68,33 @@ export default function DashboardPage() {
             <div className="text-center">
               <h3 className="text-lg font-medium">Unable to load dashboard data</h3>
               <p className="text-muted-foreground mt-2">{error}</p>
+              <Button 
+                variant="outline" 
+                className="mt-4" 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                Try Again
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccounts) {
+    return (
+      <div className="container min-h-screen py-8 px-6 space-y-8">
+        <div className="flex flex-col space-y-4">
+          <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+          <Card className="p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-medium">No Connected Accounts</h3>
+              <p className="text-muted-foreground mt-2">
+                Please connect a YouTube account to view analytics data.
+              </p>
             </div>
           </Card>
         </div>
@@ -112,11 +104,24 @@ export default function DashboardPage() {
 
   return (
     <div className="container min-h-screen py-8 px-6 space-y-8">
-      <DashboardHeader 
-        accounts={accounts}
-        selectedAccountId={selectedAccountId}
-        onAccountSelect={(value) => setSelectedAccountId(value)}
-      />
+      <div className="flex justify-between items-center">
+        <DashboardHeader 
+          accounts={accountsWithAnalytics}
+          selectedAccountId={selectedAccountId}
+          onAccountSelect={(value) => setSelectedAccountId(value)}
+        />
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh Data
+        </Button>
+      </div>
 
       {!selectedAccountId ? (
         <EmptyState />
@@ -124,7 +129,7 @@ export default function DashboardPage() {
         <StatsCards analyticsData={analyticsData} formatNumber={formatNumber} />
       )}
 
-      {selectedAccountId && (
+      {selectedAccountId && analyticsData && (
         <>
           <RecentActivity analyticsData={analyticsData} formatNumber={formatNumber} />
           <BestPostingTimes analyticsData={analyticsData} formatNumber={formatNumber} />

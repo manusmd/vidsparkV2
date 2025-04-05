@@ -12,11 +12,11 @@ const VideoUpdateSchema = z.object({
 // PATCH - Update a video's details
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const videoId = params.id;
-    if (!videoId) {
+    const { id } = await params;
+    if (!id) {
       return NextResponse.json(
         { error: "Video ID is required" },
         { status: 400 }
@@ -49,7 +49,7 @@ export async function PATCH(
     }
 
     // Update the video in Firestore
-    const videoRef = db.collection("videos").doc(videoId);
+    const videoRef = db.collection("videos").doc(id);
     await videoRef.update(updateData);
 
     return NextResponse.json({ success: true });

@@ -51,6 +51,8 @@ export type ContentType = {
   prompt?: string;
   recommendedVoiceId?: string;
   order?: number;
+  imageUrl?: string;    // URL to the content type's image
+  imagePrompt?: string; // Prompt used to generate the image
 };
 
 export interface Scene {

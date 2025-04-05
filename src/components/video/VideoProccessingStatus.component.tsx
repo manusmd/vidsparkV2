@@ -105,7 +105,7 @@ export function VideoProcessingStatus({ status }: VideoProcessingStatusProps) {
       initial="initial"
       animate="animate"
       variants={containerVariants}
-      className={`flex flex-col items-center justify-center w-full h-full bg-gradient-to-br ${config.bgClass} rounded-md p-6 text-white overflow-hidden relative border-2 border-opacity-20 shadow-inner ${config.accent}`}
+      className={`flex flex-col items-center justify-center w-full h-full ${config.bgClass} p-6 text-white overflow-hidden relative`}
     >
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -135,8 +135,11 @@ export function VideoProcessingStatus({ status }: VideoProcessingStatusProps) {
         />
       </div>
       
+      {/* Subtle grid overlay for texture */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:14px_14px] opacity-20"></div>
+      
       {/* Glow effect behind icon */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full bg-white/5 blur-xl" />
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-28 h-28 rounded-full bg-white/5 blur-xl" />
 
       {/* Icon */}
       <motion.div 
@@ -147,24 +150,44 @@ export function VideoProcessingStatus({ status }: VideoProcessingStatusProps) {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-16 h-16 rounded-full bg-white/10 blur-md" />
           </div>
-          {config.icon}
+          <motion.div
+            animate={{ 
+              rotate: status.startsWith("processing") ? 360 : 0,
+              scale: [1, status.startsWith("processing") ? 1.05 : 1, 1]
+            }}
+            transition={{ 
+              rotate: { duration: 4, repeat: Infinity, ease: "linear" },
+              scale: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+            }}
+          >
+            {config.icon}
+          </motion.div>
         </div>
       </motion.div>
 
-      {/* Text content */}
-      <motion.h2 
+      {/* Text content with glowing effect */}
+      <motion.div 
         variants={itemVariants}
-        className="text-2xl font-bold text-center relative z-10 text-white/95"
+        className="relative z-10 text-center"
       >
-        {config.title}
-      </motion.h2>
-      
-      <motion.p 
-        variants={itemVariants}
-        className="mt-2 text-center text-white/80 max-w-xs relative z-10"
-      >
-        {config.message}
-      </motion.p>
+        <motion.h2 
+          className="text-2xl font-bold text-center relative z-10 text-white/95"
+          animate={{ 
+            textShadow: status.startsWith("processing") 
+              ? ['0 0 8px rgba(255,255,255,0.1)', '0 0 12px rgba(255,255,255,0.2)', '0 0 8px rgba(255,255,255,0.1)'] 
+              : '0 0 8px rgba(255,255,255,0.1)'
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          {config.title}
+        </motion.h2>
+        
+        <motion.p 
+          className="mt-2 text-center text-white/80 max-w-xs relative z-10"
+        >
+          {config.message}
+        </motion.p>
+      </motion.div>
 
       {/* Progress dots for processing states */}
       {status.startsWith("processing") && (
