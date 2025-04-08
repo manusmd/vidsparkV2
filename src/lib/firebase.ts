@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, isSupported } from "firebase/analytics";
 import { environment } from "./environment";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -20,12 +20,17 @@ const app =
 const db = app ? getFirestore(app) : null;
 const auth = app ? getAuth(app) : null;
 
-const analytics =
-  typeof window !== "undefined" &&
-  app &&
-  process.env.NEXT_PUBLIC_APP_ENV !== "emulator"
-    ? getAnalytics(app)
-    : null;
+let analytics = null;
+if (typeof window !== "undefined" && app && process.env.NEXT_PUBLIC_APP_ENV !== "emulator") {
+  // Check if analytics is supported before initializing
+  isSupported().then(yes => {
+    if (yes) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(err => {
+    console.error("Firebase Analytics error:", err);
+  });
+}
 
 let payments = null;
 try {
