@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { PieChart as RechartsPieChart, Pie, Cell, Tooltip, Sector } from "recharts";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ interface StatusPieChartProps {
 }
 
 // Custom active shape for better interactive display
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const renderActiveShape = (props: any) => {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
 
@@ -54,7 +55,7 @@ const renderActiveShape = (props: any) => {
 export function StatusPieChart({ data, className }: StatusPieChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const handleMouseEnter = (_: any, index: number) => {
+  const handleMouseEnter = (_: unknown, index: number) => {
     setActiveIndex(index);
   };
 
@@ -79,7 +80,7 @@ export function StatusPieChart({ data, className }: StatusPieChartProps) {
           isAnimationActive={true}
           animationDuration={800}
           label={(labelProps) => {
-            const { cx, cy, midAngle, outerRadius, percent, name, index } = labelProps;
+            const { cx, cy, midAngle, outerRadius, name, index } = labelProps;
             const radius = outerRadius + 15;
             const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
             const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
@@ -99,56 +100,21 @@ export function StatusPieChart({ data, className }: StatusPieChartProps) {
               </text>
             );
           }}
-          labelLine={(labelProps) => {
-            const { cx, cy, midAngle, outerRadius } = labelProps;
-            const radius = outerRadius + 5;
-            const x1 = cx + outerRadius * Math.cos(-midAngle * Math.PI / 180);
-            const y1 = cy + outerRadius * Math.sin(-midAngle * Math.PI / 180);
-            const x2 = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-            const y2 = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-            
-            return (
-              <path 
-                d={`M${x1},${y1}L${x2},${y2}`} 
-                stroke="rgba(255,255,255,0.5)" 
-                strokeWidth={1}
-                strokeDasharray="2 2"
-                fill="none"
-              />
-            );
-          }}
         >
           {data.map((entry, index) => (
-            <Cell 
-              key={`cell-${index}`} 
-              fill={entry.color}
-              className="hover:opacity-90 transition-opacity"
-            />
+            <Cell key={`cell-${index}`} fill={entry.color} />
           ))}
         </Pie>
-        
         <Tooltip
-          wrapperStyle={{ zIndex: 100 }}
           content={({ active, payload }) => {
             if (active && payload && payload.length) {
-              const entry = payload[0].payload as StatusData;
+              const data = payload[0].payload as StatusData;
               return (
-                <div className="rounded-lg border border-white/20 bg-black/90 p-3 shadow-xl">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div 
-                      className="h-3 w-3 rounded-full"
-                      style={{ backgroundColor: entry.color }}
-                    />
-                    <span className="font-medium text-white">{entry.name}</span>
-                  </div>
-                  <div className="flex flex-col text-sm">
-                    <div className="text-white/70">
-                      {entry.value} video{entry.value !== 1 ? 's' : ''}
-                    </div>
-                    <div className="font-semibold text-white/90">
-                      {entry.percentage}% of total
-                    </div>
-                  </div>
+                <div className="bg-gray-800 p-2 rounded shadow-lg border border-gray-700">
+                  <p className="font-medium text-white">{data.displayName}</p>
+                  <p className="text-gray-300 text-sm">
+                    {data.value} videos ({data.percentage.toFixed(1)}%)
+                  </p>
                 </div>
               );
             }

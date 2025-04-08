@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, X } from "lucide-react";
+import { Check, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/lib/routes";
@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStripePayments } from "@/hooks/useStripePayments";
 
 export default function CustomPricingTable() {
-  const { products, prices, isLoading, checkoutSessionProcessing, createCheckoutSession } = useStripePayments();
+  const { products, isLoading, createCheckoutSession } = useStripePayments();
   const { user } = useAuth();
   const router = useRouter();
   const [processingPriceId, setProcessingPriceId] = useState<string | null>(null);

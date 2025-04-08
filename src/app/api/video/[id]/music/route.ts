@@ -7,6 +7,7 @@ import admin from "firebase-admin";
 const MusicUpdateSchema = z.object({
   musicUrl: z.string().nullable().optional(),
   musicName: z.string().nullable().optional(),
+  musicVolume: z.number().min(0).max(1).optional(),
 });
 
 // PATCH - Update music for a video
@@ -34,7 +35,7 @@ export async function PATCH(
       );
     }
 
-    const { musicUrl, musicName } = parseResult.data;
+    const { musicUrl, musicName, musicVolume } = parseResult.data;
 
     // Get the current video document
     const videoRef = db.collection("videos").doc(id);
@@ -47,8 +48,13 @@ export async function PATCH(
       );
     }
     
-    // Prepare update data
-    const updateData: Record<string, any> = {
+    // Prepare update data with properties from the Video type
+    const updateData: {
+      updatedAt: admin.firestore.FieldValue;
+      musicUrl?: string | null;
+      musicName?: string | null;
+      musicVolume?: number;
+    } = {
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
     
@@ -58,6 +64,10 @@ export async function PATCH(
     
     if (musicName !== undefined) {
       updateData.musicName = musicName;
+    }
+    
+    if (musicVolume !== undefined) {
+      updateData.musicVolume = musicVolume;
     }
     
     // Update the video document

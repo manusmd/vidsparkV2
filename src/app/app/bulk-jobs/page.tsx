@@ -42,10 +42,9 @@ interface BulkJob {
 export default function BulkJobsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { checkBulkJobStatus, cancelBulkJob, subscribeToBulkJob } = useBulkCreate();
+  const { cancelBulkJob, subscribeToBulkJob } = useBulkCreate();
   const [jobs, setJobs] = useState<BulkJob[]>([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [activeSubscriptions, setActiveSubscriptions] = useState<{[key: string]: () => void}>({});
 
@@ -78,7 +77,6 @@ export default function BulkJobsPage() {
       });
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
   
@@ -134,7 +132,6 @@ export default function BulkJobsPage() {
     
     // Set up interval to refresh the job list
     const intervalId = setInterval(() => {
-      setRefreshing(true);
       fetchJobs();
     }, 30000); // Refresh every 30 seconds
     
@@ -219,7 +216,7 @@ export default function BulkJobsPage() {
           <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-medium mb-2">No Bulk Jobs Yet</h3>
           <p className="text-muted-foreground max-w-md mx-auto mb-6">
-            You haven't created any bulk video jobs yet. Go to your templates and select "Bulk Create" to get started.
+            You haven&apos;t created any bulk video jobs yet. Go to your templates and select &quot;Bulk Create&quot; to get started.
           </p>
           <Button
             onClick={() => router.push(ROUTES.PAGES.APP.TEMPLATES)}

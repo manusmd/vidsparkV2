@@ -1,6 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Video, CreditCard, Upload, TrendingUp, PlayCircle } from "lucide-react";
+import { Video, Upload, TrendingUp, PlayCircle } from "lucide-react";
 import { VidSparkStats } from "@/types/vidspark";
 
 interface PerformanceMetricsProps {

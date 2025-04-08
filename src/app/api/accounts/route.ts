@@ -17,7 +17,8 @@ export const GET = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      context: { params: Record<string, Promise<string>> },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      { params: _params }: { params: Promise<{ [key: string]: string }> },
       userId: string,
     ) => {
       try {
@@ -44,7 +45,8 @@ export const POST = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      context: { params: Record<string, Promise<string>> },
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      { params: _params }: { params: Promise<{ [key: string]: string }> },
       userId: string,
     ) => {
       try {

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { PLANS } from "@/app/app/settings/credits/page";
-import { doc, getDoc, updateDoc, collection, addDoc, getFirestore, query, where, getDocs } from "firebase/firestore";
+import { Stripe } from "stripe";
+import { PLANS } from "@/app/app/settings/credits/constants";
+import { doc, updateDoc, collection, addDoc, getFirestore, query, where, getDocs } from "firebase/firestore";
 import { getFirebaseApp } from "@/lib/firebase";
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2022-11-15" as any,
+// Initialize Stripe with API version
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2022-11-15" as Stripe.LatestApiVersion,
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
@@ -61,7 +61,7 @@ async function handleCheckoutSessionCompleted(event: Stripe.Event) {
   }
 
   // Find the plan that matches this price ID
-  const matchedPlan = PLANS.find((plan) => plan.priceId === priceId);
+  const matchedPlan = getPlanFromProductId(priceId);
   if (!matchedPlan) {
     console.error("No matching plan found for price ID:", priceId);
     return;
@@ -169,4 +169,21 @@ async function handleSubscriptionDeleted(event: Stripe.Event) {
   });
 
   console.log(`Subscription cancelled for user ${userId}`);
+}
+
+// Get plan based on product ID
+function getPlanFromProductId(productId: string): {
+  credits: number;
+  name: string;
+} | null {
+  switch (productId) {
+    case process.env.NEXT_PUBLIC_STRIPE_PRODUCT_ID_STARTER:
+      return PLANS.STARTER;
+    case process.env.NEXT_PUBLIC_STRIPE_PRODUCT_ID_PRO:
+      return PLANS.PRO;
+    case process.env.NEXT_PUBLIC_STRIPE_PRODUCT_ID_ENTERPRISE:
+      return PLANS.ENTERPRISE;
+    default:
+      return null;
+  }
 }

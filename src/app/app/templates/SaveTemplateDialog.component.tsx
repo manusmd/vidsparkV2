@@ -2,13 +2,10 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTemplates } from "@/hooks/data/useTemplates";
-import { useTextDesign } from "@/hooks/useTextDesign";
+import * as z from "zod";
 import { VideoTemplate, ContentType, ImageType } from "@/app/types";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 import ROUTES from "@/lib/routes";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
 
@@ -49,19 +46,6 @@ const textPositionOptions = [
   { value: "bottom", label: "Bottom" }
 ];
 
-const textDesignOptions = [
-  { value: "default", label: "Default" },
-  { value: "cool", label: "Cool" },
-  { value: "retro", label: "Retro" },
-  { value: "classic", label: "Classic" },
-  { value: "vivid", label: "Vivid" },
-  { value: "fancy", label: "Fancy" },
-  { value: "comic", label: "Comic" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "horror", label: "Horror" },
-  { value: "futuristic", label: "Futuristic" }
-];
-
 const templateFormSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   defaultNarration: z.string().optional(),
@@ -97,8 +81,6 @@ export default function SaveTemplateDialog({
   musicId
 }: SaveTemplateDialogProps) {
   const { user } = useAuth();
-  const { createTemplate } = useTemplates();
-  const { styling } = useTextDesign();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<SaveTemplateFormData>({
@@ -109,32 +91,44 @@ export default function SaveTemplateDialog({
       textPosition: "top",
       showTitle: true,
       textDesign: {
-        fontId: styling?.font || "roboto",
-        styleId: styling?.variant || "default",
+        fontId: "roboto",
+        styleId: "default",
       },
     },
   });
 
-  const onSubmit = async (data: SaveTemplateFormData) => {
+  const onSubmit = async (values: z.infer<typeof templateFormSchema>) => {
     if (!user) return;
     setIsSubmitting(true);
 
     try {
-      // Create a new template with the form data and current video settings
-      await createTemplate({
-        name: data.name,
-        defaultNarration: data.defaultNarration,
+      // Prepare properly typed template data
+      const templateData: Partial<VideoTemplate> = {
+        name: values.name,
+        defaultNarration: values.defaultNarration,
+        textPosition: values.textPosition,
+        showTitle: values.showTitle,
         contentTypeId: contentType.id,
         imageStyleId: imageType.id,
         voiceId: voiceId,
-        textPosition: data.textPosition,
-        textDesign: data.textDesign,
-        showTitle: data.showTitle,
         musicId: musicId || undefined,
+        textDesign: values.textDesign,
+      };
+      
+      const response = await fetch(ROUTES.API.TEMPLATES.BASE, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(templateData),
       });
 
-      onOpenChange(false);
-      if (onSaved) onSaved();
+      if (response.ok) {
+        onOpenChange(false);
+        if (onSaved) onSaved();
+      } else {
+        console.error("Error saving template:", response.statusText);
+      }
     } catch (error) {
       console.error("Error saving template:", error);
     } finally {
@@ -209,7 +203,7 @@ export default function SaveTemplateDialog({
                           font: field.value.fontId,
                           variant: field.value.styleId,
                         }}
-                        onChange={(design) => {
+                        onChange={(design: { font: string; variant: string }) => {
                           field.onChange({
                             fontId: design.font,
                             styleId: design.variant,

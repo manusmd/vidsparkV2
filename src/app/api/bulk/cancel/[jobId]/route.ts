@@ -21,9 +21,19 @@ async function verifyAuth(request: NextRequest) {
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
-) {
+  { params }: { params: Promise<{ jobId: string }> }
+): Promise<NextResponse> {
   try {
+    // Get jobId from params
+    const { jobId } = await params;
+    
+    if (!jobId) {
+      return NextResponse.json(
+        { error: 'Job ID is required' },
+        { status: 400 }
+      );
+    }
+
     // Verify authentication
     const authResult = await verifyAuth(request);
     if (!authResult.success) {
@@ -34,14 +44,6 @@ export async function POST(
     }
     
     const userId = authResult.userId;
-    const { jobId } = params;
-    
-    if (!jobId) {
-      return NextResponse.json(
-        { error: 'Job ID is required' },
-        { status: 400 }
-      );
-    }
     
     // Get job from database
     const jobDoc = await db.collection('bulkJobs').doc(jobId).get();

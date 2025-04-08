@@ -151,7 +151,8 @@ export function useStripePayments() {
           email: user.email || "",
           uid: user.uid,
         }, { merge: true });
-      } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         console.log("Customer document already exists or couldn't be created");
       }
       
@@ -216,7 +217,8 @@ export function useStripePayments() {
           email: user.email || "",
           uid: user.uid,
         }, { merge: true });
-      } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_error) {
         console.log("Customer document already exists or couldn't be created");
       }
       

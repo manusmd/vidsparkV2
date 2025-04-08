@@ -7,14 +7,10 @@ import { Scene } from "@/app/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Plus, Loader2 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { VideoScene } from "@/app/types";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 
 interface SceneListProps {
   scenes: { [sceneIndex: number]: Scene };
@@ -39,14 +35,15 @@ export function SceneList({
     null,
   );
   const [editedScenes, setEditedScenes] = useState<{ [key: number]: Scene }>(scenes);
-  const [isSaving, setIsSaving] = useState(false);
+  // isSaving is defined but not used - keep for future implementation
   const [isAddingScene, setIsAddingScene] = useState(false);
   
-  // Get the methods from the hook if videoId is provided
-  const { updateScenes, addScene } = videoId ? useVideoDetail(videoId) : { 
-    updateScenes: null,
-    addScene: null
-  };
+  // Always call hooks unconditionally
+  const { updateScenes: updateScenesHook, addScene: addSceneHook } = useVideoDetail(videoId || "dummy-id");
+  
+  // Then conditionally use the results
+  const updateScenes = videoId ? updateScenesHook : null;
+  const addScene = videoId ? addSceneHook : null;
 
   // Update editedScenes when scenes prop changes or edit mode changes
   useEffect(() => {
@@ -90,7 +87,6 @@ export function SceneList({
   const saveScenes = async () => {
     if (!videoId) return;
     
-    setIsSaving(true);
     try {
       if (updateScenes) {
         // Use the hook method if available
@@ -117,8 +113,6 @@ export function SceneList({
     } catch (error) {
       console.error("Error saving scenes:", error);
       toast.error("Failed to update scenes");
-    } finally {
-      setIsSaving(false);
     }
   };
 

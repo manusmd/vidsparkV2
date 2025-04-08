@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, storage } from "@/lib/firebaseAdmin";
 import admin from "firebase-admin";
 import { environment } from "@/lib/environment";
+import { ContentType } from "@/app/types";
 
-// PUT: Update a content type
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -50,7 +50,7 @@ export async function PUT(
     }
     
     // Create data object and filter out undefined values
-    const contentData: Record<string, any> = {
+    const contentData: Partial<ContentType> = {
       title,
       description,
       examples: Array.isArray(examples) ? examples : [],
@@ -58,15 +58,20 @@ export async function PUT(
       recommendedVoiceId: recommendedVoiceId || "",
       imageUrl: finalImageUrl,
       imagePrompt: imagePrompt || "",
+    };
+    
+    // Add the server timestamp (not part of ContentType)
+    const updateData: Partial<ContentType> & { updatedAt: admin.firestore.FieldValue } = {
+      ...contentData,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
     
     // Only include order if it's not undefined
     if (typeof order !== 'undefined') {
-      contentData.order = order;
+      updateData.order = order;
     }
     
-    await db.collection("contentTypes").doc(id).update(contentData);
+    await db.collection("contentTypes").doc(id).update(updateData);
     const docSnap = await db.collection("contentTypes").doc(id).get();
     return NextResponse.json({ id, ...docSnap.data() });
   } catch (error: unknown) {

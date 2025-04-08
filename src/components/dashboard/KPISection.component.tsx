@@ -5,8 +5,7 @@ import { MetricCard } from "./MetricCard.component";
 import { 
   Video, 
   FileText,
-  Share2,
-  TrendingUp
+  Share2
 } from "lucide-react";
 
 type KPISectionProps = {

@@ -2,15 +2,8 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Users, Trophy, TrendingUp } from "lucide-react";
-import { AnalyticsResponse } from "@/services/accounts/analyticsService";
-import { formatNumber } from "../utils/formatters";
 
-interface EngagementHubProps {
-  analyticsData: AnalyticsResponse | null;
-  formatNumber: (num: number) => string;
-}
-
-export function EngagementHub({ analyticsData, formatNumber }: EngagementHubProps) {
+export function EngagementHub() {
   // Mock data for recent comments and community activity
   const recentComments = [
     {

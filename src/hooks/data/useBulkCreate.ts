@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { VideoTemplate } from "@/app/types";
 import ROUTES from "@/lib/routes";
 import { toast } from "@/components/ui/use-toast";
 import { doc, onSnapshot } from "firebase/firestore";

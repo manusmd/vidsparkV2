@@ -1,9 +1,8 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { DollarSign, Clock } from "lucide-react";
+import { DollarSign } from "lucide-react";
 import { AnalyticsResponse } from "@/services/accounts/analyticsService";
-import { formatNumber } from "../utils/formatters";
 
 interface RevenueProps {
   analyticsData: AnalyticsResponse | null;
@@ -22,7 +21,7 @@ export function Revenue({ analyticsData, formatNumber }: RevenueProps) {
         <div className="flex items-center justify-between">
           <div>
             <CardTitle>Revenue Overview</CardTitle>
-            <CardDescription>Your channel's monetization metrics</CardDescription>
+            <CardDescription>Your channel&apos;s monetization metrics</CardDescription>
           </div>
           <Button variant="outline" size="sm">
             <DollarSign className="w-4 h-4 mr-2" />

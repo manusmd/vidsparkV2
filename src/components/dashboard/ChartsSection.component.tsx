@@ -1,8 +1,7 @@
 "use client";
 
 import { 
-  LineChart,
-  BarChart
+  LineChart
 } from "@/components/ui/charts/chart";
 import { 
   Card, 
@@ -58,8 +57,6 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
     
     // Process each day of the month and assign to appropriate week
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentYear, currentMonth, day);
-      
       // Determine which week this day belongs to (0-indexed)
       // Week 1: days 1-7, Week 2: days 8-14, etc.
       const weekIndex = Math.floor((day - 1) / 7);
@@ -84,7 +81,7 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
     }
     
     // Generate better tooltips with date ranges
-    weeksData.forEach((week, index) => {
+    weeksData.forEach((week) => {
       if (week.days.length > 0) {
         const firstDay = week.days[0].day;
         const lastDay = week.days[week.days.length - 1].day;
@@ -200,12 +197,16 @@ export const ChartsSection = ({ videos, formatNumber }: ChartsSectionProps) => {
               <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px] opacity-30"></div>
               <div className="relative h-full">
                 <LineChart 
-                  data={monthlyData} 
+                  data={monthlyData.map(item => ({
+                    name: item.name,
+                    value: item.value,
+                    fullDate: item.fullDate
+                  }))} 
                   category="Videos"
                   showGrid
                   color="#60a5fa"
                   valueFormatter={formatNumber}
-                  tooltipFormatter={(item) => item.fullDate}
+                  tooltipFormatter={(item) => String(item.fullDate)}
                 />
               </div>
             </div>

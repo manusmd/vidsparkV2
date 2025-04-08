@@ -21,8 +21,6 @@ import EditTemplateDialog from "./EditTemplateDialog.component";
 import ROUTES from "@/lib/routes";
 import { toast } from "@/components/ui/use-toast";
 import { BulkCreateDialog } from "./BulkCreateDialog.component";
-import Image from "next/image";
-import { useAuth } from "@/hooks/useAuth";
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -88,7 +86,8 @@ export default function TemplatesPage() {
   const getTemplateLastUsed = (template: VideoTemplate) => {
     try {
       return formatDistanceToNow(new Date(template.lastUsedAt), { addSuffix: true });
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_error) {
       return "Unknown";
     }
   };

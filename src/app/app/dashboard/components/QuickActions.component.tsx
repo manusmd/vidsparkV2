@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Upload,
   Edit,
-  List,
   Settings,
   Image,
   FileText,

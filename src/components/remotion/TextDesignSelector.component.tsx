@@ -2,11 +2,6 @@
 
 import React, { JSX, useState } from "react";
 import { ChevronLeft, ChevronRight, Check, Type, Palette } from "lucide-react";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { 
   Card, 
   CardContent, 
@@ -189,19 +184,6 @@ export function TextDesignSelector({
     selectedVariantKey,
     selectedFont.value,
   );
-
-  // Update click handlers in the component
-  const handleVariantClick = (key: TextDesignVariant) => {
-    if (!disabled) {
-      handleStyleUpdate(key, currentFont);
-    }
-  };
-
-  const handleFontClick = (fontValue: string) => {
-    if (!disabled) {
-      handleStyleUpdate(currentVariant, fontValue as FontType);
-    }
-  };
 
   return (
     <Card className="w-full">

@@ -1,7 +1,6 @@
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatNumber } from "../utils/formatters";
 import { Video, Upload, Clock, ThumbsUp, MessageSquare } from "lucide-react";
 import { VidSparkVideo } from "@/types/vidspark";
 

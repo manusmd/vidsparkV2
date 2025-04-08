@@ -5,9 +5,9 @@ import { VideoTemplate } from '@/app/types';
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useImageTypes } from "@/hooks/data/useImageTypes";
 import { useVoices } from "@/hooks/data/useVoices";
-import { CheckCircle, Info, X } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
 interface TemplateInfoBannerProps {
@@ -16,7 +16,6 @@ interface TemplateInfoBannerProps {
 
 export default function TemplateInfoBanner({ template }: TemplateInfoBannerProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { contentTypes } = useContentTypes();
   const { imageTypes } = useImageTypes();
   const { voices } = useVoices();

@@ -53,6 +53,7 @@ export interface LineChartProps {
       | "basisClosed"
       | "natural";
     strokeWidth?: number;
+    strokeDasharray?: string;
     dot?: boolean | object;
     activeDot?: boolean | object;
     isAnimationActive?: boolean;
@@ -149,6 +150,7 @@ export function LineChart({
               type={line.type || "natural"}
               stroke={line.stroke || `var(--chart-bar-color-${(lineIndex % 5) + 1})`}
               strokeWidth={line.strokeWidth || 2}
+              strokeDasharray={line.strokeDasharray}
               dot={line.dot === undefined ? false : line.dot}
               activeDot={line.activeDot}
               isAnimationActive={line.isAnimationActive}

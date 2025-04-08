@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/firebaseAdmin";
-import admin from "firebase-admin";
 
 // Schema for updating video details
 const VideoUpdateSchema = z.object({
@@ -35,7 +34,12 @@ export async function PATCH(
     }
 
     const { title, description } = parseResult.data;
-    const updateData: Record<string, any> = {};
+    
+    // Use a specific type for Firestore compatibility
+    const updateData: {
+      title?: string;
+      description?: string;
+    } = {};
     
     if (title !== undefined) updateData.title = title;
     if (description !== undefined) updateData.description = description;

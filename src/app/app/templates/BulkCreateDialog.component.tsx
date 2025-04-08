@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import ROUTES from "@/lib/routes";
+import { PAGES } from "@/lib/routes";
 import { useBulkCreate } from "@/hooks/data/useBulkCreate";
 import { toast } from "@/components/ui/use-toast";
 
@@ -59,7 +59,7 @@ export function BulkCreateDialog({
   template,
 }: BulkCreateDialogProps) {
   const router = useRouter();
-  const { createBulkVideos, isProcessing } = useBulkCreate();
+  const { createBulkVideos } = useBulkCreate();
   const [submitting, setSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
@@ -82,25 +82,21 @@ export function BulkCreateDialog({
     setSubmitting(true);
 
     try {
-      const result = await createBulkVideos({
+      await createBulkVideos({
         templateId: template.id,
         count: values.count,
         topicPrompt: values.topicPrompt || "",
       });
 
-      toast("Bulk Creation Started", {
-        description: `Successfully started creation of ${values.count} videos from template.`
+      toast("Success", {
+        description: `Creating ${values.count} videos using template &quot;${template.name}&quot;`
       });
 
-      // Close the dialog
       onOpenChange(false);
-      
-      // Optional: Navigate to a status page or dashboard
-      router.push(ROUTES.PAGES.APP.MY_VIDEOS.INDEX);
-    } catch (error) {
-      console.error("Bulk creation error:", error);
+      router.push(PAGES.APP.DASHBOARD.INDEX);
+    } catch {
       toast("Error", {
-        description: error instanceof Error ? error.message : "Failed to start bulk creation",
+        description: "Failed to create videos. Please try again.",
         style: { backgroundColor: "red" }
       });
     } finally {
@@ -110,29 +106,13 @@ export function BulkCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Bulk Create Videos</DialogTitle>
           <DialogDescription>
-            Create multiple videos from template: {template.name}
+            Create multiple videos using this template. Each video will be unique based on the topic prompt.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="bg-slate-100 dark:bg-slate-800 p-4 rounded-md mb-4">
-          <h3 className="text-sm font-medium mb-2">Template Details</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            <span className="font-semibold">Name:</span> {template.name}
-          </p>
-          {template.description && (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              <span className="font-semibold">Description:</span> {template.description}
-            </p>
-          )}
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
-            This will create multiple videos using this template's settings.
-          </p>
-        </div>
-
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -144,62 +124,49 @@ export function BulkCreateDialog({
                   <FormControl>
                     <Input
                       type="number"
-                      placeholder="1"
+                      min={1}
+                      max={20}
                       {...field}
-                      onChange={(e) => {
-                        const value = parseInt(e.target.value, 10);
-                        field.onChange(isNaN(value) ? 0 : value);
-                      }}
+                      onChange={(e) => field.onChange(parseInt(e.target.value))}
                     />
                   </FormControl>
                   <FormDescription>
-                    How many videos you want to create (1-20)
+                    How many videos would you like to create? (max 20)
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="topicPrompt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Custom Topic Prompt (Optional)</FormLabel>
+                  <FormLabel>Topic Prompt (Optional)</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Create videos about tech gadgets for beginners"
+                      placeholder="Enter a topic or theme for the videos..."
                       className="resize-none"
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    Leave blank to use the content type&apos;s default prompt, or enter a custom prompt for more specific videos
+                    This will help generate unique content for each video
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded-md">
-              <p className="text-sm text-slate-700 dark:text-slate-300">
-                <strong>Note:</strong> The AI will automatically generate unique variations for each video.
-              </p>
-            </div>
-
             <DialogFooter>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
+                type="submit"
+                disabled={submitting}
+                className="w-full"
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={submitting}>
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating...
+                    Creating Videos...
                   </>
                 ) : (
                   "Create Videos"

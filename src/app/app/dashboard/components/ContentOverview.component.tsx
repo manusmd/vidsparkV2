@@ -2,13 +2,8 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Calendar, Clock, Edit, Trash2, Share2 } from "lucide-react";
-import { AnalyticsResponse } from "@/services/accounts/analyticsService";
 
-interface ContentOverviewProps {
-  analyticsData: AnalyticsResponse | null;
-}
-
-export function ContentOverview({ analyticsData }: ContentOverviewProps) {
+export function ContentOverview() {
   // Mock data for recent videos and upcoming content
   const recentVideos = [
     {

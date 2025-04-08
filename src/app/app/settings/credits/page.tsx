@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCredits } from "@/hooks/useCredits";
 import {
   Card,
   CardContent,
@@ -12,14 +13,26 @@ import {
 import { ReloadIcon } from "@radix-ui/react-icons";
 import { BsCreditCard } from "react-icons/bs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import CustomerPortal from "./customer-portal";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/lib/routes";
 import { useStripePayments } from "@/hooks/useStripePayments";
 
+// Define a type for the Stripe product
+interface StripeProduct {
+  id: string;
+  name?: string;
+  description?: string;
+  metadata?: {
+    credits?: string;
+    popular?: string;
+    [key: string]: string | undefined;
+  };
+}
+
 export default function CreditsPage() {
-  const { user, credits, creditsLoading } = useAuth();
+  const { user } = useAuth();
+  const { credits, creditsLoading } = useCredits();
   const { products, prices, isLoading: productsLoading, createCheckoutSession } = useStripePayments();
   const [billingInterval, setBillingInterval] = useState<"month" | "year">("month");
   const [processingPriceId, setProcessingPriceId] = useState<string | null>(null);
@@ -46,8 +59,8 @@ export default function CreditsPage() {
   });
 
   // Extract features from product metadata
-  function getProductFeatures(product: any) {
-    const features = [];
+  function getProductFeatures(product: StripeProduct | undefined) {
+    const features: string[] = [];
     
     if (product?.metadata?.credits) {
       features.push(`${product.metadata.credits} Credits`);
@@ -187,12 +200,12 @@ export default function CreditsPage() {
                         viewBox="0 0 24 24" 
                         fill="none" 
                         stroke="currentColor" 
-                        strokeWidth="2" 
-                        strokeLinecap="round" 
-                        strokeLinejoin="round" 
-                        className="h-5 w-5 mr-2 text-primary"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="w-5 h-5 mr-2 text-green-500"
                       >
-                        <polyline points="20 6 9 17 4 12"></polyline>
+                        <polyline points="20 6 9 17 4 12" />
                       </svg>
                       {feature}
                     </li>
@@ -201,12 +214,18 @@ export default function CreditsPage() {
               </CardContent>
               <CardFooter>
                 <Button 
+                  className="w-full" 
                   onClick={() => handleSubscribe(plan.priceId)}
-                  className="w-full"
-                  variant={plan.popular ? "default" : "outline"}
                   disabled={processingPriceId === plan.priceId}
                 >
-                  {processingPriceId === plan.priceId ? "Processing..." : "Subscribe"}
+                  {processingPriceId === plan.priceId ? (
+                    <>
+                      <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
                 </Button>
               </CardFooter>
             </Card>

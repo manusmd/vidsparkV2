@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useVideoDetail } from "@/hooks/data/useVideoDetail";
 import type { VideoStyling } from "@/app/types";
+import { TextDesignSchema } from "@/components/remotion/types/constants";
 
 interface TextDesignContextType {
   styling: VideoStyling | null;
@@ -31,14 +32,18 @@ export function TextDesignProvider({
 }) {
   // Get initial styling from video details.
   const { video } = useVideoDetail(videoId);
-  const [styling, setStyling] = useState<VideoStyling | null>(
-    video?.styling || null,
-  );
+  
+  // Convert video.styling to the correct VideoStyling type
+  const initialStyling = video?.styling 
+    ? TextDesignSchema.parse(video.styling) 
+    : null;
+    
+  const [styling, setStyling] = useState<VideoStyling | null>(initialStyling);
 
   // Update local styling when video.styling changes.
   useEffect(() => {
     if (video?.styling) {
-      setStyling(video.styling);
+      setStyling(TextDesignSchema.parse(video.styling));
     }
   }, [video?.styling]);
 

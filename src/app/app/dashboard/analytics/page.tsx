@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Loader2, RefreshCw } from "lucide-react";
-import { AnalyticsResponse } from "@/services/accounts/analyticsService";
 import { useAllAnalytics } from "@/hooks/data/useAllAnalytics";
 import { Button } from "@/components/ui/button";
 
@@ -18,7 +17,13 @@ import { DashboardHeader } from "../components/DashboardHeader.component";
 import { formatNumber } from "../utils/formatters";
 
 export default function DashboardPage() {
-  const { accountsWithAnalytics, isLoading, error, refreshData, hasAccounts } = useAllAnalytics();
+  const { 
+    accountsWithAnalytics, 
+    analyticsLoading, 
+    analyticsError, 
+    refreshData, 
+    accounts 
+  } = useAllAnalytics();
   const [selectedAccountId, setSelectedAccountId] = useState<string | undefined>(undefined);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -45,12 +50,12 @@ export default function DashboardPage() {
 
   // Set the first account as default when accounts are loaded
   useEffect(() => {
-    if (!isLoading && accountsWithAnalytics.length > 0 && selectedAccountId === undefined) {
+    if (!analyticsLoading && accountsWithAnalytics.length > 0 && selectedAccountId === undefined) {
       setSelectedAccountId(accountsWithAnalytics[0].id);
     }
-  }, [accountsWithAnalytics, isLoading, selectedAccountId]);
+  }, [accountsWithAnalytics, analyticsLoading, selectedAccountId]);
 
-  if (isLoading) {
+  if (analyticsLoading) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -59,7 +64,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (error) {
+  if (analyticsError) {
     return (
       <div className="container min-h-screen py-8 px-6 space-y-8">
         <div className="flex flex-col space-y-4">
@@ -67,7 +72,7 @@ export default function DashboardPage() {
           <Card className="p-6">
             <div className="text-center">
               <h3 className="text-lg font-medium">Unable to load dashboard data</h3>
-              <p className="text-muted-foreground mt-2">{error}</p>
+              <p className="text-muted-foreground mt-2">{analyticsError}</p>
               <Button 
                 variant="outline" 
                 className="mt-4" 
@@ -84,7 +89,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (!hasAccounts) {
+  if (!accounts?.length) {
     return (
       <div className="container min-h-screen py-8 px-6 space-y-8">
         <div className="flex flex-col space-y-4">

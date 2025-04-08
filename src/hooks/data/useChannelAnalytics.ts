@@ -54,87 +54,85 @@ export function useChannelAnalytics(channelId: string) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const dataContext = useDataContext();
 
-  // Try to use data from context if available
-  try {
-    const dataContext = useDataContext();
-    
-    // Find the account with analytics from the context
-    const accountWithAnalytics = dataContext.accountsWithAnalytics.find(
-      account => account.id === channelId
-    );
-    
-    const analyticsFromContext = accountWithAnalytics?.analytics || null;
+  // Find the account with analytics from the context
+  const accountWithAnalytics = dataContext?.accountsWithAnalytics.find(
+    account => account.id === channelId
+  );
+  
+  const analyticsFromContext = accountWithAnalytics?.analytics || null;
 
-    // Set up the refetch function to use context's refreshAnalytics
-    const refetch = async () => {
-      try {
-        setIsLoading(true);
-        const updatedAnalytics = await dataContext.refreshAnalytics(channelId);
-        return updatedAnalytics;
-      } finally {
-        setIsLoading(false);
+  // Set up the refetch function to use context's refreshAnalytics
+  const refetch = async () => {
+    try {
+      setIsLoading(true);
+      const updatedAnalytics = await dataContext?.refreshAnalytics(channelId);
+      return updatedAnalytics;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    // If we don't have analytics for this channel yet, try to fetch them
+    if (!analyticsFromContext && channelId) {
+      refetch();
+    }
+  }, [channelId]);
+
+  // If context is not available, fall back to original implementation
+  const getAuthHeader = async (): Promise<Record<string, string>> => {
+    if (user) {
+      const token = await user.getIdToken();
+      return { Authorization: `Bearer ${token}` };
+    }
+    return {};
+  };
+
+  const fetchAnalytics = async () => {
+    if (!channelId) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const headers = await getAuthHeader();
+      const res = await fetch(`/api/accounts/${channelId}/analytics`, { headers });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch analytics");
       }
-    };
-    
-    useEffect(() => {
-      // If we don't have analytics for this channel yet, try to fetch them
-      if (!analyticsFromContext && channelId) {
-        refetch();
-      }
-    }, [channelId]);
-    
+
+      const responseData = await res.json();
+      const analyticsData = responseData.data;
+
+      setAnalytics(analyticsData);
+      return analyticsData;
+    } catch (err: unknown) {
+      console.error("Error fetching channel analytics:", err);
+      setError((err as Error).message || "Error fetching analytics");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (channelId && user) {
+      fetchAnalytics().catch(console.error);
+    }
+  }, [channelId, user]);
+  
+  if (dataContext) {
     return {
       analytics: analyticsFromContext,
       isLoading: dataContext.analyticsLoading || isLoading,
       error: dataContext.analyticsError, 
       refetch
     };
-  } catch (e) {
-    // If context is not available, fall back to original implementation
-    const getAuthHeader = async (): Promise<Record<string, string>> => {
-      if (user) {
-        const token = await user.getIdToken();
-        return { Authorization: `Bearer ${token}` };
-      }
-      return {};
-    };
-
-    const fetchAnalytics = async () => {
-      if (!channelId) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const headers = await getAuthHeader();
-        const res = await fetch(`/api/accounts/${channelId}/analytics`, { headers });
-
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || "Failed to fetch analytics");
-        }
-
-        const responseData = await res.json();
-        const analyticsData = responseData.data;
-
-        setAnalytics(analyticsData);
-        return analyticsData;
-      } catch (err: unknown) {
-        console.error("Error fetching channel analytics:", err);
-        setError((err as Error).message || "Error fetching analytics");
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    useEffect(() => {
-      if (channelId && user) {
-        fetchAnalytics().catch(console.error);
-      }
-    }, [channelId, user]);
-
-    return { analytics, isLoading, error, refetch: fetchAnalytics };
   }
+
+  return { analytics, isLoading, error, refetch: fetchAnalytics };
 }

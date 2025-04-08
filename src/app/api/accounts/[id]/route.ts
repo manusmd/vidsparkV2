@@ -10,11 +10,12 @@ export const DELETE = withErrorHandling(
   withAuth(
     async (
       req: Request,
-      { params }: { params: Record<string, Promise<string>> },
+      { params }: { params: Promise<{ [key: string]: string }> },
       userId: string,
     ) => {
       try {
-        const id = await params.id;
+        const paramsData = await params;
+        const id = paramsData.id;
         await deleteAccount(id, userId);
         return successResponse({ message: "Account deleted successfully" });
       } catch (error) {

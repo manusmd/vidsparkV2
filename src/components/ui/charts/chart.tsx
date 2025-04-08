@@ -10,7 +10,6 @@ import {
   LineChart as RechartsLineChart,
   Pie,
   PieChart as RechartsPieChart,
-  Rectangle,
   ResponsiveContainer,
   Sector,
   Tooltip,
@@ -44,7 +43,9 @@ export interface BarChartProps extends ChartProps {
   data: {
     name: string;
     value: number;
-    [key: string]: any;
+    color?: string;
+    endColor?: string;
+    [key: string]: unknown;
   }[];
   colors?: string[];
   category?: string;
@@ -68,8 +69,17 @@ export function BarChart({
   
   const isHorizontal = layout === "horizontal";
 
+  // Define the prop types for CustomizedLabel
+  interface CustomizedLabelProps {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    index: number;
+  }
+
   // Custom label content that has access to data
-  const CustomizedLabel = (props: any) => {
+  const CustomizedLabel = (props: CustomizedLabelProps) => {
     const { x, y, width, height, index } = props;
     const item = data[index];
     
@@ -266,7 +276,7 @@ export interface LineChartProps extends ChartProps {
   data: {
     name: string;
     value: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }[];
   category?: string;
   showGrid?: boolean;
@@ -274,7 +284,7 @@ export interface LineChartProps extends ChartProps {
   color?: string;
   strokeWidth?: number;
   valueFormatter?: (value: number) => string;
-  tooltipFormatter?: (item: any) => string;
+  tooltipFormatter?: (item: Record<string, unknown>) => string;
 }
 
 export function LineChart({
@@ -394,6 +404,28 @@ export function LineChart({
 }
 
 const RADIAN = Math.PI / 180;
+
+// Define the type for the active shape props
+interface ActiveShapeProps {
+  cx: number;
+  cy: number;
+  midAngle: number;
+  innerRadius: number;
+  outerRadius: number;
+  startAngle: number;
+  endAngle: number;
+  fill: string;
+  payload: {
+    name: string;
+    value: number;
+    [key: string]: unknown;
+  };
+  percent: number;
+  value: number;
+  name: string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const renderActiveShape = (props: any) => {
   const {
     cx,
@@ -404,11 +436,9 @@ const renderActiveShape = (props: any) => {
     startAngle,
     endAngle,
     fill,
-    payload,
-    percent,
-    value,
     name,
-  } = props;
+    percent
+  } = props as ActiveShapeProps;
   const sin = Math.sin(-RADIAN * midAngle);
   const cos = Math.cos(-RADIAN * midAngle);
   const sx = cx + (outerRadius + 10) * cos;
@@ -472,7 +502,7 @@ export interface PieChartProps extends ChartProps {
   data: {
     name: string;
     value: number;
-    [key: string]: any;
+    [key: string]: unknown;
   }[];
   colors?: string[];
   valueFormatter?: (value: number) => string;
@@ -488,7 +518,7 @@ export function PieChart({
 }: PieChartProps) {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const onPieEnter = (_: any, index: number) => {
+  const onPieEnter = (_: React.MouseEvent<SVGElement>, index: number) => {
     if (interactive) {
       setActiveIndex(index);
     }

@@ -7,7 +7,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Info,
 } from "lucide-react";
 
 export function Notifications() {

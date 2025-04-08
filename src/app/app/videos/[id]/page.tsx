@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Plus, Info, Film, ChevronDown, ChevronUp, ChevronRight, FileCheck } from "lucide-react";
+import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Info, Film, ChevronRight, FileCheck } from "lucide-react";
 import ROUTES from "@/lib/routes";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
@@ -20,11 +20,8 @@ import { TextDesignProvider } from "@/hooks/useTextDesign";
 import { YoutubeUploadModal } from "@/components/modals/YouTubeUploadModal.component";
 import { useAccounts } from "@/hooks/data/useAccounts";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -40,7 +37,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTemplates } from "@/hooks/data/useTemplates";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function VideoDetailPageContent() {
   const { id } = useParams();
@@ -54,10 +50,8 @@ function VideoDetailPageContent() {
     stableAssets, 
     uploadToYoutube,
     updateVideoDetails,
-    updateScenes,
-    addScene
   } = useVideoDetail(id as string);
-  const { templates, loading: templatesLoading } = useTemplates();
+  const { templates } = useTemplates();
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [showTitle, setShowTitle] = useState<boolean>(true);
   const [textPosition, setTextPosition] = useState<string>("top");
@@ -346,7 +340,8 @@ function VideoDetailPageContent() {
   };
   
   // Get YouTube status from video if available
-  const youtubeUploadStatus = (video as any)?.youtubeUploadStatus || "not_started";
+  const typedVideo = video as { youtubeUploadStatus?: string };
+  const youtubeUploadStatus = typedVideo?.youtubeUploadStatus || "not_started";
   
   if (loading) {
     return (
@@ -375,9 +370,6 @@ function VideoDetailPageContent() {
       </div>
     );
   }
-
-  const isProcessingStory = video.status === "processing:story";
-  const isEditingDisabled = video.status !== "draft";
 
   // Prepare action buttons
   const actionButtons = [];
@@ -557,7 +549,7 @@ function VideoDetailPageContent() {
                     {video.status === "draft" ||
                     video.status === "processing:assets" ||
                     video.status === "processing:video" ||
-                    isProcessingStory ? (
+                    video.status === "processing:story" ? (
                       <VideoProcessingStatus status={video.status} />
                     ) : (
                       <VideoPreview
@@ -630,7 +622,7 @@ function VideoDetailPageContent() {
                   <SceneList 
                     id="scene-list-component"
                     scenes={video.scenes} 
-                    loading={isProcessingStory} 
+                    loading={video.status === "processing:story"} 
                     isEditing={isEditingScenes}
                     videoId={video.id}
                     onSaveChanges={() => setIsEditingScenes(false)}
@@ -652,7 +644,7 @@ function VideoDetailPageContent() {
                     </div>
                     <div className="relative z-10">
                       <h2 className="text-lg font-medium mb-1">Video Customization</h2>
-                      <p className="text-sm text-muted-foreground">Tailor your video's appearance and style to match your brand</p>
+                      <p className="text-sm text-muted-foreground">Tailor your video&apos;s appearance and style to match your brand</p>
                     </div>
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-border to-transparent opacity-40" />
                   </div>
@@ -672,7 +664,7 @@ function VideoDetailPageContent() {
                       icon={<Settings className="w-4 h-4 text-primary" />}
                     >
                       <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
-                        <TextDesignSelector disabled={isProcessingStory} />
+                        <TextDesignSelector disabled={video.status === "processing:story"} />
                       </div>
                     </CollapsibleSection>
                     
@@ -690,7 +682,7 @@ function VideoDetailPageContent() {
                           onTextPositionChange={setTextPosition}
                           showTitle={showTitle}
                           onShowTitleChange={setShowTitle}
-                          disabled={isProcessingStory}
+                          disabled={video.status === "processing:story"}
                         />
                       </div>
                     </CollapsibleSection>
@@ -704,7 +696,7 @@ function VideoDetailPageContent() {
                       icon={<Edit2 className="w-4 h-4 text-primary" />}
                     >
                       <div className="bg-card/50 rounded-lg p-4 border border-border/30 shadow-sm">
-                        <MusicSelector disabled={isProcessingStory} />
+                        <MusicSelector disabled={video.status === "processing:story"} />
                       </div>
                     </CollapsibleSection>
                   </div>

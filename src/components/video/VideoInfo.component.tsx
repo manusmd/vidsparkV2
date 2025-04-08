@@ -11,7 +11,6 @@ import {
   Info,
   Aperture,
   AlertCircle,
-  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import ROUTES from "@/lib/routes";
@@ -25,10 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 
 interface VideoInfoProps {
   video: Video;
@@ -53,7 +48,7 @@ export function VideoInfo({ video, className }: VideoInfoProps) {
       
       toast.success("Video deleted successfully");
       router.push(ROUTES.PAGES.APP.DASHBOARD.INDEX);
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete video");
     }
   };
@@ -142,8 +137,8 @@ export function VideoInfo({ video, className }: VideoInfoProps) {
                 <div>
                   <h4 className="text-sm font-medium text-blue-900">Review Before Generating</h4>
                   <p className="mt-1 text-xs text-blue-700 leading-relaxed">
-                    Please review your content structure carefully. Once you click "Generate Video", 
-                    you won't be able to edit the script structure or scene texts anymore. 
+                    Please review your content structure carefully. Once you click &quot;Generate Video&quot;, 
+                    you won&apos;t be able to edit the script structure or scene texts anymore. 
                     However, you can still customize appearance, text design, and music after generation.
                   </p>
                 </div>

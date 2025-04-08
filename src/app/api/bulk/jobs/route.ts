@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db, auth } from '@/lib/firebaseAdmin';
+import { QueryDocumentSnapshot } from 'firebase-admin/firestore';
 
 // Helper function for auth verification
 async function verifyAuth(request: NextRequest) {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
       .limit(50) // Limit to 50 recent jobs
       .get();
     
-    const jobs = jobsSnapshot.docs.map((doc: any) => {
+    const jobs = jobsSnapshot.docs.map((doc: QueryDocumentSnapshot) => {
       const data = doc.data();
       return {
         id: doc.id,

@@ -17,7 +17,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { VoiceSelector } from "@/components/video/VoiceSelector.component";
 import type { ContentType, Voice } from "@/app/types";
 import Image from "next/image";
-import ROUTES from "@/lib/routes";
 import { Loader2 } from "lucide-react";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 
@@ -402,7 +401,7 @@ function ExamplesInput({
       )}
       
       {value.length === 0 && (
-        <p className="text-xs text-zinc-500 pt-1">Add examples of the content type to help users understand what it's for.</p>
+        <p className="text-xs text-zinc-500 pt-1">Add examples of the content type to help users understand what it&apos;s for.</p>
       )}
     </div>
   );

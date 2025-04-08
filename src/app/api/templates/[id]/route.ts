@@ -10,8 +10,8 @@ import admin from 'firebase-admin';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   // Authenticate the user
   const auth = await authenticate(request);
   if (!auth) {
@@ -19,8 +19,8 @@ export async function GET(
   }
 
   try {
-    const templateId = params.id;
-    const templateDoc = await db.collection("templates").doc(templateId).get();
+    const { id } = await params;
+    const templateDoc = await db.collection("templates").doc(id).get();
 
     if (!templateDoc.exists) {
       return NextResponse.json({ error: "Template not found" }, { status: 404 });
@@ -64,8 +64,8 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   // Authenticate the user
   const auth = await authenticate(request);
   if (!auth) {
@@ -73,8 +73,8 @@ export async function PUT(
   }
 
   try {
-    const templateId = params.id;
-    const templateRef = db.collection("templates").doc(templateId);
+    const { id } = await params;
+    const templateRef = db.collection("templates").doc(id);
     const templateDoc = await templateRef.get();
 
     // Check if template exists
@@ -107,7 +107,7 @@ export async function PUT(
 
     // Return the updated template
     return NextResponse.json({
-      id: templateId,
+      id: id,
       ...(templateData || {}),
       ...updatedData,
       createdAt: templateData?.createdAt?.toDate() || new Date(),
@@ -127,8 +127,8 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   // Authenticate the user
   const auth = await authenticate(request);
   if (!auth) {
@@ -136,8 +136,8 @@ export async function DELETE(
   }
 
   try {
-    const templateId = params.id;
-    const templateRef = db.collection("templates").doc(templateId);
+    const { id } = await params;
+    const templateRef = db.collection("templates").doc(id);
     const templateDoc = await templateRef.get();
 
     // Check if template exists

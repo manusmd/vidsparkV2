@@ -3,8 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { VideoCard } from "./VideoCard.component";
-import { Video as VideoType } from "@/app/types";
-import { Video, Plus, Filter, ChevronLeft, ChevronRight, SearchX, Loader2, RefreshCw } from "lucide-react";
+import { Plus, Filter, ChevronLeft, ChevronRight, SearchX, Loader2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import ROUTES from "@/lib/routes";
 import { 
@@ -16,15 +15,6 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useUserVideos } from "@/hooks/data/useUserVideos";
-
-interface Video extends VideoType {
-  youtubeVideoId?: string;
-  youtubeStats?: {
-    views: number;
-    likes: number;
-    comments: number;
-  };
-}
 
 type FilterType = "all" | "draft" | "processing" | "completed";
 

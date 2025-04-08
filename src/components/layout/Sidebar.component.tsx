@@ -3,7 +3,6 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Plus,
   Film,
   BarChart,
   Settings,
@@ -17,7 +16,6 @@ import {
   Users,
   Music,
   ShoppingBag,
-  Sparkles,
   Video,
   BookmarkPlus,
   Layers,

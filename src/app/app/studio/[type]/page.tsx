@@ -8,7 +8,7 @@ import { useTemplates } from "@/hooks/data/useTemplates";
 import { useVoices } from "@/hooks/data/useVoices";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useStoryIdea } from "@/hooks/data/useStoryIdea";
-import { Loader2, ArrowLeft, ArrowRight, Save, Sparkles, BookmarkPlus } from "lucide-react";
+import { Loader2, ArrowLeft, Sparkles, BookmarkPlus } from "lucide-react";
 import { ContentTypeDetails } from "@/app/app/studio/[type]/ContentTypeDetails.component";
 import { NarrationForm } from "@/app/app/studio/[type]/forms/NarrationForm.component";
 import { ImageTypeSelector } from "@/components/image/ImageTypeSelector.component";
@@ -16,19 +16,15 @@ import TemplateInfoBanner from "@/app/app/studio/[type]/TemplateInfoBanner.compo
 import { VoiceSelector } from "@/components/video/VoiceSelector.component";
 import { Button } from "@/components/ui/button";
 import { useTextDesign } from "@/hooks/useTextDesign";
-import { Badge } from "@/components/ui/badge";
 import ROUTES from "@/lib/routes";
 import { toast } from "@/components/ui/use-toast";
 import { ContentType, ImageType, VideoTemplate } from "@/app/types";
 import { useStory } from "@/hooks/data/useStory";
 import { useMusic } from "@/providers/useMusic";
 import { motion } from "framer-motion";
-import LoadingOverlay from "@/app/app/studio/[type]/StoryLoadingOverlay.component";
 import VideoGenerationOverlay from "@/app/app/studio/[type]/VideoGenerationOverlay.component";
 import SaveTemplateDialog from "@/app/app/studio/[type]/SaveTemplateDialog.component";
-import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TextDesign as TextDesignType, useFontStyles, useImagesFromDesign } from "@/hooks/useTextDesign";
+import { TextDesignVariant } from "@/components/remotion/textDesigns";
 
 const steps = [
   { id: 1, name: "Narration" },
@@ -52,8 +48,8 @@ export default function VideoGenerationPage() {
   } = useImageTypes();
   const { voices } = useVoices();
   const { templates, loading: templatesLoading } = useTemplates();
-  const { styling, setStyling } = useTextDesign();
-  const { musicUrl, setMusicUrl } = useMusic();
+  const { setStyling } = useTextDesign();
+  const { setMusicUrl } = useMusic();
 
   const [selectedContentType, setSelectedContentType] = useState<ContentType | null>(null);
   const [selectedImageType, setSelectedImageType] = useState<ImageType | null>(null);
@@ -93,12 +89,11 @@ export default function VideoGenerationPage() {
           setSelectedImageType(imageType);
         }
         
-        // Set text design settings (will need to be handled by your text design context)
+        // Update text styling if template has it
         if (template.textDesign) {
-          // We need to adapt the strings to enum values that the context expects
           setStyling({
-            variant: template.textDesign.styleId as any,
-            font: template.textDesign.fontId as any,
+            variant: template.textDesign.styleId as TextDesignVariant,
+            font: template.textDesign.fontId as "roboto" | "lato" | "caveat" | "playfair" | "dancingScript",
           });
         }
         
@@ -114,7 +109,7 @@ export default function VideoGenerationPage() {
         });
       }
     }
-  }, [templateId, templates, templatesLoading, imageTypes]);
+  }, [templateId, templates, templatesLoading, imageTypes, generateStoryIdea, setMusicUrl, setStyling]);
 
   // When content type is loaded, update selectedVoice if recommendedVoiceId exists.
   useEffect(() => {
@@ -270,7 +265,7 @@ export default function VideoGenerationPage() {
       {/* Progress steps */}
       <div className="mb-8">
         <div className="flex items-center justify-between max-w-xs mx-auto mb-2">
-          {steps.map((s, i) => (
+          {steps.map((s) => (
             <div 
               key={s.id} 
               className="flex flex-col items-center"

@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Ghost, Scale, History, Brain } from "lucide-react";
 import { ContentType } from "@/app/types";
-import Image from "next/image";
 
 interface ContentTypeGridProps {
   contentTypes: ContentType[];

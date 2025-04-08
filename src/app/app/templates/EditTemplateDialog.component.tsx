@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -40,36 +39,14 @@ import {
 import { Loader2, Save } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/hooks/useAuth";
-import { TextDesignSchema } from "@/components/remotion/types/constants";
-import { MusicSelector } from "@/components/video/MusicSelector.component";
 import { TextPositionSelector } from "@/components/video/TextPositionSelector.component";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
-import { useMusic, MusicProvider } from "@/providers/useMusic";
 import {
   Tabs,
   TabsList,
   TabsTrigger,
   TabsContent
 } from "@/components/ui/tabs";
-
-const textPositionOptions = [
-  { value: "top", label: "Top" },
-  { value: "middle", label: "Middle" },
-  { value: "bottom", label: "Bottom" }
-];
-
-const textDesignOptions = [
-  { value: "default", label: "Default" },
-  { value: "cool", label: "Cool" },
-  { value: "retro", label: "Retro" },
-  { value: "classic", label: "Classic" },
-  { value: "vivid", label: "Vivid" },
-  { value: "fancy", label: "Fancy" },
-  { value: "comic", label: "Comic" },
-  { value: "tiktok", label: "TikTok" },
-  { value: "horror", label: "Horror" },
-  { value: "futuristic", label: "Futuristic" }
-];
 
 const templateFormSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
@@ -152,8 +129,15 @@ export default function EditTemplateDialog({
     setIsSubmitting(true);
     
     try {
-      const updateData = {
-        ...data,
+      const updateData: Partial<VideoTemplate> = {
+        name: data.name,
+        defaultNarration: data.defaultNarration,
+        textPosition: data.textPosition,
+        showTitle: data.showTitle,
+        contentTypeId: data.contentTypeId,
+        imageStyleId: data.imageStyleId,
+        voiceId: data.voiceId,
+        textDesign: data.textDesign,
         musicId: data.musicId === "none" ? "" : data.musicId
       };
       
@@ -173,7 +157,7 @@ export default function EditTemplateDialog({
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle>Edit Template</DialogTitle>
           <DialogDescription>
-            Update your template settings. Click save when you're done.
+            Update your template settings. Click save when you&apos;re done.
           </DialogDescription>
         </DialogHeader>
         
@@ -345,7 +329,7 @@ export default function EditTemplateDialog({
                               font: field.value.fontId,
                               variant: field.value.styleId,
                             }}
-                            onChange={(design) => {
+                            onChange={(design: { font: string; variant: string }) => {
                               field.onChange({
                                 fontId: design.font,
                                 styleId: design.variant,

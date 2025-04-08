@@ -21,7 +21,10 @@ export function MusicSelector({
   const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
-  const { video } = useVideoDetail(useParams().id as string);
+  const params = useParams();
+  const videoId = params.id as string | undefined;
+  const videoDetailResult = useVideoDetail(videoId || "dummy-id");
+  const video = videoId ? videoDetailResult.video : null;
 
   // Initialize selected track from musicId or musicUrl
   useEffect(() => {

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { db } from "@/lib/firebaseAdmin";
-import admin from "firebase-admin";
 
 // Schema for a scene
 const SceneSchema = z.object({

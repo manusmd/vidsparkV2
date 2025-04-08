@@ -34,7 +34,7 @@ export default function SignIn() {
   // If user is already signed in, redirect them.
   useEffect(() => {
     if (user) {
-      router.push(ROUTES.PAGES.APP.CREATE);
+      router.push(ROUTES.PAGES.APP.STUDIO);
     }
   }, [user, router]);
 
@@ -47,7 +47,7 @@ export default function SignIn() {
         throw new Error("Authentication service is not available");
       }
       await signInWithEmailAndPassword(auth, email, password);
-      router.push(ROUTES.PAGES.APP.CREATE);
+      router.push(ROUTES.PAGES.APP.STUDIO);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -59,14 +59,12 @@ export default function SignIn() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     setError("");
-    setIsLoading(true);
     try {
-      if (!auth) {
-        throw new Error("Authentication service is not available");
-      }
-      await signInWithPopup(auth, new GoogleAuthProvider());
-      router.push(ROUTES.PAGES.APP.CREATE);
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      router.push(ROUTES.PAGES.APP.STUDIO);
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -74,7 +72,6 @@ export default function SignIn() {
         setError("An unknown error occurred.");
       }
     }
-    setIsLoading(false);
   };
 
   return (
