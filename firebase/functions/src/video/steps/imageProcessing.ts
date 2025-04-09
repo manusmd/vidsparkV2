@@ -104,11 +104,16 @@ export const processImageQueue = onTaskDispatched(
       const filePath = `videos/${videoId}/scene_${sceneIndex}.jpg`;
       const fileRef = storage.file(filePath);
       await fileRef.save(imageBuffer, {
-        metadata: { contentType: "image/jpeg" },
+        metadata: { 
+          contentType: "image/jpeg",
+          cacheControl: "public, max-age=31536000"
+        },
       });
-      const [signedUrl] = await fileRef.getSignedUrl({
-        action: "read",
-        expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
+      
+      // Get the download URL using the proper Firebase Storage format
+      const downloadUrl = await fileRef.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2500', // Far future date
       });
 
       const videoSnapshot = await videoRef.get();
@@ -119,10 +124,9 @@ export const processImageQueue = onTaskDispatched(
           ...currentScenes,
           [sceneIndex]: {
             ...currentScenes[sceneIndex],
-            imageUrl: signedUrl,
+            imageUrl: downloadUrl[0],
           },
         },
-        // Mark image as completed with a timestamp.
         [`imageStatus.${sceneIndex}.statusMessage`]: "completed",
         [`imageStatus.${sceneIndex}.progress`]: 1,
         [`imageStatus.${sceneIndex}.updatedAt`]: Date.now(),
@@ -149,7 +153,7 @@ export const processImageQueue = onTaskDispatched(
               ...updatedScenes,
               [sceneIndex]: {
                 ...updatedScenes[sceneIndex],
-                imageUrl: signedUrl,
+                imageUrl: downloadUrl[0],
               },
             },
           });

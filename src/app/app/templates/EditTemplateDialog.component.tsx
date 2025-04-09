@@ -47,6 +47,7 @@ import {
   TabsTrigger,
   TabsContent
 } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
 
 const templateFormSchema = z.object({
   name: z.string().min(1, { message: "Name is required" }),
@@ -57,9 +58,10 @@ const templateFormSchema = z.object({
   imageStyleId: z.string().min(1, { message: "Image style is required" }),
   voiceId: z.string().min(1, { message: "Voice is required" }),
   musicId: z.string().optional(),
-  textDesign: z.object({
-    fontId: z.string(),
-    styleId: z.string(),
+  musicVolume: z.number().min(0).max(1).default(0.5),
+  styling: z.object({
+    font: z.string(),
+    variant: z.string(),
   }),
 });
 
@@ -70,16 +72,18 @@ interface EditTemplateDialogProps {
   onOpenChange: (open: boolean) => void;
   template: VideoTemplate;
   onSaved?: () => void;
+  isNewTemplate?: boolean;
 }
 
 export default function EditTemplateDialog({
   open,
   onOpenChange,
   template,
-  onSaved
+  onSaved,
+  isNewTemplate = false
 }: EditTemplateDialogProps) {
   const { user } = useAuth();
-  const { updateTemplate } = useTemplates();
+  const { updateTemplate, createTemplate, fetchTemplates } = useTemplates();
   const { contentTypes } = useContentTypes();
   const { imageTypes } = useImageTypes();
   const { voices } = useVoices();
@@ -96,9 +100,10 @@ export default function EditTemplateDialog({
       imageStyleId: template.imageStyleId || "",
       voiceId: template.voiceId || "",
       musicId: template.musicId ? template.musicId : "none",
-      textDesign: template.textDesign || {
-        fontId: "roboto",
-        styleId: "default",
+      musicVolume: template.musicVolume || 0.5,
+      styling: template.styling || {
+        font: "roboto",
+        variant: "default",
       },
     }
   });
@@ -116,9 +121,10 @@ export default function EditTemplateDialog({
         imageStyleId: template.imageStyleId || "",
         voiceId: template.voiceId || "",
         musicId: template.musicId ? template.musicId : "none",
-        textDesign: template.textDesign || {
-          fontId: "roboto",
-          styleId: "default",
+        musicVolume: template.musicVolume || 0.5,
+        styling: template.styling || {
+          font: "roboto",
+          variant: "default",
         },
       });
     }
@@ -137,11 +143,25 @@ export default function EditTemplateDialog({
         contentTypeId: data.contentTypeId,
         imageStyleId: data.imageStyleId,
         voiceId: data.voiceId,
-        textDesign: data.textDesign,
-        musicId: data.musicId === "none" ? "" : data.musicId
+        styling: data.styling,
+        musicId: data.musicId === "none" ? "" : data.musicId,
+        musicVolume: data.musicVolume,
       };
       
-      await updateTemplate(template.id, updateData);
+      if (isNewTemplate) {
+        await createTemplate({
+          ...updateData, 
+          userId: user.uid,
+          createdAt: new Date().toISOString(),
+          lastUsedAt: new Date().toISOString()
+        });
+      } else {
+        await updateTemplate(template.id, updateData);
+      }
+      
+      // Refresh the templates list
+      await fetchTemplates();
+      
       onOpenChange(false);
       if (onSaved) onSaved();
     } catch (error) {
@@ -155,9 +175,11 @@ export default function EditTemplateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[800px] max-h-[85vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 pt-6 pb-2">
-          <DialogTitle>Edit Template</DialogTitle>
+          <DialogTitle>{isNewTemplate ? "Create Template" : "Edit Template"}</DialogTitle>
           <DialogDescription>
-            Update your template settings. Click save when you&apos;re done.
+            {isNewTemplate 
+              ? "Configure your new template settings. Click save when you're done."
+              : "Update your template settings. Click save when you're done."}
           </DialogDescription>
         </DialogHeader>
         
@@ -318,7 +340,7 @@ export default function EditTemplateDialog({
                 
                 <FormField
                   control={form.control}
-                  name="textDesign"
+                  name="styling"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Text Design</FormLabel>
@@ -326,13 +348,13 @@ export default function EditTemplateDialog({
                         <div className="border rounded-md p-3 bg-background">
                           <TextDesignSelector 
                             initialDesign={{
-                              font: field.value.fontId,
-                              variant: field.value.styleId,
+                              font: field.value.font,
+                              variant: field.value.variant,
                             }}
                             onChange={(design: { font: string; variant: string }) => {
                               field.onChange({
-                                fontId: design.font,
-                                styleId: design.variant,
+                                font: design.font,
+                                variant: design.variant,
                               });
                             }}
                           />
@@ -390,6 +412,40 @@ export default function EditTemplateDialog({
                           ))}
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="musicVolume"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Music Volume</FormLabel>
+                      <FormDescription>
+                        Adjust background music volume
+                      </FormDescription>
+                      <div className="flex items-center gap-3">
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={1}
+                            step={0.1}
+                            value={[field.value]}
+                            onValueChange={(value) => {
+                              // Just update the UI while dragging, don't trigger form state change
+                              document.getElementById('music-volume-display')!.textContent = 
+                                Math.round(value[0] * 10).toString();
+                            }}
+                            onValueCommit={(value) => field.onChange(value[0])}
+                            disabled={form.watch("musicId") === "none"}
+                          />
+                        </FormControl>
+                        <span id="music-volume-display" className="min-w-8 text-center">
+                          {Math.round(field.value * 10)}
+                        </span>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}

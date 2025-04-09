@@ -94,7 +94,7 @@ export default function Sidebar() {
           icon: <User className="w-4 h-4" />,
         },
         {
-          href: ROUTES.PAGES.APP.SETTINGS.INDEX,
+          href: ROUTES.PAGES.APP.SETTINGS.CONNECTED_ACCOUNTS,
           label: "Accounts",
           icon: <LinkIcon className="w-4 h-4" />,
         },

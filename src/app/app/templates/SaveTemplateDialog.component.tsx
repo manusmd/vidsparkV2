@@ -8,6 +8,7 @@ import { VideoTemplate, ContentType, ImageType } from "@/app/types";
 import { useAuth } from "@/hooks/useAuth";
 import ROUTES from "@/lib/routes";
 import { TextDesignSelector } from "@/components/remotion/TextDesignSelector.component";
+import { useTemplates } from "@/hooks/data/useTemplates";
 
 import {
   Dialog,
@@ -51,9 +52,9 @@ const templateFormSchema = z.object({
   defaultNarration: z.string().optional(),
   textPosition: z.enum(["top", "middle", "bottom"]),
   showTitle: z.boolean(),
-  textDesign: z.object({
-    fontId: z.string(),
-    styleId: z.string(),
+  styling: z.object({
+    font: z.string(),
+    variant: z.string(),
   }),
 });
 
@@ -81,6 +82,7 @@ export default function SaveTemplateDialog({
   musicId
 }: SaveTemplateDialogProps) {
   const { user } = useAuth();
+  const { fetchTemplates } = useTemplates();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<SaveTemplateFormData>({
@@ -90,9 +92,9 @@ export default function SaveTemplateDialog({
       defaultNarration: narration || "",
       textPosition: "top",
       showTitle: true,
-      textDesign: {
-        fontId: "roboto",
-        styleId: "default",
+      styling: {
+        font: "roboto",
+        variant: "default",
       },
     },
   });
@@ -112,7 +114,7 @@ export default function SaveTemplateDialog({
         imageStyleId: imageType.id,
         voiceId: voiceId,
         musicId: musicId || undefined,
-        textDesign: values.textDesign,
+        styling: values.styling,
       };
       
       const response = await fetch(ROUTES.API.TEMPLATES.BASE, {
@@ -124,6 +126,9 @@ export default function SaveTemplateDialog({
       });
 
       if (response.ok) {
+        // Refresh the templates list
+        await fetchTemplates();
+        
         onOpenChange(false);
         if (onSaved) onSaved();
       } else {
@@ -192,7 +197,7 @@ export default function SaveTemplateDialog({
             
             <FormField
               control={form.control}
-              name="textDesign"
+              name="styling"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Text Design</FormLabel>
@@ -200,13 +205,13 @@ export default function SaveTemplateDialog({
                     <div className="border rounded-md p-3 bg-background">
                       <TextDesignSelector 
                         initialDesign={{
-                          font: field.value.fontId,
-                          variant: field.value.styleId,
+                          font: field.value.font,
+                          variant: field.value.variant,
                         }}
                         onChange={(design: { font: string; variant: string }) => {
                           field.onChange({
-                            fontId: design.font,
-                            styleId: design.variant,
+                            font: design.font,
+                            variant: design.variant,
                           });
                         }}
                       />

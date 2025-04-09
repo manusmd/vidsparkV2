@@ -194,6 +194,37 @@ export function useBulkCreate() {
     }
   };
 
+  const deleteBulkJob = async (jobId: string): Promise<{ success: boolean; deletedVideoCount?: number }> => {
+    if (!user) {
+      throw new Error("User must be authenticated to delete bulk job");
+    }
+
+    try {
+      const headers = await getAuthHeader();
+      const response = await fetch(`${ROUTES.API.BULK_CREATION.DELETE}/${jobId}`, {
+        method: "DELETE",
+        headers,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete job: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return { 
+        success: data.success || false,
+        deletedVideoCount: data.deletedVideoCount || 0
+      };
+    } catch (err) {
+      console.error("Error deleting bulk job:", err);
+      toast("Error", {
+        description: "Failed to delete bulk creation job",
+        style: { backgroundColor: "red" }
+      });
+      return { success: false };
+    }
+  };
+
   // Clean up subscription when component unmounts
   useEffect(() => {
     return () => {
@@ -205,6 +236,7 @@ export function useBulkCreate() {
     createBulkVideos,
     checkBulkJobStatus,
     cancelBulkJob,
+    deleteBulkJob,
     subscribeToBulkJob,
     isProcessing,
     progress,

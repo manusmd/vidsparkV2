@@ -56,9 +56,11 @@ service cloud.firestore {
       allow update, delete: if request.auth.uid == resource.data.userId;
     }
 
-    // Allow users to read their own bulk jobs
+    // Allow users to read and manage their own bulk jobs
     match /bulkJobs/{jobId} {
-      allow read: if request.auth.uid == resource.data.userId;
+      allow read, update: if request.auth.uid == resource.data.userId;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
     }
   }
 }

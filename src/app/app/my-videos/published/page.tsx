@@ -1,7 +1,7 @@
 "use client";
 
-import { VideoList } from "@/components/my-videos/VideoList.component";
+import { VideoGrid } from "@/components/my-videos/VideoGrid.component";
 
 export default function PublishedPage() {
-  return <VideoList status="published" />;
+  return <VideoGrid status="published" />;
 }

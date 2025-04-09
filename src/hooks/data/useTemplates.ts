@@ -13,6 +13,7 @@ interface UseTemplatesReturn {
   updateTemplate: (id: string, template: Partial<VideoTemplate>) => Promise<VideoTemplate>;
   deleteTemplate: (id: string) => Promise<void>;
   getTemplate: (id: string) => VideoTemplate | undefined;
+  fetchTemplates: () => Promise<void>;
 }
 
 export function useTemplates(): UseTemplatesReturn {
@@ -140,5 +141,6 @@ export function useTemplates(): UseTemplatesReturn {
     updateTemplate,
     deleteTemplate,
     getTemplate,
+    fetchTemplates,
   };
 } 

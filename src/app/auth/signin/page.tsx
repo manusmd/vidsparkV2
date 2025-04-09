@@ -22,6 +22,9 @@ import { GrGoogle } from "react-icons/gr";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import ROUTES from "@/lib/routes";
+import { ShimmeringText } from "@/components/ui/ShimmeringText.component";
+import Link from "next/link";
+import InteractiveBackground from "@/components/ui/InteractiveBackground";
 
 export default function SignIn() {
   const router = useRouter();
@@ -31,7 +34,6 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // If user is already signed in, redirect them.
   useEffect(() => {
     if (user) {
       router.push(ROUTES.PAGES.APP.STUDIO);
@@ -75,35 +77,48 @@ export default function SignIn() {
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background">
-      <Card className="relative z-10 w-full max-w-md bg-opacity-80 backdrop-blur-lg">
-        <CardHeader>
-          <CardTitle>Welcome Back to VidSpark</CardTitle>
-          <CardDescription>
-            Sign in to continue your AI-powered video creation journey.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignIn} className="my-8">
+    <div className="flex min-h-screen w-full">
+      <InteractiveBackground />
+      <div className="relative flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="space-y-2 text-center">
+            <h1 className="text-3xl font-bold tracking-tight">
+              <ShimmeringText text="Welcome Back to VidSpark" className="bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-500" />
+            </h1>
+            <p className="text-muted-foreground">
+              Sign in to continue your AI-powered video creation journey.
+            </p>
+          </div>
+
+          <form onSubmit={handleSignIn} className="space-y-4">
             {error && (
-              <p className="text-red-500 text-sm text-center mb-4">{error}</p>
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <p className="text-red-500 text-sm text-center">{error}</p>
+              </div>
             )}
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email"
-              required
-            />
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password"
-              required
-              className="mt-4"
-            />
-            <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+            <div className="space-y-4">
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                required
+                className="bg-background/40 border-neutral-200/20 focus:border-purple-500/50 transition-all duration-300"
+              />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                className="bg-background/40 border-neutral-200/20 focus:border-purple-500/50 transition-all duration-300"
+              />
+            </div>
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 shadow-lg hover:shadow-purple-500/25"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <span className="flex items-center justify-center">
                   <Loader2 className="animate-spin w-4 h-4 mr-2" />
@@ -113,22 +128,40 @@ export default function SignIn() {
                 "Sign In →"
               )}
             </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-neutral-200/10"></div>
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md transition-all duration-300 bg-background hover:bg-neutral-100 dark:hover:bg-neutral-800 border border-neutral-200/10"
+              disabled={isLoading}
+            >
+              <GrGoogle className="w-5 h-5" />
+              <span>Sign in with Google</span>
+            </button>
+
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Link 
+                  href="/auth/signup"
+                  className="font-medium text-purple-500 hover:text-purple-600 transition-colors"
+                >
+                  Sign up here
+                </Link>
+              </p>
+            </div>
           </form>
-        </CardContent>
-        <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-2 h-[1px] w-full" />
-        <CardFooter>
-          <button
-            onClick={handleGoogleSignIn}
-            className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-black rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
-            disabled={isLoading}
-          >
-            <GrGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
-            <span className="text-neutral-700 dark:text-neutral-300 text-sm">
-              Sign in with Google
-            </span>
-          </button>
-        </CardFooter>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

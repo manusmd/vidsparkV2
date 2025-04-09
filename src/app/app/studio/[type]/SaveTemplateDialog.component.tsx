@@ -69,9 +69,9 @@ export default function SaveTemplateDialog({
   onSaved,
 }: SaveTemplateDialogProps) {
   const { user } = useAuth();
-  const { createTemplate } = useTemplates();
+  const { createTemplate, fetchTemplates } = useTemplates();
   const { styling } = useTextDesign();
-  const { musicUrl } = useMusic();
+  const { musicUrl, musicVolume } = useMusic();
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<SaveTemplateFormData>({
@@ -96,15 +96,18 @@ export default function SaveTemplateDialog({
         imageStyleId: imageType.id,
         voiceId: voiceId,
         defaultNarration: data.defaultNarration || undefined,
-        textDesign: {
-          fontId: styling?.font || "roboto",
-          styleId: styling?.variant || "default",
+        styling: {
+          font: styling?.font || "roboto",
+          variant: styling?.variant || "default",
         },
         musicId: musicUrl ? "default" : undefined,
+        musicVolume: musicVolume,
         userId: user.uid,
       };
 
       await createTemplate(templateData);
+      
+      await fetchTemplates();
       
       if (onSaved) {
         onSaved();

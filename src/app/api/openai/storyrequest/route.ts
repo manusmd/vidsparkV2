@@ -10,10 +10,11 @@ export async function POST(req: NextRequest) {
       voiceId, 
       uid, 
       templateId, 
-      textDesign, 
+      styling, 
       textPosition, 
       showTitle, 
-      musicId 
+      musicId,
+      musicVolume 
     } = await req.json();
     
     if (!narration) {
@@ -31,10 +32,11 @@ export async function POST(req: NextRequest) {
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       // Include template-related properties if available
       ...(templateId && { templateId }),
-      ...(textDesign && { textDesign }),
+      ...(styling && { styling }),
       ...(textPosition && { textPosition }),
       ...(showTitle !== undefined && { showTitle }),
-      ...(musicId && { musicId })
+      ...(musicId && { musicId }),
+      ...(musicVolume !== undefined && { musicVolume })
     };
     
     const videoRef = await db.collection("videos").add(videoData);

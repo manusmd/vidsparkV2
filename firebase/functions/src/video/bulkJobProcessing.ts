@@ -55,8 +55,10 @@ export const processBulkJob = onDocumentCreated("bulkJobs/{jobId}", async (event
     const contentType = contentTypeDoc.data() || {};
     const basePrompt = contentType.prompt || '';
     
-    if (!basePrompt) {
-      throw new Error(`Content type ${template.contentTypeId} has no prompt defined`);
+    // Check if we have a valid prompt source
+    // If content type doesn't have a prompt, require a user-provided topic prompt
+    if (!basePrompt && (!bulkJob.topicPrompt || bulkJob.topicPrompt.trim() === '')) {
+      throw new Error(`Content type ${template.contentTypeId} has no default prompt defined. A topic prompt must be provided when using this content type for bulk creation.`);
     }
 
     // Process each video in the job
@@ -91,10 +93,11 @@ export const processBulkJob = onDocumentCreated("bulkJobs/{jobId}", async (event
           imageTypeId: template.imageStyleId || '',
           voiceId: template.voiceId || '',
           contentTypeId: template.contentTypeId || '',
-          textDesign: template.textDesign || null,
+          styling: template.styling || null,
           textPosition: template.textPosition || 'top',
           showTitle: template.showTitle !== undefined ? template.showTitle : true,
           musicId: template.musicId || null,
+          musicVolume: template.musicVolume !== undefined ? template.musicVolume : 0.5,
           bulkJobId: jobId,
           createdAt: new Date().toISOString(),
         };

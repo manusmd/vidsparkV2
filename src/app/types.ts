@@ -91,6 +91,8 @@ export interface Video {
   narration?: string;
   templateId?: string; // Reference to the template this video was created from
   voiceId: string;
+  contentTypeId?: string;
+  imageStyleId?: string;
   scenes: {
     [key: number]: Scene;
   };
@@ -98,9 +100,18 @@ export interface Video {
     font: string;
     variant: string;
   } | null;
+  textPosition: "top" | "middle" | "bottom";
+  showTitle?: boolean;
   musicVolume: number;
   musicUrl: string | null;
   musicId?: string | null;
+  uploadStatus?: {
+    youtube?: {
+      progress: number;
+      videoId: string | null;
+      videoUrl: string | null;
+    }
+  };
   status:
     | "draft"
     | "processing:assets"
@@ -146,13 +157,14 @@ export interface VideoTemplate {
   contentTypeId: string;
   imageStyleId: string;
   voiceId: string;
-  textDesign: {
-    fontId: string;
-    styleId: string;
+  styling: {
+    font: string;
+    variant: string;
   };
   textPosition: "top" | "middle" | "bottom";
   showTitle: boolean;
   musicId: string;
+  musicVolume?: number;
   defaultNarration?: string;
   createdAt: string;
   lastUsedAt: string | Date;

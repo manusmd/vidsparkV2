@@ -5,9 +5,7 @@ import { VideoTemplate } from '@/app/types';
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useImageTypes } from "@/hooks/data/useImageTypes";
 import { useVoices } from "@/hooks/data/useVoices";
-import { CheckCircle, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
+import { CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface TemplateInfoBannerProps {
@@ -15,7 +13,6 @@ interface TemplateInfoBannerProps {
 }
 
 export default function TemplateInfoBanner({ template }: TemplateInfoBannerProps) {
-  const router = useRouter();
   const { contentTypes } = useContentTypes();
   const { imageTypes } = useImageTypes();
   const { voices } = useVoices();
@@ -24,15 +21,9 @@ export default function TemplateInfoBanner({ template }: TemplateInfoBannerProps
   const imageType = imageTypes.find(it => it.id === template.imageStyleId);
   const voice = voices.find(v => v.id === template.voiceId);
 
-  const clearTemplate = () => {
-    // Remove template from URL and reload
-    const currentPath = window.location.pathname;
-    router.push(currentPath);
-  };
-
   return (
-    <div className="w-full p-4 bg-primary/10 rounded-lg mb-6 relative">
-      <div className="flex items-start justify-between">
+    <div className="w-full p-4 bg-primary/10 rounded-lg mb-6">
+      <div className="flex items-start">
         <div className="flex items-start gap-3">
           <CheckCircle className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
           <div>
@@ -78,16 +69,6 @@ export default function TemplateInfoBanner({ template }: TemplateInfoBannerProps
             </div>
           </div>
         </div>
-        
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-8 w-8 rounded-full absolute top-3 right-3"
-          onClick={clearTemplate}
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Clear template</span>
-        </Button>
       </div>
     </div>
   );

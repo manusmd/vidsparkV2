@@ -22,10 +22,14 @@ export async function POST(req: NextRequest) {
       timezone,
       privacy,
     });
+    
+    // Ensure publishAt is properly converted to ISO string if it exists
+    const formattedPublishAt = publishAt ? new Date(publishAt).toISOString() : undefined;
+    
     await youtubeQueue.enqueue({
       videoId,
       channelId,
-      publishAt,
+      publishAt: formattedPublishAt,
       timezone,
       privacy,
     });

@@ -1,7 +1,7 @@
 "use client";
 
-import { VideoList } from "@/components/my-videos/VideoList.component";
+import { VideoGrid } from "@/components/my-videos/VideoGrid.component";
 
 export default function DraftsPage() {
-  return <VideoList status="draft" />;
+  return <VideoGrid status="draft" />;
 }

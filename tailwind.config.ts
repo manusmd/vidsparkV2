@@ -101,10 +101,50 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        float: {
+          '0%': {
+            transform: 'translateY(0px) scale(1)',
+          },
+          '50%': {
+            transform: 'translateY(-20px) scale(1.1)',
+          },
+          '100%': {
+            transform: 'translateY(0px) scale(1)',
+          },
+        },
+        'bounce-slow': {
+          '0%, 100%': {
+            transform: 'translateY(-10%)',
+            animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+          },
+          '50%': {
+            transform: 'translateY(0)',
+            animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+          },
+        },
+        scan: {
+          '0%': {
+            transform: 'translateX(-100%) var(--tw-transform)',
+            opacity: '0',
+          },
+          '50%': {
+            transform: 'translateX(0%) var(--tw-transform)',
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'translateX(100%) var(--tw-transform)',
+            opacity: '0',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'float-slow': 'float 6s ease-in-out infinite',
+        'float-slower': 'float 8s ease-in-out infinite',
+        float: 'float 4s ease-in-out infinite',
+        'bounce-slow': 'bounce-slow 3s infinite',
+        scan: 'scan 3s linear infinite',
       },
     },
   },

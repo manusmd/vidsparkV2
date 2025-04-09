@@ -1,7 +1,7 @@
 "use client";
 
-import { VideoList } from "@/components/my-videos/VideoList.component";
+import { VideoGrid } from "@/components/my-videos/VideoGrid.component";
 
 export default function ArchivedPage() {
-  return <VideoList status="archived" />;
+  return <VideoGrid status="archived" />;
 }

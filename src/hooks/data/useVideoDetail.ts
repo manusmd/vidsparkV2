@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Scene, Step, Video } from "@/app/types";
 
@@ -29,6 +29,22 @@ export function useVideoDetail(videoId: string) {
         if (docSnapshot.exists()) {
           const videoData = docSnapshot.data();
 
+          // Convert textDesign to styling if needed
+          if (videoData.textDesign && (!videoData.styling || !videoData.styling.variant)) {
+            videoData.styling = {
+              variant: videoData.textDesign.styleId || "default",
+              font: videoData.textDesign.fontId || "roboto"
+            };
+          }
+
+          // Handle musicId - ensure we have consistent data format
+          if (videoData.musicId && !videoData.musicUrl) {
+            // In this implementation we're using musicId directly as the URL
+            // In a real app, you'd look up the actual URL from a music tracks collection
+            console.log("Converting musicId to musicUrl:", videoData.musicId);
+            videoData.musicUrl = videoData.musicId;
+          }
+
           const scenes = videoData.scenes ?? {};
           const formattedScenes = Object.entries(scenes).reduce(
             (acc, [key, value]) => {
@@ -44,16 +60,22 @@ export function useVideoDetail(videoId: string) {
             description: videoData.description ?? "No description available.",
             voiceId: videoData.voiceId ?? "",
             templateId: videoData.templateId ?? undefined,
+            contentTypeId: videoData.contentTypeId,
+            imageStyleId: videoData.imageTypeId || videoData.imageStyleId,
             scenes: formattedScenes,
             status: videoData.status ?? "processing:voices",
             sceneStatus: videoData.sceneStatus ?? {},
             renderStatus: videoData.renderStatus ?? {},
             imageStatus: videoData.imageStatus ?? {},
             voiceStatus: videoData.voiceStatus ?? {},
+            uploadStatus: videoData.uploadStatus ?? {},
             styling: videoData.styling ?? null,
             musicVolume: videoData.musicVolume ?? 0,
             musicUrl: videoData.musicUrl ?? null,
             musicId: videoData.musicId ?? null,
+            narration: videoData.narration,
+            showTitle: videoData.showTitle !== undefined ? videoData.showTitle : true,
+            textPosition: videoData.textPosition || "top",
             createdAt: videoData.createdAt?.toDate
               ? videoData.createdAt.toDate()
               : new Date(),
@@ -71,15 +93,17 @@ export function useVideoDetail(videoId: string) {
         console.error("Error fetching video:", err);
         setError("Failed to fetch video details.");
         setLoading(false);
-      },
+      }
     );
-
+    
     return () => unsubscribe();
   }, [videoId]);
 
   function updateSteps(video: Video) {
     const newSteps: Step[] = processingSteps.map((step) => {
       let effectiveStatus: "complete" | "current" | "failed" | "upcoming";
+      
+      // Handle video rendering step
       if (step.id === "processing:video") {
         if (
           video.renderStatus?.progress === 1 ||
@@ -91,7 +115,20 @@ export function useVideoDetail(videoId: string) {
         } else {
           effectiveStatus = "upcoming";
         }
-      } else {
+      } 
+      // Handle YouTube upload step
+      else if (step.id === "processing:upload") {
+        if (video.uploadStatus?.youtube?.videoUrl) {
+          effectiveStatus = "complete";
+        } else if (video.uploadStatus?.youtube?.progress && 
+                   video.uploadStatus.youtube.progress > 0 && 
+                   video.uploadStatus.youtube.progress < 100) {
+          effectiveStatus = "current";
+        } else {
+          effectiveStatus = "upcoming";
+        }
+      }
+      else {
         effectiveStatus = computeEffectiveStatus(step);
       }
 

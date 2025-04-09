@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Info, Film, ChevronRight, FileCheck } from "lucide-react";
+import { Loader2, ArrowLeft, Video, Share2, Download, Upload, Settings, Edit2, Save, X, Info, Film, ChevronRight, FileCheck, BookmarkPlus } from "lucide-react";
 import ROUTES from "@/lib/routes";
 import { ProgressSteps } from "@/components/video/ProgressSteps.component";
 import { VideoInfo } from "@/components/video/VideoInfo.component";
@@ -37,6 +37,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useTemplates } from "@/hooks/data/useTemplates";
+import SaveTemplateDialog from "@/app/app/studio/[type]/SaveTemplateDialog.component";
 
 function VideoDetailPageContent() {
   const { id } = useParams();
@@ -69,6 +70,12 @@ function VideoDetailPageContent() {
 
   // State for Generation Confirmation Dialog
   const [confirmGenDialogOpen, setConfirmGenDialogOpen] = useState(false);
+
+  // State for Save Template Dialog
+  const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
+
+  // Check for YouTube upload status from video
+  const hasYoutubeUrl = video?.uploadStatus?.youtube?.videoUrl ? true : false;
 
   // Fix for YouTubeUploadModal
   const handleCloseUploadModal = () => {
@@ -229,111 +236,97 @@ function VideoDetailPageContent() {
       templates.find(t => t.id === video.templateId) : null;
     
     return (
-      <div className="py-6">
-        {/* Basic video info */}
-        <div className="space-y-6">
-          {/* Template info section */}
-          {template && (
-            <div className="bg-muted/30 rounded-lg p-4 border border-border">
-              <div className="flex items-center mb-2">
-                <div className="bg-primary/10 rounded-full p-2 mr-2">
-                  <FileCheck className="h-4 w-4 text-primary" />
-                </div>
-                <h3 className="text-sm font-medium">Created from Template</h3>
-              </div>
-              <div className="pl-10">
-                <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{template.name}</span></p>
-                <Link 
-                  href={`${ROUTES.PAGES.APP.TEMPLATES}`} 
-                  className="text-xs text-primary hover:underline inline-flex items-center mt-1"
-                >
-                  View all templates
-                  <ChevronRight className="h-3 w-3 ml-1" />
-                </Link>
-              </div>
-            </div>
-          )}
-        
-          {isEditMode ? (
-            <div className="space-y-4 py-2">
-              {/* Edit mode UI */}
-              <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium">
-                  Title
-                </label>
-                <input
-                  id="title"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full p-2 rounded-md border border-border bg-background"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  rows={4}
-                  className="w-full p-2 rounded-md border border-border bg-background resize-none"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={cancelEdit}
-                >
-                  <X className="w-4 h-4 mr-1" />
-                  Cancel
-                </Button>
-                <Button
-                  onClick={saveVideoDetails}
-                  size="sm"
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 mr-1" />
-                      Save
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            // Display mode UI
-            <div>
-              <div className="flex justify-between items-start">
+      <div className="mb-8">
+        <div className="bg-card rounded-xl border shadow-sm overflow-hidden mb-4">
+          <div className="p-5">
+            {isEditMode ? (
+              // Edit mode UI
+              <div className="space-y-4">
                 <div>
-                  <h1 className="text-2xl font-bold mb-2">{video.title}</h1>
-                  <p className="text-muted-foreground whitespace-pre-line">
-                    {video.description}
-                  </p>
-                </div>
-                {video.status === "draft" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setIsEditMode(true)}
-                    className="h-8 w-8"
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium mb-1"
                   >
-                    <Edit2 className="h-4 w-4" />
-                    <span className="sr-only">Edit</span>
+                    Title
+                  </label>
+                  <input
+                    id="title"
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium mb-1"
+                  >
+                    Description
+                  </label>
+                  <textarea
+                    id="description"
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    rows={3}
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelEdit}
+                  >
+                    Cancel
                   </Button>
-                )}
+                  <Button
+                    size="sm"
+                    onClick={saveVideoDetails}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </Button>
+                </div>
               </div>
-            </div>
-          )}
+            ) : (
+              // Display mode UI
+              <div>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h1 className="text-2xl font-bold mb-2">{video.title}</h1>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {video.description}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    {video.renderStatus?.statusMessage === "completed" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex gap-1.5 items-center"
+                        onClick={() => setShowTemplateDialog(true)}
+                      >
+                        <BookmarkPlus className="h-3.5 w-3.5" />
+                        Save as Template
+                      </Button>
+                    )}
+                    {video.status === "draft" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsEditMode(true)}
+                        className="h-8 w-8"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -416,8 +409,8 @@ function VideoDetailPageContent() {
       </Button>
     );
     
-    // YouTube upload button
-    if (accounts.length > 0) {
+    // Only show YouTube upload button if not already uploaded
+    if (accounts.length > 0 && !hasYoutubeUrl) {
       actionButtons.push(
         <Button
           key="youtube"
@@ -425,13 +418,12 @@ function VideoDetailPageContent() {
           variant="outline"
           className="flex gap-1.5 items-center"
           onClick={onUpload}
-          disabled={youtubeUploadStatus === "pending" || youtubeUploadStatus === "processing"}
+          disabled={video?.uploadStatus?.youtube?.progress ? 
+            (video.uploadStatus.youtube.progress > 0 && video.uploadStatus.youtube.progress < 100) : false}
         >
           <Upload className="h-3.5 w-3.5" />
-          {youtubeUploadStatus === "pending" || youtubeUploadStatus === "processing"
-            ? "Uploading..."
-            : youtubeUploadStatus === "completed"
-            ? "Re-upload"
+          {video?.uploadStatus?.youtube?.progress ? 
+            (video.uploadStatus.youtube.progress > 0 && video.uploadStatus.youtube.progress < 100 ? "Uploading..." : "YouTube") 
             : "YouTube"}
         </Button>
       );
@@ -465,6 +457,34 @@ function VideoDetailPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {showTemplateDialog && video && (
+        <SaveTemplateDialog
+          open={showTemplateDialog}
+          onOpenChange={setShowTemplateDialog}
+          contentType={{
+            id: video.contentTypeId || "",
+            title: "",
+            description: "",
+            examples: []
+          }}
+          imageType={{
+            id: video.imageStyleId || "",
+            title: "",
+            description: "",
+            imagePrompt: "",
+            prompt: "",
+            imageUrl: ""
+          }}
+          voiceId={video.voiceId}
+          narration={video.narration || ""}
+          onSaved={() => {
+            toast.success("Template Saved", {
+              description: "Your template has been saved successfully"
+            });
+          }}
+        />
+      )}
       
       <div className="container mx-auto px-4 py-8">
         {renderInfoSection()}

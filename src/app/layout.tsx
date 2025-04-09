@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/hooks/useAuth";
-import LayoutWrapper from "@/components/layout/LayoutWrapper.component";
 import { ThemeProvider } from "@/providers/ThemeProvider";
-import WaitForAuth from "@/components/layout/WaitForAuth.component";
 import { DataProvider } from "@/contexts/DataContext";
+import RootLayoutContent from "@/components/layout/RootLayoutContent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,16 +29,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className="dark">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-background text-foreground`}
       >
         <ThemeProvider>
           <AuthProvider>
             <DataProvider>
-              <WaitForAuth>
-                <LayoutWrapper>{children}</LayoutWrapper>
-              </WaitForAuth>
+              <RootLayoutContent>{children}</RootLayoutContent>
             </DataProvider>
           </AuthProvider>
         </ThemeProvider>

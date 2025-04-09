@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTemplates } from "@/hooks/data/useTemplates";
+import { useCachedData } from "@/hooks/data/useCachedData";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useImageTypes } from "@/hooks/data/useImageTypes";
 import { useVoices } from "@/hooks/data/useVoices";
@@ -19,38 +20,38 @@ import { VideoTemplate } from "@/app/types";
 import { useRouter } from "next/navigation";
 import EditTemplateDialog from "./EditTemplateDialog.component";
 import ROUTES from "@/lib/routes";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { BulkCreateDialog } from "./BulkCreateDialog.component";
+import { Input } from "@/components/ui/input";
 
 export default function TemplatesPage() {
   const router = useRouter();
+  const { data, isLoading: dataLoading } = useCachedData();
+  const { contentTypes, voices, imageTypes } = data;
   const { templates, loading: templatesLoading, deleteTemplate } = useTemplates();
-  const { contentTypes } = useContentTypes();
-  const { imageTypes } = useImageTypes();
-  const { voices } = useVoices();
-  
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [editingTemplate, setEditingTemplate] = useState<VideoTemplate | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [bulkCreateTemplate, setBulkCreateTemplate] = useState<VideoTemplate | null>(null);
+  const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [createTemplateOpen, setCreateTemplateOpen] = useState(false);
+  const [emptyTemplate, setEmptyTemplate] = useState<VideoTemplate | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<VideoTemplate | null>(null);
+  const [bulkCreateTemplate, setBulkCreateTemplate] = useState<VideoTemplate | null>(null);
 
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this template?")) {
-      setDeleting(id);
+      setTemplateToDelete(id);
       try {
         await deleteTemplate(id);
-        toast("Template deleted", {
-          description: "Your template has been deleted successfully"
-        });
+        toast("Your template has been deleted successfully");
       } catch (error) {
         console.error("Failed to delete template:", error);
-        toast("Error", {
-          description: "Failed to delete template",
+        toast("Failed to delete template", {
           style: { backgroundColor: "red" }
         });
       } finally {
-        setDeleting(null);
+        setTemplateToDelete(null);
       }
     }
   };
@@ -66,9 +67,7 @@ export default function TemplatesPage() {
   };
 
   const handleEditSaved = () => {
-    toast("Template updated", {
-      description: "Your template has been updated successfully"
-    });
+    toast("Your template has been updated successfully");
   };
 
   const findContentTypeName = (id: string) => {
@@ -93,10 +92,41 @@ export default function TemplatesPage() {
   };
 
   const createFromTemplate = (template: VideoTemplate) => {
-    // Navigate to create video page with template ID as a query parameter
-    // We need to navigate to a specific content type URL with the template param
     router.push(`${ROUTES.PAGES.APP.STUDIO}/${template.contentTypeId}?template=${template.id}`);
   };
+
+  const handleCreateTemplate = () => {
+    // Create an empty template with default values
+    const defaultTemplate: VideoTemplate = {
+      id: '',
+      name: '',
+      userId: '',
+      contentTypeId: contentTypes.length > 0 ? contentTypes[0].id : '',
+      imageStyleId: imageTypes.length > 0 ? imageTypes[0].id : '',
+      voiceId: voices.length > 0 ? voices[0].id : '',
+      textPosition: 'top',
+      showTitle: true,
+      createdAt: '',
+      lastUsedAt: '',
+      styling: {
+        font: 'default',
+        variant: 'default'
+      },
+      musicId: '',
+      musicVolume: 0.5
+    };
+    
+    setEmptyTemplate(defaultTemplate);
+    setCreateTemplateOpen(true);
+  };
+
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const filteredTemplates = templates.filter((template) =>
+    template.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   if (templatesLoading) {
     return (
@@ -116,12 +146,34 @@ export default function TemplatesPage() {
             Manage your saved templates to quickly create videos
           </p>
         </div>
-        <Button
-          onClick={() => router.push(ROUTES.PAGES.APP.STUDIO)}
-          className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Create New Video
+        <div className="flex gap-3">
+          <Button
+            onClick={handleCreateTemplate}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Bookmark className="h-4 w-4" />
+            Create Template
+          </Button>
+          <Button
+            onClick={() => router.push(ROUTES.PAGES.APP.STUDIO)}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Video
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center pb-4 gap-2">
+        <Input
+          placeholder="Search templates..."
+          value={searchQuery}
+          onChange={handleSearchInput}
+          className="max-w-sm"
+        />
+        <Button variant="outline" onClick={() => setSearchQuery("")}>
+          Clear
         </Button>
       </div>
 
@@ -176,7 +228,7 @@ export default function TemplatesPage() {
                         onClick={() => handleDelete(template.id)}
                         className="text-destructive focus:text-destructive"
                       >
-                        {deleting === template.id ? (
+                        {templateToDelete === template.id ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             Deleting...
@@ -239,6 +291,18 @@ export default function TemplatesPage() {
           open={bulkDialogOpen}
           onOpenChange={setBulkDialogOpen}
           template={bulkCreateTemplate}
+        />
+      )}
+
+      {emptyTemplate && (
+        <EditTemplateDialog
+          open={createTemplateOpen}
+          onOpenChange={setCreateTemplateOpen}
+          template={emptyTemplate}
+          isNewTemplate={true}
+          onSaved={() => {
+            toast("Your template has been created successfully");
+          }}
         />
       )}
     </div>

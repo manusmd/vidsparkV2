@@ -69,6 +69,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Check if content type has a prompt, if not, ensure topic prompt is provided
+    const contentTypeDoc = await db.collection('contentTypes').doc(template.contentTypeId).get();
+    if (!contentTypeDoc.exists) {
+      return NextResponse.json(
+        { error: 'Content type not found' },
+        { status: 404 }
+      );
+    }
+
+    const contentType = contentTypeDoc.data();
+    const hasContentTypePrompt = contentType?.prompt && contentType.prompt.trim().length > 0;
+
+    // If content type doesn't have a prompt, topic prompt is required
+    if (!hasContentTypePrompt && (!topicPrompt || topicPrompt.trim().length === 0)) {
+      return NextResponse.json(
+        { error: 'Topic prompt is required for content types without a default prompt' },
+        { status: 400 }
+      );
+    }
+    
     // Create bulk job record
     const jobId = uuidv4();
     const bulkJob = {

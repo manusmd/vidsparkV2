@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PAGES } from "@/lib/routes";
 import { useBulkCreate } from "@/hooks/data/useBulkCreate";
+import { useCachedData } from "@/hooks/data/useCachedData";
 import { toast } from "@/components/ui/use-toast";
 
 import {
@@ -32,20 +33,20 @@ import { Button } from "@/components/ui/button";
 import { VideoTemplate } from "@/app/types";
 import { Loader2 } from "lucide-react";
 
-const formSchema = z.object({
-  count: z
-    .number()
-    .min(1, "Must create at least 1 video")
-    .max(20, "Maximum 20 videos at once")
-    .int("Must be a whole number")
-    .default(1),
-  topicPrompt: z
-    .string()
-    .max(200, "Topic prompt must be at most 200 characters")
-    .optional(),
-});
-
-type FormValues = z.infer<typeof formSchema>;
+function createFormSchema(isTopicPromptRequired: boolean) {
+  return z.object({
+    count: z
+      .number()
+      .min(1, "Must create at least 1 video")
+      .max(20, "Maximum 20 videos at once")
+      .int("Must be a whole number")
+      .default(1),
+    topicPrompt: isTopicPromptRequired
+      ? z.string().min(1, "Topic prompt is required for this content type")
+        .max(800, "Topic prompt must be at most 800 characters")
+      : z.string().max(800, "Topic prompt must be at most 800 characters").optional(),
+  });
+}
 
 interface BulkCreateDialogProps {
   open: boolean;
@@ -60,7 +61,15 @@ export function BulkCreateDialog({
 }: BulkCreateDialogProps) {
   const router = useRouter();
   const { createBulkVideos } = useBulkCreate();
+  const { data } = useCachedData();
   const [submitting, setSubmitting] = useState(false);
+  
+  const contentType = data.contentTypes.find(ct => ct.id === template.contentTypeId);
+  const hasContentTypePrompt = !!(contentType?.prompt);
+  const isTopicPromptRequired = !hasContentTypePrompt;
+  
+  const formSchema = createFormSchema(isTopicPromptRequired);
+  type FormValues = z.infer<typeof formSchema>;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -68,7 +77,17 @@ export function BulkCreateDialog({
       count: 1,
       topicPrompt: "",
     },
+    context: { isTopicPromptRequired }
   });
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        count: 1,
+        topicPrompt: ""
+      });
+    }
+  }, [open, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!template.id) {
@@ -93,12 +112,22 @@ export function BulkCreateDialog({
       });
 
       onOpenChange(false);
-      router.push(PAGES.APP.DASHBOARD.INDEX);
-    } catch {
-      toast("Error", {
-        description: "Failed to create videos. Please try again.",
-        style: { backgroundColor: "red" }
-      });
+      router.push(PAGES.APP.MY_VIDEOS.INDEX);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to create videos";
+      
+      if (errorMessage.includes("no default prompt defined") || errorMessage.includes("topic prompt must be provided")) {
+        toast("Topic Prompt Required", {
+          description: "This content type requires a topic prompt for bulk creation. Please provide one.",
+          style: { backgroundColor: "red" }
+        });
+        form.setFocus("topicPrompt");
+      } else {
+        toast("Error", {
+          description: errorMessage,
+          style: { backgroundColor: "red" }
+        });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -142,16 +171,26 @@ export function BulkCreateDialog({
               name="topicPrompt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Topic Prompt (Optional)</FormLabel>
+                  <FormLabel>
+                    Topic Prompt {isTopicPromptRequired ? "(Required)" : "(Optional)"}
+                  </FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Enter a topic or theme for the videos..."
-                      className="resize-none"
+                      placeholder={isTopicPromptRequired 
+                        ? "Enter a topic or theme for the videos (required)..." 
+                        : "Enter a topic or theme for the videos..."}
+                      className={`resize-none ${isTopicPromptRequired ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                       {...field}
                     />
                   </FormControl>
                   <FormDescription>
-                    This will help generate unique content for each video
+                    {isTopicPromptRequired ? (
+                      <span className="text-red-500 font-semibold">
+                        This content type requires a topic prompt for bulk creation
+                      </span>
+                    ) : (
+                      "This will help generate unique content for each video"
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

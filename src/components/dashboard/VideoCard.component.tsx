@@ -10,6 +10,7 @@ import { parseDate } from "@/lib/utils";
 import { getFriendlyStatus } from "@/lib/getFriendlyStatus";
 import { formatDistanceToNow } from "date-fns";
 import ROUTES from "@/lib/routes";
+import Image from "next/image";
 
 interface VideoCardProps {
   video: VideoType & {
@@ -45,6 +46,12 @@ export const VideoCard = ({ video }: VideoCardProps) => {
     }
   };
 
+  const firstSceneImage = video.scenes && 
+    Object.values(video.scenes)[0]?.imageUrl && 
+    typeof Object.values(video.scenes)[0].imageUrl === 'string' 
+      ? Object.values(video.scenes)[0].imageUrl as string 
+      : null;
+
   return (
     <Card className="group relative overflow-hidden border border-white/10 bg-card/60 backdrop-blur-sm shadow-xl hover:shadow-2xl transition-all duration-300 hover:border-primary/20">
       {/* Gradient overlay */}
@@ -52,11 +59,16 @@ export const VideoCard = ({ video }: VideoCardProps) => {
       
       {/* Thumbnail area */}
       <div className="h-44 relative overflow-hidden">
-        {video.scenes && video.scenes[0]?.imageUrl ? (
-          <div 
-            className="w-full h-full bg-cover bg-center transform group-hover:scale-105 transition-transform duration-700"
-            style={{ backgroundImage: `url(${video.scenes[0].imageUrl})` }}
-          />
+        {firstSceneImage ? (
+          <div className="relative w-full h-full">
+            <Image
+              src={firstSceneImage}
+              alt={video.title || 'Video thumbnail'}
+              fill
+              className="object-cover transform group-hover:scale-105 transition-transform duration-700"
+              unoptimized
+            />
+          </div>
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
             <Video className="w-12 h-12 text-muted-foreground/50" />

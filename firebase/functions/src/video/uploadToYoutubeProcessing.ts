@@ -35,7 +35,30 @@ export const processYoutubeUploadQueue = onTaskDispatched(
         console.error("Missing videoId or channelId");
         return;
       }
-      console.log("Processing YouTube upload task with data:", event.data);
+      
+      // Log all data received including timezone if it exists
+      const timezone = event.data.timezone;
+      console.log("Processing YouTube upload task with data:", {
+        videoId, 
+        channelId, 
+        publishAt, 
+        timezone: timezone || 'not provided', 
+        privacy
+      });
+
+      // Handle publishAt date with timezone
+      let formattedPublishAt: string | undefined = undefined;
+      if (publishAt) {
+        try {
+          // Parse the date and format it to ISO 8601 format with UTC timezone that YouTube API requires
+          // Note: YouTube API requires RFC 3339 format which is close to ISO 8601
+          formattedPublishAt = new Date(publishAt).toISOString();
+          console.log(`Formatted publishAt date: ${formattedPublishAt} (original timezone info: ${timezone || 'not provided'})`);
+        } catch (error) {
+          console.error("Error formatting publishAt date:", error);
+          // If there's an error, we'll continue without a publish date
+        }
+      }
 
       // Fetch video document from Firestore
       const videoRef = db.collection("videos").doc(videoId);
@@ -111,7 +134,8 @@ export const processYoutubeUploadQueue = onTaskDispatched(
         status: {
           privacyStatus: privacy || videoData.privacy || "private",
           selfDeclaredMadeForKids: false,
-          publishAt: publishAt ?? undefined,
+          // Only include publishAt for non-public videos (private/unlisted)
+          publishAt: (privacy === "public") ? undefined : formattedPublishAt,
         },
       };
 

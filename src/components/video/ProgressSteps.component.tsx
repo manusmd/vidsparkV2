@@ -98,6 +98,14 @@ export function ProgressSteps({
               effectiveStatus = "complete";
             }
             
+            // Special case for YouTube upload step
+            if (
+              step.id === "processing:upload" &&
+              video.uploadStatus?.youtube?.videoUrl
+            ) {
+              effectiveStatus = "complete";
+            }
+            
             const isStepComplete = effectiveStatus === "complete";
             const isStepCurrent = effectiveStatus === "current";
             const isStepFailed = effectiveStatus === "failed";
@@ -313,7 +321,8 @@ export function ProgressSteps({
                         {/* Upload button */}
                         {step.id === "processing:upload" &&
                           video.status === "render:complete" &&
-                          onUpload && (
+                          onUpload && 
+                          !video.uploadStatus?.youtube?.videoUrl && (
                             <Button
                               size="sm"
                               onClick={onUpload}

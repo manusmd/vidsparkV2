@@ -1,7 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import ContentTypeGrid from "@/app/app/studio/ContentTypeGrid.component";
-import { Loader2, ChevronRight, LayoutTemplate, Plus } from "lucide-react";
+import { Loader2, ChevronRight, LayoutTemplate, Plus, Sparkles, ArrowLeft } from "lucide-react";
 import { useCachedData } from "@/hooks/data/useCachedData";
 import { useTemplates } from "@/hooks/data/useTemplates";
 import { useRouter } from "next/navigation";
@@ -10,13 +9,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { VideoTemplate } from "@/app/types";
 import { formatDistanceToNow } from "date-fns";
 import ROUTES from "@/lib/routes";
+import ContentTypeGrid from "./ContentTypeGrid.component";
 
 export default function StudioPage() {
   const router = useRouter();
   const { data, isLoading, hasError, errorMessage } = useCachedData();
   const { contentTypes } = data;
   const { templates, loading: templatesLoading } = useTemplates();
-  const [showTemplates, setShowTemplates] = useState(true);
+  const [showContentTypes, setShowContentTypes] = useState(false);
 
   if (isLoading || templatesLoading || !contentTypes || contentTypes.length === 0) {
     return (
@@ -53,91 +53,95 @@ export default function StudioPage() {
           </p>
         </div>
 
-        {showTemplates && templates.length > 0 && (
-          <div className="w-full mt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <LayoutTemplate className="w-5 h-5 text-primary" />
-                Start with a Template
-              </h2>
-              <div className="flex gap-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => router.push(ROUTES.PAGES.APP.TEMPLATES)}
-                  className="text-sm"
-                >
-                  View all templates
-                  <ChevronRight className="ml-1 h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTemplates(false)}
-                  className="text-sm"
-                >
-                  Start from scratch
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {recentTemplates.map((template) => (
-                <Card 
-                  key={template.id} 
-                  className="overflow-hidden border hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleSelectTemplate(template)}
-                >
-                  <CardContent className="p-6">
-                    <div className="mb-2">
-                      <h3 className="text-lg font-medium truncate">{template.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Last used {formatDistanceToNow(new Date(template.lastUsedAt), { addSuffix: true })}
-                      </p>
-                    </div>
-                    <Button 
-                      className="w-full mt-2 bg-primary/90 hover:bg-primary"
-                    >
-                      Use Template
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-              
-              <Card 
-                className="overflow-hidden border border-dashed hover:shadow-md transition-shadow cursor-pointer flex flex-col items-center justify-center p-6"
-                onClick={() => router.push(ROUTES.PAGES.APP.TEMPLATES)}
+        {showContentTypes ? (
+          <div className="w-full mt-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Select Content Type</h2>
+              <Button
+                variant="ghost"
+                onClick={() => setShowContentTypes(false)}
               >
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Plus className="w-6 h-6 text-primary" />
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            </div>
+            <ContentTypeGrid contentTypes={contentTypes} />
+          </div>
+        ) : (
+          <>
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+              <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-8 w-1 rounded-full bg-gradient-to-b from-primary to-primary/50"></div>
+                      <h2 className="text-xl font-semibold">Start from Scratch</h2>
+                    </div>
+                    <p className="text-muted-foreground mb-6">
+                      Begin with a blank canvas and customize every aspect of your video.
+                    </p>
+                    <div className="mt-auto">
+                      <Button 
+                        className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                        onClick={() => setShowContentTypes(true)}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create New Video
+                      </Button>
+                    </div>
                   </div>
-                  <h3 className="text-lg font-medium">View more templates</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Browse all your saved templates
-                  </p>
-                </div>
+                </CardContent>
+              </Card>
+
+              <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors">
+                <CardContent className="p-6">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-8 w-1 rounded-full bg-gradient-to-b from-blue-400 to-blue-600"></div>
+                      <h2 className="text-xl font-semibold">Use a Template</h2>
+                    </div>
+                    <p className="text-muted-foreground mb-6">
+                      Start with a pre-designed template to speed up your workflow.
+                    </p>
+                    <div className="mt-auto">
+                      <Button 
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => router.push(ROUTES.PAGES.APP.TEMPLATES)}
+                      >
+                        <LayoutTemplate className="w-4 h-4 mr-2" />
+                        Browse Templates
+                        <ChevronRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             </div>
-          </div>
-        )}
 
-        {(!showTemplates || templates.length === 0) && (
-          <>
-            <h2 className="text-xl font-semibold mt-4">
-              {templates.length > 0 ? "Or, start from scratch" : "Select a content type"}
-            </h2>
-            <ContentTypeGrid contentTypes={contentTypes} />
-            
-            {templates.length > 0 && (
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => setShowTemplates(true)}
-              >
-                <LayoutTemplate className="mr-2 h-4 w-4" />
-                Start with a template instead
-              </Button>
+            {recentTemplates.length > 0 && (
+              <div className="w-full mt-8">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  Recent Templates
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {recentTemplates.map((template) => (
+                    <Card 
+                      key={template.id}
+                      className="cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => handleSelectTemplate(template)}
+                    >
+                      <CardContent className="p-4">
+                        <h3 className="font-medium mb-1">{template.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Created {formatDistanceToNow(new Date(template.createdAt), { addSuffix: true })}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}

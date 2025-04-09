@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, Clock, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Loader2, Trash2, Clock, CheckCircle, AlertCircle, ExternalLink, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useBulkCreate } from "@/hooks/data/useBulkCreate";
 import { toast } from "@/components/ui/use-toast";
 import ROUTES from "@/lib/routes";
+import DeleteConfirmationModal from "./DeleteConfirmationModal.component";
 
 import {
   Card,
@@ -42,11 +43,18 @@ interface BulkJob {
 export default function BulkJobsPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { cancelBulkJob, subscribeToBulkJob } = useBulkCreate();
+  const { cancelBulkJob, deleteBulkJob, subscribeToBulkJob } = useBulkCreate();
   const [jobs, setJobs] = useState<BulkJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [activeSubscriptions, setActiveSubscriptions] = useState<{[key: string]: () => void}>({});
+  
+  // Add state for the delete confirmation modal
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
+  const [videoCountToDelete, setVideoCountToDelete] = useState(0);
+  const [fetchingVideoCount, setFetchingVideoCount] = useState(false);
 
   // Fetch jobs
   const fetchJobs = async () => {
@@ -118,6 +126,62 @@ export default function BulkJobsPage() {
       console.error("Error cancelling job:", error);
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  // Prepare delete modal
+  const openDeleteModal = async (jobId: string) => {
+    setJobToDelete(jobId);
+    
+    // Fetch the count of videos for this job to show in the modal
+    setFetchingVideoCount(true);
+    try {
+      const token = await user?.getIdToken();
+      if (!token) return;
+      
+      const response = await fetch(`/api/bulk/status/${jobId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setVideoCountToDelete(data.completedVideos?.length || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching video count:", error);
+    } finally {
+      setFetchingVideoCount(false);
+    }
+    
+    setIsDeleteModalOpen(true);
+  };
+  
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setJobToDelete(null);
+  };
+
+  // Handle deleting a job
+  const handleDeleteJob = async () => {
+    if (!jobToDelete) return;
+    
+    setDeletingId(jobToDelete);
+    try {
+      const result = await deleteBulkJob(jobToDelete);
+      if (result.success) {
+        toast("Job Deleted", {
+          description: `The bulk job and ${result.deletedVideoCount} videos have been permanently deleted`,
+        });
+        // Refresh jobs
+        await fetchJobs();
+      }
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    } finally {
+      setDeletingId(null);
+      closeDeleteModal();
     }
   };
 
@@ -294,6 +358,30 @@ export default function BulkJobsPage() {
                   </Tooltip>
                 </TooltipProvider>
 
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => openDeleteModal(job.id)}
+                        variant="outline"
+                        className="bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                        disabled={deletingId === job.id || fetchingVideoCount}
+                      >
+                        {deletingId === job.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : fetchingVideoCount ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Delete job and all related videos</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
                 {(job.status === "queued" || job.status === "processing") && (
                   <TooltipProvider>
                     <Tooltip>
@@ -301,17 +389,18 @@ export default function BulkJobsPage() {
                         <Button
                           onClick={() => handleCancelJob(job.id)}
                           variant="destructive"
+                          size="icon"
                           disabled={cancellingId === job.id}
                         >
                           {cancellingId === job.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            <Trash2 className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           )}
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Cancel this job</p>
+                        <p>Cancel job</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -321,6 +410,16 @@ export default function BulkJobsPage() {
           ))}
         </div>
       )}
+
+      {/* Add the delete confirmation modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleDeleteJob}
+        isDeleting={!!deletingId}
+        jobId={jobToDelete || ''}
+        videoCount={videoCountToDelete}
+      />
     </div>
   );
 } 

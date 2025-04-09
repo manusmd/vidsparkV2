@@ -17,9 +17,10 @@ export function MusicSelector({
   disabled?: boolean;
 }): JSX.Element {
   const { musicTracks, loading, error } = useMusicTracks();
-  const { musicUrl, musicVolume, updateMusic } = useMusic();
+  const { musicUrl, musicVolume, setMusicVolume, updateMusic } = useMusic();
   const [selectedTrack, setSelectedTrack] = useState<MusicTrack | null>(null);
   const [playingTrackId, setPlayingTrackId] = useState<string | null>(null);
+  const [localVolume, setLocalVolume] = useState<number>(musicVolume);
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const params = useParams();
   const videoId = params.id as string | undefined;
@@ -45,12 +46,23 @@ export function MusicSelector({
     }
   }, [musicTracks, musicUrl, video]);
 
+  // Update local volume when musicVolume changes
+  useEffect(() => {
+    setLocalVolume(musicVolume);
+  }, [musicVolume]);
+
   const handleSelectMusic = async (track: MusicTrack | null) => {
     setSelectedTrack(track);
     await updateMusic(track ? track.src : "", musicVolume, track ? track.id : null);
   };
 
-  const handleVolumeChange = async (value: number) => {
+  // Handle volume changes locally (for UI updates while dragging)
+  const handleVolumeChanging = (value: number) => {
+    setLocalVolume(value);
+  };
+
+  // Save volume changes to the server only when the user finishes dragging
+  const handleVolumeChangeComplete = async (value: number) => {
     await updateMusic(selectedTrack ? selectedTrack.src : "", value, selectedTrack ? selectedTrack.id : null);
   };
 
@@ -96,14 +108,15 @@ export function MusicSelector({
         <div className="flex items-center gap-2">
           <Slider
             disabled={disabled || !selectedTrack}
-            value={[selectedTrack ? musicVolume : 0]}
-            onValueChange={(value) => handleVolumeChange(value[0])}
+            value={[selectedTrack ? localVolume : 0]}
+            onValueChange={(value) => handleVolumeChanging(value[0])}
+            onValueCommit={(value) => handleVolumeChangeComplete(value[0])}
             max={1}
             step={0.1}
             className="w-full"
           />
           <span className="text-xs font-medium">
-            {Math.round(selectedTrack ? musicVolume * 10 : 0)}
+            {Math.round(selectedTrack ? localVolume * 10 : 0)}
           </span>
         </div>
       </div>

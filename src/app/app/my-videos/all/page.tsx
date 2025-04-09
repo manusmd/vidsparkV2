@@ -1,7 +1,7 @@
 "use client";
 
-import { VideoList } from "@/components/my-videos/VideoList.component";
+import { VideoGrid } from "@/components/my-videos/VideoGrid.component";
 
 export default function AllVideosPage() {
-  return <VideoList status="all" />;
+  return <VideoGrid status="all" />;
 }

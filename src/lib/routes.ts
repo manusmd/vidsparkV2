@@ -124,6 +124,7 @@ export const API = {
     CREATE: "/api/bulk/create",
     STATUS: "/api/bulk/status",
     CANCEL: "/api/bulk/cancel",
+    DELETE: "/api/bulk/delete",
   },
 
   // External services

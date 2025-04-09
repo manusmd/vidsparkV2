@@ -266,12 +266,10 @@ export function DataProvider({ children }: DataProviderProps) {
       
       if (!res.ok) {
         const errorData = await res.text();
-        console.error("Video fetch error:", errorData);
         throw new Error(`Failed to fetch user videos: ${res.status} ${res.statusText}`);
       }
       
       const data = await res.json();
-      console.log("Video response:", data); // Log to help debug the response structure
       
       // Handle different response formats
       let videos;
@@ -280,7 +278,6 @@ export function DataProvider({ children }: DataProviderProps) {
       } else if (data.videos && Array.isArray(data.videos)) {
         videos = data.videos;
       } else {
-        console.warn("Unexpected video response format:", data);
         videos = [];
       }
       
@@ -288,7 +285,6 @@ export function DataProvider({ children }: DataProviderProps) {
       return videos;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Video fetch error details:", err);
       setUserVideosError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -466,15 +462,12 @@ export function DataProvider({ children }: DataProviderProps) {
       let accountsList: Account[] = [];
       if (data && data.data && Array.isArray(data.data.accounts)) {
         accountsList = data.data.accounts;
-      } else {
-        console.warn("Accounts data is not in the expected format:", data);
       }
       
       setAccounts(accountsList);
       return accountsList;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Error fetching accounts:", err);
       setAccountsError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -503,7 +496,6 @@ export function DataProvider({ children }: DataProviderProps) {
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Error connecting account:", err);
       throw new Error(errorMessage);
     }
   };
@@ -520,7 +512,6 @@ export function DataProvider({ children }: DataProviderProps) {
       await fetchAccounts();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Error deleting account:", err);
       throw new Error(errorMessage);
     }
   };
@@ -543,9 +534,7 @@ export function DataProvider({ children }: DataProviderProps) {
       const responseData = await res.json();
       return responseData.data;
     } catch (err: unknown) {
-      console.error("Error fetching channel analytics:", err);
-      const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      setAnalyticsError(errorMessage);
+      setAnalyticsError(err instanceof Error ? err.message : "Unknown error occurred");
       return null;
     }
   };
@@ -575,7 +564,6 @@ export function DataProvider({ children }: DataProviderProps) {
               }
             }
           })
-          .catch(err => console.error(`Error fetching analytics for ${account.id}:`, err))
       );
       
       await Promise.allSettled(analyticsPromises);
@@ -583,7 +571,6 @@ export function DataProvider({ children }: DataProviderProps) {
       
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Error fetching all analytics:", err);
       setAnalyticsError(errorMessage);
     } finally {
       setAnalyticsLoading(false);
@@ -612,7 +599,6 @@ export function DataProvider({ children }: DataProviderProps) {
       return data;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Unknown error occurred";
-      console.error("Error fetching templates:", err);
       setTemplatesError(errorMessage);
       setTemplatesLoading(false);
       return [];
@@ -708,7 +694,7 @@ export function DataProvider({ children }: DataProviderProps) {
           }
         }
       } catch (error) {
-        console.error("Error loading initial data:", error);
+        // Silently handle initialization errors
       }
     };
     

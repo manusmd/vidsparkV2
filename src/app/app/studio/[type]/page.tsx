@@ -8,7 +8,7 @@ import { useTemplates } from "@/hooks/data/useTemplates";
 import { useVoices } from "@/hooks/data/useVoices";
 import { useContentTypes } from "@/hooks/data/useContentTypes";
 import { useStoryIdea } from "@/hooks/data/useStoryIdea";
-import { Loader2, ArrowLeft, Sparkles, BookmarkPlus } from "lucide-react";
+import { Loader2, ArrowLeft, Sparkles } from "lucide-react";
 import { ContentTypeDetails } from "@/app/app/studio/[type]/ContentTypeDetails.component";
 import { NarrationForm } from "@/app/app/studio/[type]/forms/NarrationForm.component";
 import { ImageTypeSelector } from "@/components/image/ImageTypeSelector.component";
@@ -23,8 +23,6 @@ import { useStory } from "@/hooks/data/useStory";
 import { useMusic } from "@/providers/useMusic";
 import { motion } from "framer-motion";
 import VideoGenerationOverlay from "@/app/app/studio/[type]/VideoGenerationOverlay.component";
-import SaveTemplateDialog from "@/app/app/studio/[type]/SaveTemplateDialog.component";
-import { TextDesignVariant } from "@/components/remotion/textDesigns";
 
 const steps = [
   { id: 1, name: "Narration" },
@@ -48,8 +46,8 @@ export default function VideoGenerationPage() {
   } = useImageTypes();
   const { voices } = useVoices();
   const { templates, loading: templatesLoading } = useTemplates();
-  const { setStyling } = useTextDesign();
-  const { setMusicUrl } = useMusic();
+  const { styling, setStyling, updateStyling } = useTextDesign();
+  const { setMusicUrl, setMusicVolume } = useMusic();
 
   const [selectedContentType, setSelectedContentType] = useState<ContentType | null>(null);
   const [selectedImageType, setSelectedImageType] = useState<ImageType | null>(null);
@@ -59,7 +57,6 @@ export default function VideoGenerationPage() {
   const [showVideoGenerationOverlay, setShowVideoGenerationOverlay] = useState<boolean>(false);
   const [step, setStep] = useState<number>(1);
   const [createdVideoId, setCreatedVideoId] = useState<string | null>(null);
-  const [showTemplateDialog, setShowTemplateDialog] = useState<boolean>(false);
   
   // Add ref to track if we've already loaded the template
   const templateLoadedRef = useRef<string | null>(null);
@@ -72,16 +69,8 @@ export default function VideoGenerationPage() {
         // Mark this template as loaded to prevent infinite re-renders
         templateLoadedRef.current = templateId;
         
-        // Store the selected template
-        setSelectedTemplate(template);
-        
-        // Set voice from template
+        // Set form fields from template
         setSelectedVoice(template.voiceId);
-        
-        // Set default narration if available
-        if (template.defaultNarration) {
-          generateStoryIdea(template.defaultNarration);
-        }
         
         // Find and set image type from template
         const imageType = imageTypes.find(i => i.id === template.imageStyleId);
@@ -90,18 +79,26 @@ export default function VideoGenerationPage() {
         }
         
         // Update text styling if template has it
-        if (template.textDesign) {
-          setStyling({
-            variant: template.textDesign.styleId as TextDesignVariant,
-            font: template.textDesign.fontId as "roboto" | "lato" | "caveat" | "playfair" | "dancingScript",
-          });
+        if (template.styling) {
+          setStyling(template.styling);
         }
         
-        // Set music (will need to be handled by your music context)
+        // Set music if provided
         if (template.musicId) {
-          // Example - adapt to your context implementation
+          // For consistency, directly use the musicId as the URL
           setMusicUrl(template.musicId);
+          
+          // Also set the music volume if available in the template
+          if (template.musicVolume !== undefined) {
+            // Ensure the volume is within the 0-1 range
+            const volume = typeof template.musicVolume === 'number' ? 
+              Math.min(Math.max(template.musicVolume, 0), 1) : 0.5;
+            setMusicVolume(volume);
+          }
         }
+        
+        // Set selected template
+        setSelectedTemplate(template);
         
         // Show success toast
         toast("Template Loaded", {
@@ -109,7 +106,7 @@ export default function VideoGenerationPage() {
         });
       }
     }
-  }, [templateId, templates, templatesLoading, imageTypes, generateStoryIdea, setMusicUrl, setStyling]);
+  }, [templateId, templates, templatesLoading, imageTypes, setMusicUrl, setMusicVolume, setStyling]);
 
   // When content type is loaded, update selectedVoice if recommendedVoiceId exists.
   useEffect(() => {
@@ -168,10 +165,11 @@ export default function VideoGenerationPage() {
         // Include template properties if a template is selected
         ...(selectedTemplate ? {
           templateId: selectedTemplate.id,
-          textDesign: selectedTemplate.textDesign,
+          styling: selectedTemplate.styling,
           textPosition: selectedTemplate.textPosition,
           showTitle: selectedTemplate.showTitle,
           musicId: selectedTemplate.musicId,
+          musicVolume: selectedTemplate.musicVolume !== undefined ? selectedTemplate.musicVolume : 0.5,
         } : {})
       });
       
@@ -350,54 +348,25 @@ export default function VideoGenerationPage() {
               <ArrowLeft className="mr-2 h-4 w-4" /> Back
             </Button>
             
-            <div className="flex gap-3">
-              <Button 
-                variant="outline"
-                onClick={() => setShowTemplateDialog(true)}
-                className="flex items-center gap-2"
-                disabled={isSubmitting}
-              >
-                <BookmarkPlus className="h-4 w-4" />
-                Save as Template
-              </Button>
-              
-              <Button 
-                onClick={handleFinalSubmit}
-                disabled={!selectedImageType || !selectedVoice || isSubmitting}
-                className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="mr-2 h-4 w-4" />
-                    Generate Video
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button 
+              onClick={handleFinalSubmit}
+              disabled={!selectedImageType || !selectedVoice || isSubmitting}
+              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Video
+                </>
+              )}
+            </Button>
           </div>
         </motion.div>
-      )}
-      
-      {/* Save Template Dialog */}
-      {showTemplateDialog && (
-        <SaveTemplateDialog
-          open={showTemplateDialog}
-          onOpenChange={setShowTemplateDialog}
-          contentType={selectedContentType}
-          imageType={selectedImageType!}
-          voiceId={selectedVoice}
-          narration={storyIdea}
-          onSaved={() => {
-            toast("Template Saved", {
-              description: "Your template has been saved successfully"
-            });
-          }}
-        />
       )}
     </div>
   );
