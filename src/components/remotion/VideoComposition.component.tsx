@@ -7,6 +7,8 @@ import {
   interpolate,
   prefetch,
   useVideoConfig,
+  Sequence,
+  Img,
 } from "remotion";
 import {
   type Caption,
@@ -47,17 +49,22 @@ export const VideoComposition: React.FC<Props> = ({
 }) => {
   const { fps } = useVideoConfig();
   const currentFrameRef = { current: 0 };
+  const scenePadding = Math.ceil(0.5 * fps); // 0.5 seconds padding before and after
+  const thumbnailDuration = 1; // Just 1 frame for thumbnail
 
-  const alignmentClass =
-    textPosition === "top"
-      ? "items-start"
-      : textPosition === "center"
-        ? "items-center"
-        : textPosition === "bottom"
-          ? "items-end"
-          : "items-start";
-
+  // Preload all media assets
   useEffect(() => {
+    // Preload all scene images
+    Object.values(scenes).forEach((scene) => {
+      if (scene.imageUrl) {
+        prefetch(scene.imageUrl, {
+          method: "blob-url",
+          contentType: "image/*",
+        });
+      }
+    });
+
+    // Preload all audio files
     Object.values(scenes).forEach((scene) => {
       if (scene.voiceUrl) {
         resolveRedirect(scene.voiceUrl)
@@ -75,7 +82,33 @@ export const VideoComposition: React.FC<Props> = ({
           });
       }
     });
-  }, [scenes]);
+
+    // Preload background music if exists
+    if (musicUrl) {
+      resolveRedirect(musicUrl)
+        .then((resolvedUrl) => {
+          prefetch(resolvedUrl, {
+            method: "blob-url",
+            contentType: "audio/mpeg",
+          });
+        })
+        .catch((err) => {
+          console.error(`Could not resolve redirect for music ${musicUrl}`, err);
+        });
+    }
+  }, [scenes, musicUrl]);
+
+  // Add thumbnail duration to the starting frame of all scenes
+  currentFrameRef.current = thumbnailDuration;
+
+  const alignmentClass =
+    textPosition === "top"
+      ? "items-start"
+      : textPosition === "center"
+        ? "items-center"
+        : textPosition === "bottom"
+          ? "items-end"
+          : "items-start";
 
   const scenesWithTiming: Exclude<SceneWithTiming, null>[] = Object.entries(
     scenes,
@@ -107,13 +140,15 @@ export const VideoComposition: React.FC<Props> = ({
       const startFrame = currentFrameRef.current;
       const audioDuration =
         tikTokCaptions[tikTokCaptions.length - 1].endMs / 1000;
-      const durationInFrames = Math.ceil(audioDuration * fps);
+      const contentDuration = Math.ceil(audioDuration * fps);
+      const durationInFrames = contentDuration + (scenePadding * 2); // Add padding to both start and end
       currentFrameRef.current += durationInFrames;
 
       return {
         scene,
         startFrame,
         durationInFrames,
+        contentDuration,
         pages,
       };
     })
@@ -123,6 +158,46 @@ export const VideoComposition: React.FC<Props> = ({
 
   return (
     <AbsoluteFill>
+      {/* Thumbnail sequence - just 1 frame */}
+      {showTitle && title && scenesWithTiming.length > 0 && (
+        <Sequence from={0} durationInFrames={thumbnailDuration}>
+          <AbsoluteFill>
+            <Img
+              src={scenesWithTiming[0].scene.imageUrl ?? ""}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+            <AbsoluteFill
+              style={{
+                background: "linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%)",
+              }}
+            />
+            <AbsoluteFill className="flex items-center justify-center">
+              <TextDesign
+                enterProgress={1}
+                page={{
+                  startMs: 0,
+                  durationMs: 1,
+                  text: title,
+                  tokens: [{
+                    text: title,
+                    fromMs: 0,
+                    toMs: 1
+                  }]
+                }}
+                textVariant={styling?.font}
+                variant={styling?.variant}
+                isTitle={true}
+              />
+            </AbsoluteFill>
+          </AbsoluteFill>
+        </Sequence>
+      )}
+
+      {/* Regular scenes */}
       {scenesWithTiming.map(
         ({ scene, startFrame, durationInFrames, pages }, sceneIndex) => {
           if (!scene.voiceUrl || !scene.imageUrl) {
@@ -139,75 +214,29 @@ export const VideoComposition: React.FC<Props> = ({
               durationInFrames={durationInFrames}
               premountFor={100}
             >
-              <SceneComposition scene={scene} index={sceneIndex} />
-              <Audio src={scene.voiceUrl} volume={1} />
+              <SceneComposition 
+                scene={scene} 
+                index={sceneIndex} 
+                durationInFrames={durationInFrames}
+              />
+              <Sequence from={scenePadding}>
+                <Audio src={scene.voiceUrl} volume={1} />
+              </Sequence>
               {pages?.map((page: TikTokPage, pageIndex: number) => {
                 const currentPage = page as MyTikTokPage;
-                const nextPage = pages[pageIndex + 1] as
-                  | MyTikTokPage
-                  | undefined;
-                const pageStartFrame = Math.floor((page.startMs / 1000) * fps);
+                const nextPage = pages[pageIndex + 1] as MyTikTokPage | undefined;
+                const pageStartFrame = Math.floor((page.startMs / 1000) * fps) + scenePadding;
                 const pageEndFrame = Math.floor(
-                  ((nextPage ? nextPage.startMs : currentPage.endMs) / 1000) *
-                    fps,
-                );
+                  ((nextPage ? nextPage.startMs : currentPage.endMs) / 1000) * fps
+                ) + scenePadding;
                 const pageDuration = pageEndFrame - pageStartFrame;
                 if (pageDuration <= 0) return null;
-
-                if (sceneIndex === 0 && showTitle && pageIndex === 0 && title) {
-                  // Split the title into words to create multiple tokens
-                  const words = title.split(" ");
-                  const titleTokens = words.map((word, i) => ({
-                    text: word + (i < words.length - 1 ? " " : ""),
-                    fromMs: 0,
-                    toMs: 1,
-                  }));
-
-                  const titlePage: TikTokPage = {
-                    startMs: 0,
-                    durationMs: 1,
-                    tokens: titleTokens,
-                    text: title,
-                  };
-                  return (
-                    <Fragment key={`${scene.voiceUrl}-${pageIndex}`}>
-                      <PremountedSequence
-                        from={0}
-                        durationInFrames={1} // Changed from 30 to 1 frame as per requirement
-                        premountFor={30}
-                      >
-                        <AbsoluteFill
-                          className={`flex ${alignmentClass} justify-center`}
-                        >
-                          <TextDesign
-                            enterProgress={1}
-                            page={titlePage}
-                            textVariant={styling?.font}
-                            variant={styling?.variant}
-                            isTitle={true}
-                          />
-                        </AbsoluteFill>
-                      </PremountedSequence>
-                      <PremountedSequence
-                        from={1} // Start after the title page ends (which is 1 frame)
-                        durationInFrames={Math.max(1, pageDuration - 1)} // Ensure duration is at least 1 frame
-                        premountFor={30}
-                      >
-                        <SubtitlePage
-                          page={page}
-                          styling={styling}
-                          textPosition={textPosition}
-                        />
-                      </PremountedSequence>
-                    </Fragment>
-                  );
-                }
 
                 return (
                   <PremountedSequence
                     key={pageIndex}
                     from={pageStartFrame}
-                    durationInFrames={Math.max(1, pageDuration)} // Ensure duration is at least 1 frame
+                    durationInFrames={Math.max(1, pageDuration)}
                     premountFor={30}
                   >
                     <SubtitlePage
@@ -222,7 +251,6 @@ export const VideoComposition: React.FC<Props> = ({
           );
         },
       )}
-      {/* Background Music with Fade Out over the last 30 frames */}
       {musicUrl && (
         <Audio
           src={musicUrl}

@@ -7,39 +7,23 @@ import { Scene } from "@/app/types";
 interface SceneCompositionProps {
   scene: Scene;
   index: number;
-  durationInFrames?: number;
+  durationInFrames: number;
 }
 
 export const SceneComposition: React.FC<SceneCompositionProps> = ({
   scene,
-  durationInFrames = 150,
+  durationInFrames,
 }) => {
   const frame = useCurrentFrame();
 
-  // Enhanced slow scaling animation that lasts the entire scene duration
-  // Scale from 1 to 1.1 with a smooth easing function
+  // Simple linear zoom from start to end
   const scale = interpolate(
     frame,
     [0, durationInFrames],
-    [1, 1.1],
+    [1, 1.4],
     {
       extrapolateRight: "clamp",
-      // Use a cubic bezier curve for smoother, more natural motion
-      easing: (t) => {
-        // Slow start, slow end cubic easing
-        return t * t * (3 - 2 * t);
-      }
-    }
-  );
-
-  // Add a subtle horizontal pan effect
-  const xOffset = interpolate(
-    frame,
-    [0, durationInFrames],
-    [0, -5],
-    {
-      extrapolateRight: "clamp",
-      easing: (t) => t * t,
+      easing: (t) => t, // Linear easing
     }
   );
 
@@ -51,10 +35,9 @@ export const SceneComposition: React.FC<SceneCompositionProps> = ({
         style={{
           width: "100%",
           height: "100%",
-          objectFit: "cover", // Changed from contain to cover for better visual impact
-          transform: `scale(${scale}) translateX(${xOffset}px)`,
+          objectFit: "cover",
+          transform: `scale(${scale})`,
           transformOrigin: "center center",
-          transition: "transform 0.5s ease-out",
         }}
       />
       <AbsoluteFill
@@ -66,3 +49,4 @@ export const SceneComposition: React.FC<SceneCompositionProps> = ({
     </AbsoluteFill>
   );
 };
+
