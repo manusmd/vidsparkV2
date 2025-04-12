@@ -80,8 +80,18 @@ export function VideoInfo({ video, className }: VideoInfoProps) {
   const progress = getProgress();
   
   // Format date function
-  const formatDate = (date: Date | number) => {
-    return format(date, 'MMM d, yyyy');
+  const formatDate = (date: string | Date | number | null | undefined) => {
+    if (!date) return 'N/A';
+    
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : 
+                     typeof date === 'number' ? new Date(date) : date;
+      if (isNaN(dateObj.getTime())) return 'Invalid date';
+      return format(dateObj, 'MMM d, yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
   
   // Count scenes - since video.scenes is an object with numerical keys

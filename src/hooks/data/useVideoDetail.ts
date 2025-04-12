@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { doc, onSnapshot, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import type { Scene, Step, Video } from "@/app/types";
+import { useAuth } from "@/hooks/useAuth";
+import { db } from "@/lib/firebase";
+import { DocumentSnapshot, collection, doc, onSnapshot } from "firebase/firestore";
 
 // Define processing steps globally (reused in the hook)
 const processingSteps: Step[] = [
@@ -15,6 +16,7 @@ export function useVideoDetail(videoId: string) {
   const [video, setVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
   const [steps, setSteps] = useState<Step[]>([]);
   const [stableAssets, setStableAssets] = useState<{
     scenes: Video["scenes"];
@@ -22,82 +24,85 @@ export function useVideoDetail(videoId: string) {
   } | null>(null);
 
   useEffect(() => {
-    if (!videoId || !db) return;
+    if (!user) {
+      setError("User not authenticated");
+      setLoading(false);
+      return;
+    }
+
+    if (!videoId) {
+      setError("Video ID is required");
+      setLoading(false);
+      return;
+    }
+
+    if (!db) {
+      setError("Database not initialized");
+      setLoading(false);
+      return;
+    }
+
+    const videoRef = doc(collection(db, "videos"), videoId);
     const unsubscribe = onSnapshot(
-      doc(db, "videos", videoId),
-      (docSnapshot) => {
-        if (docSnapshot.exists()) {
-          const videoData = docSnapshot.data();
-
-          // Convert textDesign to styling if needed
-          if (videoData.textDesign && (!videoData.styling || !videoData.styling.variant)) {
-            videoData.styling = {
-              variant: videoData.textDesign.styleId || "default",
-              font: videoData.textDesign.fontId || "roboto"
-            };
-          }
-
-          // Handle musicId - ensure we have consistent data format
-          if (videoData.musicId && !videoData.musicUrl) {
-            // In this implementation we're using musicId directly as the URL
-            // In a real app, you'd look up the actual URL from a music tracks collection
-            console.log("Converting musicId to musicUrl:", videoData.musicId);
-            videoData.musicUrl = videoData.musicId;
-          }
-
-          const scenes = videoData.scenes ?? {};
-          const formattedScenes = Object.entries(scenes).reduce(
-            (acc, [key, value]) => {
-              acc[Number(key)] = value as Scene;
-              return acc;
-            },
-            {} as Record<number, Scene>,
-          );
-
-          const newVideo: Video = {
-            id: docSnapshot.id,
-            title: videoData.title ?? "Untitled Video",
-            description: videoData.description ?? "No description available.",
-            voiceId: videoData.voiceId ?? "",
-            templateId: videoData.templateId ?? undefined,
-            contentTypeId: videoData.contentTypeId,
-            imageStyleId: videoData.imageTypeId || videoData.imageStyleId,
-            scenes: formattedScenes,
-            status: videoData.status ?? "processing:voices",
-            sceneStatus: videoData.sceneStatus ?? {},
-            renderStatus: videoData.renderStatus ?? {},
-            imageStatus: videoData.imageStatus ?? {},
-            voiceStatus: videoData.voiceStatus ?? {},
-            uploadStatus: videoData.uploadStatus ?? {},
-            styling: videoData.styling ?? null,
-            musicVolume: videoData.musicVolume ?? 0,
-            musicUrl: videoData.musicUrl ?? null,
-            musicId: videoData.musicId ?? null,
-            narration: videoData.narration,
-            showTitle: videoData.showTitle !== undefined ? videoData.showTitle : true,
-            textPosition: videoData.textPosition || "top",
-            createdAt: videoData.createdAt?.toDate
-              ? videoData.createdAt.toDate()
-              : new Date(),
-          };
-
-          setVideo(newVideo);
+      videoRef,
+      (doc: DocumentSnapshot) => {
+        if (!doc.exists) {
+          setError("Video not found");
+          setVideo(null);
           setLoading(false);
-          updateSteps(newVideo);
-        } else {
-          setError("Video not found.");
-          setLoading(false);
+          return;
         }
+
+        const data = doc.data();
+        if (data?.uid !== user.uid) {
+          setError("You don't have permission to access this video");
+          setVideo(null);
+          setLoading(false);
+          return;
+        }
+
+        const videoData: Video = {
+          id: doc.id,
+          title: data.title || "",
+          description: data.description || "",
+          narration: data.narration || "",
+          templateId: data.templateId || undefined,
+          voiceId: data.voiceId || "",
+          contentTypeId: data.contentTypeId || undefined,
+          imageStyleId: data.imageStyleId || undefined,
+          scenes: data.scenes || {},
+          styling: data.styling || null,
+          textPosition: data.textPosition || "bottom",
+          showTitle: data.showTitle ?? true,
+          musicVolume: data.musicVolume || 0.5,
+          musicUrl: data.musicUrl || null,
+          musicId: data.musicId || null,
+          uploadStatus: data.uploadStatus || undefined,
+          status: data.status || "draft",
+          renderStatus: data.renderStatus || {
+            progress: 0,
+            statusMessage: "",
+            videoUrl: ""
+          },
+          sceneStatus: data.sceneStatus || {},
+          imageStatus: data.imageStatus || {},
+          voiceStatus: data.voiceStatus || {},
+          createdAt: new Date(data.createdAt || new Date().toISOString())
+        };
+
+        setVideo(videoData);
+        setError(null);
+        setLoading(false);
+        updateSteps(data);
       },
-      (err) => {
-        console.error("Error fetching video:", err);
-        setError("Failed to fetch video details.");
+      (err: Error) => {
+        setError(err.message);
         setLoading(false);
       }
     );
-    
+
     return () => unsubscribe();
-  }, [videoId]);
+  }, [user, videoId]);
 
   function updateSteps(video: Video) {
     const newSteps: Step[] = processingSteps.map((step) => {

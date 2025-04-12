@@ -1,0 +1,24 @@
+import { processVideoQueue } from "./video/videoProcessing";
+import { syncNewUserToFirestore } from "./auth/userSync";
+import { processVoiceQueue } from "./video/steps/voiceProcessing";
+import { processImageQueue } from "./video/steps/imageProcessing";
+import { processVideoRender } from "./video/videoRenderProcessing";
+import { processStoryRequest } from "./story/storyRequestProcessing";
+import { processStoryIdea } from "./story/storyIdeaProcessing";
+import { syncVideoStatus } from "./video/syncVideoStatus";
+import { processYoutubeUploadQueue } from "./video/uploadToYoutubeProcessing";
+import { processBulkJob } from "./video/bulkJobProcessing";
+import { generateEpisodePlans, generateEpisodes } from "./series/planning";
+
+exports.videoQueue = processVideoQueue;
+exports.voiceQueue = processVoiceQueue;
+exports.imageQueue = processImageQueue;
+exports.youtubeUploadQueue = processYoutubeUploadQueue;
+exports.storyRequestProcessing = processStoryRequest;
+exports.storyIdeaProcessing = processStoryIdea;
+exports.videoRenderProcessing = processVideoRender;
+exports.syncVideoStatus = syncVideoStatus;
+exports.syncNewUserToFirestore = syncNewUserToFirestore;
+exports.processBulkJob = processBulkJob;
+exports.generateEpisodePlans = generateEpisodePlans;
+exports.generateEpisodes = generateEpisodes; 

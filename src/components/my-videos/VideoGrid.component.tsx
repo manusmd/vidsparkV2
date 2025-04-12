@@ -315,6 +315,29 @@ export function VideoGrid({ status }: VideoGridProps) {
                 >
                   {getFriendlyStatus(video.status)}
                 </Badge>
+                <div 
+                  className="absolute top-2 left-2 z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedVideos(prev => 
+                      prev.includes(video.id) 
+                        ? prev.filter(id => id !== video.id)
+                        : [...prev, video.id]
+                    );
+                  }}
+                >
+                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    selectedVideos.includes(video.id) 
+                      ? 'bg-primary border-primary' 
+                      : 'bg-background/80 border-muted-foreground/50 hover:border-primary'
+                  }`}>
+                    {selectedVideos.includes(video.id) && (
+                      <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                        <path d="M20 6L9 17L4 12" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="p-4">
@@ -337,23 +360,6 @@ export function VideoGrid({ status }: VideoGridProps) {
                       <DropdownMenuItem onClick={() => router.push(ROUTES.PAGES.APP.VIDEOS.DETAIL(video.id))}>
                         <Eye className="w-4 h-4 mr-2" />
                         View Details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          setSelectedVideos(prev => 
-                            prev.includes(video.id) 
-                              ? prev.filter(id => id !== video.id)
-                              : [...prev, video.id]
-                          );
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedVideos.includes(video.id)}
-                          onChange={() => {}}
-                          className="mr-2"
-                        />
-                        Select
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

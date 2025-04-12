@@ -77,6 +77,7 @@ export const API = {
     GENERATE: "/api/video/generate",
     STYLING: "/api/video/styling",
     MUSIC: "/api/video/music",
+    DETAIL: (id: string) => `/api/video/${id}`,
     YOUTUBE: {
       UPLOAD: "/api/video/youtube/upload",
       CALLBACK: "/api/video/youtube/upload/callback",

@@ -47,7 +47,6 @@ export default function VidSparkDashboard() {
       </div>
       <p className="text-muted-foreground mb-8 max-w-3xl">
         Welcome to your VidSpark Dashboard. Create, manage, and analyze your video content all in one place.
-        {dataLoaded && <span className="text-green-500 ml-2">✓ All data prefetched</span>}
       </p>
 
       <QuickActions />

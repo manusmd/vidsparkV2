@@ -19,6 +19,7 @@ import {
   Video,
   BookmarkPlus,
   Layers,
+  Tv,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ROUTES from "@/lib/routes";
