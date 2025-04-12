@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Lottie from "lottie-react";
 import storyAnimation from "./storyAnimation.json";
 import { CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface VideoGenerationOverlayProps {
   onComplete: () => void;
@@ -52,21 +53,16 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // Set initialized after the first render to avoid the progress bar jumping
     if (!initialized) {
       setInitialized(true);
     }
   }, [initialized]);
 
   useEffect(() => {
-    // Check if processing is complete and we're in the waiting stage
     if (waitingForCompletion && !isProcessing) {
-      // Add a small delay to ensure smooth transition
       setTimeout(() => {
         setCompletedStages(prev => [...prev, stages[stages.length - 1].id]);
         setProgress(100);
-        
-        // Wait a moment before completing
         setTimeout(() => {
           onComplete();
         }, 1000);
@@ -77,17 +73,13 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
   useEffect(() => {
     if (!initialized) return;
     
-    // Set up the sequence of staged animations
     let stageTimeout: NodeJS.Timeout;
     let progressInterval: NodeJS.Timeout;
     
     const advanceStage = (index: number) => {
       if (index >= stages.length) {
-        // We've gone through all stages but need to wait for server processing to complete
         setWaitingForCompletion(true);
         clearInterval(progressInterval);
-        
-        // Hold progress at 95% until processing completes
         setProgress(95);
         return;
       }
@@ -95,17 +87,12 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
       const currentStage = stages[index];
       setCurrentStageIndex(index);
       
-      // Start progress animation for this stage
       const startTime = Date.now();
       const stageDuration = currentStage.duration;
       
-      // Update progress every 50ms
       progressInterval = setInterval(() => {
         const elapsed = Date.now() - startTime;
         const stageProgress = Math.min(elapsed / stageDuration, 1);
-        
-        // Calculate overall progress (each stage is equal weight)
-        // Limit to 95% until processing is complete
         const overallProgress = Math.min((index + stageProgress) / stages.length, 0.95);
         setProgress(overallProgress * 100);
         
@@ -113,7 +100,6 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
           clearInterval(progressInterval);
           setCompletedStages(prev => [...prev, currentStage.id]);
           
-          // Schedule next stage
           stageTimeout = setTimeout(() => {
             advanceStage(index + 1);
           }, 500);
@@ -121,7 +107,6 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
       }, 50);
     };
     
-    // Start the sequence
     advanceStage(0);
     
     return () => {
@@ -149,7 +134,7 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="text-center mb-6"
+            className="text-center mb-8"
           >
             {waitingForCompletion ? (
               <>
@@ -165,56 +150,50 @@ export default function VideoGenerationOverlay({ onComplete, isProcessing }: Vid
           </motion.div>
         </AnimatePresence>
         
-        {/* Progress bar */}
-        {initialized && (
-          <div className="h-2 bg-muted rounded-full overflow-hidden mb-8">
-            <motion.div 
-              className="h-full bg-primary"
-              initial={{ width: "0%" }}
-              animate={{ width: `${progress}%` }}
-              transition={{ ease: "easeInOut" }}
-            />
-          </div>
-        )}
-        
-        {/* Stage indicators */}
-        <div className="grid grid-cols-5 gap-2">
-          {stages.map((stage, index) => (
-            <div 
-              key={stage.id}
-              className="flex flex-col items-center"
-            >
+        <div className="grid grid-cols-5 gap-4">
+          {stages.map((stage, index) => {
+            const isCompleted = completedStages.includes(stage.id);
+            const isCurrent = index === currentStageIndex && !waitingForCompletion;
+            const isWaiting = waitingForCompletion && index === stages.length - 1;
+            
+            return (
               <div 
-                className={`
-                  w-8 h-8 flex items-center justify-center rounded-full
-                  ${(index === currentStageIndex && !waitingForCompletion) ? 'border-2 border-primary animate-pulse' : ''}
-                  ${waitingForCompletion && index === stages.length - 1 ? 'border-2 border-primary animate-pulse' : ''}
-                  ${completedStages.includes(stage.id) ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}
-                `}
+                key={stage.id}
+                className="flex flex-col items-center gap-2"
               >
-                {completedStages.includes(stage.id) ? (
-                  <CheckCircle2 className="w-5 h-5" />
-                ) : (
-                  index + 1
+                <div 
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300",
+                    isCompleted && "bg-primary text-primary-foreground shadow-md shadow-primary/20",
+                    isCurrent && "bg-primary/20 text-primary border-2 border-primary animate-pulse",
+                    isWaiting && "bg-primary/20 text-primary border-2 border-primary animate-pulse",
+                    !isCompleted && !isCurrent && !isWaiting && "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {isCompleted ? (
+                    <CheckCircle2 className="w-5 h-5" />
+                  ) : (
+                    <span className="text-sm font-medium">{index + 1}</span>
+                  )}
+                </div>
+                
+                {index < stages.length - 1 && (
+                  <div className="w-full h-0.5 mt-5 relative">
+                    <div className="absolute inset-0 bg-muted rounded-full" />
+                    <motion.div 
+                      className="absolute inset-0 bg-primary rounded-full origin-left"
+                      initial={{ scaleX: 0 }}
+                      animate={{ 
+                        scaleX: isCompleted ? 1 : 
+                                isCurrent ? progress % (100/stages.length) / (100/stages.length) : 0 
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
                 )}
               </div>
-              {initialized && (
-                <div className="h-1 w-full mt-2 rounded-full bg-muted">
-                  <motion.div 
-                    className="h-full bg-primary rounded-full"
-                    initial={{ width: "0%" }}
-                    animate={{ 
-                      width: completedStages.includes(stage.id) ? "100%" : 
-                             index < currentStageIndex ? "100%" : 
-                             index === currentStageIndex && !waitingForCompletion ? `${((progress % (100/stages.length)) / (100/stages.length)) * 100}%` : 
-                             waitingForCompletion && index === stages.length - 1 ? "90%" :
-                             "0%" 
-                    }}
-                  />
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

@@ -75,10 +75,20 @@ export function ProgressSteps({
             <Button 
               onClick={onGenerate}
               size="sm"
-              className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white shadow-sm"
+              className={cn(
+                "relative overflow-hidden transition-all duration-300",
+                "bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600",
+                "hover:shadow-xl hover:shadow-primary/30",
+                "border-0 text-white font-medium px-4",
+                "before:absolute before:inset-0",
+                "before:bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)]",
+                "before:animate-[shimmer_2s_infinite]"
+              )}
             >
-              <Play className="w-4 h-4 mr-1.5" />
-              Generate
+              <div className="flex items-center gap-1.5">
+                <Play className="w-4 h-4" />
+                <span>Generate</span>
+              </div>
             </Button>
           )}
         </div>

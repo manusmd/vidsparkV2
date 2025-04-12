@@ -8,12 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { 
   Select,
@@ -24,16 +18,15 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Loader2, 
   Trash2, 
-  MoreVertical, 
   Eye, 
   Search,
   Filter,
   Plus,
-  Clock,
-  RefreshCw
+  Clock
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Video } from "@/app/types";
@@ -60,7 +53,8 @@ export function VideoGrid({ status }: VideoGridProps) {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title">("newest");
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadedThumbnails, setLoadedThumbnails] = useState<Record<string, boolean>>({});
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -104,73 +98,62 @@ export function VideoGrid({ status }: VideoGridProps) {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(video => 
-        video.title.toLowerCase().includes(query) || 
+        video.title?.toLowerCase().includes(query) || 
         video.description?.toLowerCase().includes(query)
       );
     }
 
     // Sort videos
     result.sort((a, b) => {
-      if (sortBy === "newest") {
-        return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
-      } else if (sortBy === "oldest") {
-        return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
-      } else {
-        return a.title.localeCompare(b.title);
+      switch (sortBy) {
+        case "newest":
+          return (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0);
+        case "oldest":
+          return (a.createdAt?.getTime() || 0) - (b.createdAt?.getTime() || 0);
+        case "title":
+          return (a.title || "").localeCompare(b.title || "");
+        default:
+          return 0;
       }
     });
 
     setFilteredVideos(result);
   }, [videos, status, searchQuery, sortBy]);
 
-  const handleRefresh = async () => {
-    if (!user) return;
-    setIsRefreshing(true);
-    try {
-      const response = await fetch(`/api/video/get-user-videos`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${await user.getIdToken()}`,
-        },
-      });
-
-      if (!response.ok) throw new Error("Failed to fetch videos");
-
-      const res = await response.json();
-      const mappedVideos: Video[] = res.videos.map((video: Video) => ({
-        ...video,
-        createdAt: video.createdAt ? parseDate(video.createdAt) : null,
-      }));
-      setVideos(mappedVideos);
-    } catch (error) {
-      console.error("Error refreshing videos:", error);
-    }
-    setIsRefreshing(false);
-  };
-
   const handleDelete = async () => {
+    if (!user) return;
+
+    setIsDeleting(true);
     try {
       await Promise.all(
         selectedVideos.map(async (id) => {
-          await fetch(`/api/video`, {
+          const response = await fetch(`/api/video`, {
             method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${await user.getIdToken()}`,
+            },
             body: JSON.stringify({ videoId: id }),
           });
-        }),
+
+          if (!response.ok) throw new Error("Failed to delete video");
+        })
       );
 
-      setVideos((prev) =>
-        prev.filter((video) => !selectedVideos.includes(video.id)),
-      );
+      setVideos(prev => prev.filter(video => !selectedVideos.includes(video.id)));
       setSelectedVideos([]);
+      setIsConfirmOpen(false);
     } catch (error) {
       console.error("Error deleting videos:", error);
+    } finally {
+      setIsDeleting(false);
     }
-    setIsConfirmOpen(false);
   };
 
   const getBadgeColor = (status: string) => {
     switch (status) {
+      case "published":
+        return "bg-green-500/20 text-green-500 border-green-500/30";
       case "draft":
         return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
       case "processing":
@@ -185,18 +168,33 @@ export function VideoGrid({ status }: VideoGridProps) {
     }
   };
 
+  const handleThumbnailLoad = (videoId: string) => {
+    setLoadedThumbnails(prev => ({ ...prev, [videoId]: true }));
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="animate-spin w-6 h-6 text-muted-foreground" />
-        <p className="ml-2 text-lg">Loading videos...</p>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="overflow-hidden">
+            <div className="aspect-video w-full bg-muted/20 relative">
+              <Skeleton className="absolute inset-0 animate-pulse" />
+            </div>
+            <div className="p-4">
+              <Skeleton className="h-6 w-3/4 mb-2" />
+              <Skeleton className="h-4 w-full" />
+              <div className="flex items-center mt-4">
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header with search and filters */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex-1 w-full sm:max-w-md relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -221,15 +219,6 @@ export function VideoGrid({ status }: VideoGridProps) {
               <SelectItem value="title">By Title</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="shrink-0"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </Button>
           <Button
             onClick={() => router.push(ROUTES.PAGES.APP.STUDIO)}
             className="shrink-0 bg-primary/90 hover:bg-primary"
@@ -294,12 +283,18 @@ export function VideoGrid({ status }: VideoGridProps) {
                  Object.values(video.scenes)[0]?.imageUrl && 
                  typeof Object.values(video.scenes)[0].imageUrl === 'string' && (
                   <div className="relative w-full h-full">
+                    {!loadedThumbnails[video.id] && (
+                      <Skeleton className="absolute inset-0 animate-pulse" />
+                    )}
                     <Image
                       src={Object.values(video.scenes)[0].imageUrl as string}
                       alt={video.title || 'Video thumbnail'}
                       fill
-                      className="object-cover"
+                      className={`object-cover transition-opacity duration-300 ${
+                        loadedThumbnails[video.id] ? 'opacity-100' : 'opacity-0'
+                      }`}
                       unoptimized
+                      onLoad={() => handleThumbnailLoad(video.id)}
                     />
                   </div>
                 )}
@@ -350,19 +345,6 @@ export function VideoGrid({ status }: VideoGridProps) {
                       {video.description}
                     </p>
                   </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(ROUTES.PAGES.APP.VIDEOS.DETAIL(video.id))}>
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Details
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </div>
                 <div className="flex items-center mt-4 text-xs text-muted-foreground">
                   <Clock className="w-3.5 h-3.5 mr-1.5" />
@@ -387,11 +369,18 @@ export function VideoGrid({ status }: VideoGridProps) {
             This action cannot be undone.
           </DialogDescription>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsConfirmOpen(false)}>
+            <Button variant="outline" onClick={() => setIsConfirmOpen(false)} disabled={isDeleting}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

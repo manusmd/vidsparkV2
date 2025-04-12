@@ -3,7 +3,7 @@ export function buildGenerationPrompt(
   imageType?: string,
 ): string {
   const styleInstruction = imageType
-    ? `\n• IMPORTANT: For every scene's image prompt, integrate the style details: "${imageType}".`
+    ? `\n• IMPORTANT: For every scene's image prompt, integrate these style details: "${imageType}".`
     : "";
   return `
 You are a professional storyteller.
@@ -13,7 +13,12 @@ Requirements:
 - The story must have a title, a video description, and an array of scenes.
 - Each scene must contain:
     "narration": a segment of the provided narration text,
-    "imagePrompt": a detailed prompt that includes lighting, mood, style, and realism.${styleInstruction}
+    "imagePrompt": a detailed prompt that includes:
+        - Consistent lighting and atmosphere across all scenes
+        - Same art style and visual treatment throughout
+        - If characters appear in multiple scenes, they must have identical appearance
+        - Specific camera angles and composition details
+        - Include "high quality, detailed, 8k, masterpiece" in every prompt${styleInstruction}
 
 Also, output a video description in this exact format (no extra text):
 <Description text> (include at least one smiley)

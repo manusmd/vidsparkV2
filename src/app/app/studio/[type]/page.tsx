@@ -23,6 +23,7 @@ import { useStory } from "@/hooks/data/useStory";
 import { useMusic } from "@/providers/useMusic";
 import { motion } from "framer-motion";
 import VideoGenerationOverlay from "@/app/app/studio/[type]/VideoGenerationOverlay.component";
+import { cn } from "@/lib/utils";
 
 const steps = [
   { id: 1, name: "Narration" },
@@ -351,17 +352,26 @@ export default function VideoGenerationPage() {
             <Button 
               onClick={handleFinalSubmit}
               disabled={!selectedImageType || !selectedVoice || isSubmitting}
-              className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              className={cn(
+                "relative overflow-hidden transition-all duration-300",
+                "bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 hover:bg-[length:400%_400%]",
+                "hover:shadow-xl hover:shadow-primary/30",
+                "border-0 text-white font-medium",
+                "before:absolute before:inset-0 before:bg-[length:200%_200%]",
+                "before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent",
+                "before:animate-[shimmer_2s_infinite]",
+                isSubmitting && "cursor-not-allowed opacity-80"
+              )}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  <span>Processing...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="mr-2 h-4 w-4" />
-                  Generate Video
+                  <span>Generate Video</span>
                 </>
               )}
             </Button>
